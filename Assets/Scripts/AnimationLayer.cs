@@ -135,6 +135,16 @@ public class AnimationLayer
         public int fromState, toState;
         public AnimTransition transition;
     }
+
+    public static AnimationLayer CreateLayer()
+    {
+        var layer = new AnimationLayer
+        {
+            states = new List<AnimationState>(),
+            transitions = new AnimationLayer.StateTransition[0]
+        };
+        return layer;
+    }
 }
 
 public enum AnimationLayerType

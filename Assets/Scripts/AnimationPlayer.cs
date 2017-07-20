@@ -7,8 +7,6 @@ using Debug = UnityEngine.Debug;
 
 public class AnimationPlayer : MonoBehaviour
 {
-//    public AnimationBaseLayer baseLayer;
-//    public AnimationExtraLayer[] additionalLayers;
     public AnimationLayer[] layers;
     public AnimTransition defaultTransition;
     

@@ -82,7 +82,7 @@ public class AnimationPlayer : MonoBehaviour
     /// <param name="layer">Layer the clip should be played on</param>
     public void SnapTo(int clip, int layer = 0)
     {
-        Play(clip, AnimTransition.Instant());
+        Play(clip, AnimTransition.Instant(), layer);
     }
 
     /// <summary>
@@ -92,7 +92,7 @@ public class AnimationPlayer : MonoBehaviour
     /// <param name="layer">Layer the clip should be played on</param>
     public void Play(int clip, int layer = 0)
     {
-        Play(clip, defaultTransition);
+        Play(clip, defaultTransition, layer);
     }
 
     /// <summary>

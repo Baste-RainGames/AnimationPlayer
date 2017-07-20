@@ -141,7 +141,8 @@ public class AnimationLayer
         var layer = new AnimationLayer
         {
             states = new List<AnimationState>(),
-            transitions = new AnimationLayer.StateTransition[0]
+            transitions = new StateTransition[0],
+            startWeight = 1f
         };
         return layer;
     }

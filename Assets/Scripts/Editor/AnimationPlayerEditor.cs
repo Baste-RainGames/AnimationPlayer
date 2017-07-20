@@ -59,23 +59,23 @@ public class AnimationPlayerEditor : Editor
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("Snap to " + i))
             {
-                animationPlayer.SnapTo(i);
+                animationPlayer.SnapTo(i, selectedLayer);
             }
             if (GUILayout.Button("Blend to " + i + " over .5 secs"))
             {
-                animationPlayer.Play(i, AnimTransition.Linear(.5f));
+                animationPlayer.Play(i, AnimTransition.Linear(.5f), selectedLayer);
             }
             if (GUILayout.Button("Blend to " + i + " using default transition"))
             {
-                animationPlayer.Play(i);
+                animationPlayer.Play(i, selectedLayer);
             }
             EditorGUILayout.EndHorizontal();
         }
 
-        EditorGUILayout.LabelField("Playing clip " + animationPlayer.GetCurrentPlayingClip());
+        EditorGUILayout.LabelField("Playing clip " + animationPlayer.GetCurrentPlayingClip(selectedLayer));
         for (int i = animationPlayer.GetClipCount() - 1; i >= 0; i--)
         {
-            EditorGUILayout.LabelField("weigh for " + i + ": " + animationPlayer.GetClipWeight(i));
+            EditorGUILayout.LabelField("weigh for " + i + ": " + animationPlayer.GetClipWeight(i, selectedLayer));
         }
     }
 
@@ -99,8 +99,6 @@ public class AnimationPlayerEditor : Editor
             selectedLayer = animationPlayer.layers.Length - 1;
             SetDirty();
         }
-        
-        
         
         GUILayout.FlexibleSpace();
 
@@ -138,7 +136,7 @@ public class AnimationPlayerEditor : Editor
         layer.mask = ObjectField("Mask", layer.mask);
         
         GUILayout.Space(10f);
-        EditorGUILayout.LabelField("Clips:");
+        EditorGUILayout.LabelField("States:");
 
         EditorGUI.indentLevel++;
         foreach (var state in layer.states)
@@ -158,8 +156,17 @@ public class AnimationPlayerEditor : Editor
 
     private void DrawState(AnimationState state)
     {
-        state.name = EditorGUILayout.TextField("Name", state.name);
-        state.clip = ObjectField("Clip", state.clip);
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField("Name", GUILayout.Width(55f));
+        state.name = EditorGUILayout.TextField(state.name);
+        EditorGUILayout.EndHorizontal();
+        
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField("Clip", GUILayout.Width(55f));
+        state.clip = ObjectField(state.clip);
+        if (state.clip != null && string.IsNullOrEmpty(state.name))
+            state.name = state.clip.name;
+        EditorGUILayout.EndHorizontal();
     }
 
     private new void SetDirty()
@@ -177,6 +184,11 @@ public class AnimationPlayerEditor : Editor
     private T ObjectField<T>(string label, T obj) where T : UnityEngine.Object
     {
         return (T) EditorGUILayout.ObjectField(label, obj, typeof(T), false);
+    }
+    
+    private T ObjectField<T>(T obj) where T : UnityEngine.Object
+    {
+        return (T) EditorGUILayout.ObjectField(obj, typeof(T), false);
     }
 
     private const string rightArrow = "\u2192";

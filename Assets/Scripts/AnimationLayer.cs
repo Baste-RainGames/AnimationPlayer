@@ -40,6 +40,7 @@ public class AnimationLayer
         for (int i = 0; i < states.Count; i++)
         {
             var clipPlayable = AnimationClipPlayable.Create(graph, states[i].clip);
+            clipPlayable.SetSpeed(states[i].speed);
             graph.Connect(clipPlayable, 0, mixer, i);
         }
 

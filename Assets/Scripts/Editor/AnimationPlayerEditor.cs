@@ -282,16 +282,23 @@ public class AnimationPlayerEditor : Editor
 
     private bool DrawState(AnimationState state)
     {
+        const float labelWidth = 55f;
+        
         EditorGUILayout.BeginHorizontal();
-        EditorGUILayout.LabelField("Name", GUILayout.Width(55f));
+        EditorGUILayout.LabelField("Name", GUILayout.Width(labelWidth));
         state.name = EditorGUILayout.TextField(state.name);
         EditorGUILayout.EndHorizontal();
 
         EditorGUILayout.BeginHorizontal();
-        EditorGUILayout.LabelField("Clip", GUILayout.Width(55f));
+        EditorGUILayout.LabelField("Clip", GUILayout.Width(labelWidth));
         state.clip = EditorUtilities.ObjectField(state.clip);
         if (state.clip != null && string.IsNullOrEmpty(state.name))
             state.name = state.clip.name;
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField("Speed", GUILayout.Width(labelWidth));
+        state.speed = EditorGUILayout.DoubleField(state.speed);
         EditorGUILayout.EndHorizontal();
 
         EditorGUILayout.BeginHorizontal();

@@ -4,7 +4,6 @@ Animation states:
         - flows (state A into state B into state C, etc.)
             - this can be used to change into a specific idle state after standing still. Or other stuff!
         - random (bunch of states, selects a random one when you enter)
-    - State speed multiplier
     - Check if it's possible to loop/not loop in the state, and how expensive that is compared to the native (stupid) way of doing it
     - Some way of adding a bunch from a file at the same time!
     - Preview (oh my!)
@@ -19,7 +18,6 @@ Animation transitions:
         probably want default transition and named transition
     - Move the transitions to the states?
 
-- Delete options for everything
-    * layers
-    * states
-    * transitions
+Misc
+    - Add "Are you sure" to all of the delete buttons
+    - Make the cached values in the editor be per-layer where appropriate (selected from/to state for transitions)

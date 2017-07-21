@@ -748,10 +748,13 @@ MonoBehaviour:
   - states:
     - name: Low
       clip: {fileID: 7400000, guid: 60fcf93512bebac4f890c3ebe54ac175, type: 2}
+      speed: 1
     - name: Mid
       clip: {fileID: 7400000, guid: f2816587fa48a7f48a030f97ff7b205c, type: 2}
+      speed: 12
     - name: High
       clip: {fileID: 7400000, guid: 2ca257280f8273448bedb60eb9f7d5eb, type: 2}
+      speed: 1
     transitions:
     - fromState: 0
       toState: 2
@@ -789,13 +792,13 @@ MonoBehaviour:
   - states:
     - name: Low
       clip: {fileID: 7400000, guid: 60fcf93512bebac4f890c3ebe54ac175, type: 2}
-    - name: Mid
-      clip: {fileID: 7400000, guid: f2816587fa48a7f48a030f97ff7b205c, type: 2}
+      speed: 1
     - name: High
       clip: {fileID: 7400000, guid: 2ca257280f8273448bedb60eb9f7d5eb, type: 2}
+      speed: 1
     transitions:
     - fromState: 0
-      toState: 2
+      toState: 1
       transitionData:
         duration: 1
         type: 1

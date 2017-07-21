@@ -6,34 +6,54 @@ using UnityEditor;
 /// 
 /// Uses the edited element's instanceID (or any int, but you know) to match value with object.
 /// </summary>
-public class PersistedInt
+public abstract class PersistedVal<T>
 {
     private readonly string key;
-    private int cachedVal;
+    private T cachedVal;
 
-    public PersistedInt(string key, int instanceID)
+    protected PersistedVal(string key, int instanceID)
     {
         this.key = key + instanceID;
         cachedVal = Get();
     }
 
-    public void SetTo(int value)
+    public void SetTo(T value)
     {
-        if (value != cachedVal)
+        if (ToInt(value) != ToInt(cachedVal))
         {
-            EditorPrefs.SetInt(key, value);
+            EditorPrefs.SetInt(key, ToInt(value));
             cachedVal = value;
         }
     }
 
-    public int Get()
+    public T Get()
     {
-        return EditorPrefs.GetInt(key, 0);
+        return ToType(EditorPrefs.GetInt(key, 0));
     }
 
-    public static implicit operator int(PersistedInt p)
+    public static implicit operator int(PersistedVal<T> p)
     {
-        return p.Get();
+        return p.ToInt(p.Get());
     }
     
+    protected abstract int ToInt(T val);
+
+    protected abstract T ToType(int i);
+}
+
+public class PersistedInt : PersistedVal<int>
+{
+
+    public PersistedInt(string key, int instanceID) : base(key, instanceID)
+    { }
+
+    protected override int ToInt(int val)
+    {
+        return val;
+    }
+
+    protected override int ToType(int i)
+    {
+        return i;
+    }
 }

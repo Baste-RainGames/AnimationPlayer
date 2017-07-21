@@ -41,16 +41,8 @@ public class AnimationPlayer : MonoBehaviour
             var layerMixer = AnimationLayerMixerPlayable.Create(graph, layers.Length);
 
             for (var i = 0; i < layers.Length; i++)
-            {
                 layers[i].InitializeLayerBlending(graph, i, layerMixer);
-            }
 
-            Debug.Log(layerMixer.GetInputCount());
-            for (int i = 0; i < layerMixer.GetInputCount(); i++)
-            {
-                Debug.Log(layerMixer.GetInput(i).GetHandle() == PlayableHandle.Null);
-            }
-            
             rootPlayable = layerMixer;
         }
         animOutput.SetSourcePlayable(rootPlayable);

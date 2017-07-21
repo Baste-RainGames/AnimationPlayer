@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using NUnit.Framework.Constraints;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -16,7 +17,17 @@ public class AnimationPlayerEditor : Editor
     }
 
     private PersistedInt selectedLayer;
-    private PersistedInt selectedEditMode;
+    private PersistedInt selectedState; //for now in transition view
+    private PersistedInt selectedToState;
+    private PersistedEditMode selectedEditMode;
+
+    private string[][] allStateNames;
+
+    private static bool stylesCreated = false;
+    private static GUIStyle editLayerStyle;
+    private static GUIStyle editLayerButton_Background;
+    private static GUIStyle editLayerButton_NotSelected;
+    private static GUIStyle editLayerButton_Selected;
 
     void OnEnable()
     {
@@ -24,12 +35,50 @@ public class AnimationPlayerEditor : Editor
         animationPlayer.editTimeUpdateCallback -= Repaint;
         animationPlayer.editTimeUpdateCallback += Repaint;
 
-        selectedLayer = new PersistedInt(persistedLayer, animationPlayer.GetInstanceID());
-        selectedEditMode = new PersistedInt(persistedEditMode, animationPlayer.GetInstanceID());
+        var instanceId = animationPlayer.GetInstanceID();
+        
+        selectedLayer = new PersistedInt(persistedLayer, instanceId);
+        selectedEditMode = new PersistedEditMode(persistedEditMode, instanceId);
+        selectedState = new PersistedInt(persistedState, instanceId);
+        selectedToState = new PersistedInt(persistedToState, instanceId);
+        
+        allStateNames = new string[animationPlayer.layers.Length][];
+        for (int i = 0; i < animationPlayer.layers.Length; i++)
+        {
+            var states = animationPlayer.layers[i].states;
+            allStateNames[i] = new string[states.Count];
+            for (int j = 0; j < states.Count; j++)
+                allStateNames[i][j] = states[j].name;
+        }
     }
 
+    
     public override void OnInspectorGUI()
     {
+        if (!stylesCreated)
+        {
+            var backgroundTex = EditorUtilities.MakeTex(1, 1, new Color(1.0f, 1.0f, 1.0f, .1f));
+            editLayerStyle = new GUIStyle {normal = {background = backgroundTex}};
+
+            var buttonBackgroundTex = EditorUtilities.MakeTex(1, 1, new Color(1.0f, 1.0f, 1.0f, 0.05f));
+            var buttonSelectedTex = EditorUtilities.MakeTex(1, 1, new Color(1.0f, 1.0f, 1.0f, 0.05f));
+            var buttonNotSelectedText = EditorUtilities.MakeTex(1, 1, new Color(1.0f, 1.0f, 1.0f, 0.2f));
+            
+            editLayerButton_Background = new GUIStyle {normal = {background = buttonBackgroundTex}};
+
+            editLayerButton_NotSelected = new GUIStyle(GUI.skin.label)
+            {
+                normal = {background = buttonNotSelectedText}
+            };
+
+            editLayerButton_Selected = new GUIStyle(GUI.skin.label)
+            {
+                normal = {background = buttonSelectedTex}
+            };
+
+            stylesCreated = true;
+        }
+        
         GUILayout.Space(30f);
 
         var numLayers = animationPlayer.layers.Length;
@@ -43,7 +92,7 @@ public class AnimationPlayerEditor : Editor
             }
             return;
         }
-        
+
         EditorUtilities.Splitter();
 
         selectedLayer.SetTo(DrawLayerSelection(numLayers));
@@ -51,15 +100,14 @@ public class AnimationPlayerEditor : Editor
         GUILayout.Space(10f);
 
         DrawSelectedLayer();
-        
-        GUILayout.Space(20f);
+
         EditorUtilities.Splitter();
-        
+
         EditorGUILayout.LabelField("Default transition");
-        
+
         Undo.RecordObject(animationPlayer, "Change default transition");
         animationPlayer.defaultTransition = DrawTransitionData(animationPlayer.defaultTransition);
-        
+
         EditorUtilities.Splitter();
 
         DrawRuntimeDebugData();
@@ -74,16 +122,16 @@ public class AnimationPlayerEditor : Editor
         {
             EditorGUILayout.BeginHorizontal();
             string stateName = animationPlayer.layers[selectedLayer].states[i].name;
-            
+
             if (GUILayout.Button($"Blend to {stateName} using default transition"))
                 animationPlayer.Play(i, selectedLayer);
-            
+
             if (GUILayout.Button($"Blend to {stateName} over .5 secs"))
                 animationPlayer.Play(i, TransitionData.Linear(.5f), selectedLayer);
-            
+
             if (GUILayout.Button($"Snap to {stateName}"))
                 animationPlayer.SnapTo(i, selectedLayer);
-            
+
             EditorGUILayout.EndHorizontal();
         }
 
@@ -152,18 +200,64 @@ public class AnimationPlayerEditor : Editor
 
         GUILayout.Space(10f);
 
-        selectedEditMode.SetTo(EditorGUILayout.Popup(selectedEditMode, editModeChoices, GUILayout.Width(200f)));
+        EditorUtilities.Splitter();
+
+
+        EditorGUILayout.BeginHorizontal(editLayerButton_Background);
+        
+        //HACK: Reseve the rects for later use
+        GUILayout.Label("");
+        var editStatesRect = GUILayoutUtility.GetLastRect();
+        GUILayout.Label("");
+        var editTransitionsRect = GUILayoutUtility.GetLastRect();
+        GUILayout.Label("");
+        var fooBarRect = GUILayoutUtility.GetLastRect();
+        
+        EditorGUILayout.EndHorizontal();
+        
+        //Hack part 2: expand the rects so they hit the next control
+        Action<Rect, string, int> Draw = (rect, label, index) =>
+        {
+            rect.yMax += 2;
+            rect.yMin -= 2;
+            if (index == 0)
+            {
+                rect.x -= 4;
+                rect.xMax += 4;
+            }
+            else if (index == 2)
+            {
+                rect.x += 4;
+                rect.xMin -= 4;
+            }
+
+            var isSelected = index == selectedEditMode;
+            var style = isSelected ? editLayerButton_Selected : editLayerButton_NotSelected;
+            if(GUI.Button(rect, label, style))
+                selectedEditMode.SetTo((EditMode) index);
+        };
+
+        Draw(editStatesRect, "Edit states", 0);
+        Draw(editTransitionsRect, "Edit Transitions", 1);
+        Draw(fooBarRect, "Foo/Bar: FooBar", 2);
+        
+        EditorGUILayout.BeginVertical(editLayerStyle);
 
         GUILayout.Space(10f);
 
         if (selectedEditMode == (int) EditMode.States)
-            DrawStates(layer);
-        else
-            DrawTransitions(layer);
+            DrawStates();
+        else if(selectedEditMode == (int) EditMode.Transitions)
+            DrawTransitions();
+
+        GUILayout.Space(20f);
+        EditorGUILayout.EndVertical();
     }
 
-    private void DrawStates(AnimationLayer layer)
+    private void DrawStates()
     {
+        var layer = animationPlayer.layers[selectedLayer]; 
+            
         EditorGUILayout.LabelField("States:");
 
         EditorGUI.indentLevel++;
@@ -196,33 +290,33 @@ public class AnimationPlayerEditor : Editor
         EditorGUILayout.EndHorizontal();
     }
 
-    private void DrawTransitions(AnimationLayer layer)
+    private void DrawTransitions()
     {
-        EditorGUILayout.LabelField("Transitions:");
-
+        var layer = animationPlayer.layers[selectedLayer]; 
+        selectedState.SetTo(EditorGUILayout.Popup("Transitions from state", selectedState, allStateNames[selectedLayer]));
+        
         EditorGUI.indentLevel++;
-        foreach (var transition in layer.transitions)
+        selectedToState.SetTo(EditorGUILayout.Popup("Transtion to state state", selectedToState, allStateNames[selectedLayer]));
+        
+        EditorGUILayout.Space();
+        
+        var transition = layer.transitions.Find(state => state.fromState == selectedState && state.toState == selectedToState);
+        if (transition == null)
         {
-            GUILayout.Space(10f);
-            Undo.RecordObject(animationPlayer, "Edit transition in animation player");
-            DrawTransition(transition, layer);
+            EditorGUILayout.LabelField("No transition defined!");
+            if (GUILayout.Button("Create transition"))
+            {
+                Undo.RecordObject(animationPlayer, $"Add transition from {layer.states[selectedState].name} to {layer.states[selectedToState].name}");
+                layer.transitions.Add(new StateTransition {fromState = selectedState, toState = selectedToState, transitionData = TransitionData.Linear(1f)});
+            }
         }
+        else
+        {
+            Undo.RecordObject(animationPlayer, "change transition from  {layer.states[selectedState].name} to {layer.states[selectedToState].name}");
+            transition.transitionData = DrawTransitionData(transition.transitionData);
+        }
+        
         EditorGUI.indentLevel--;
-
-        if (GUILayout.Button("Add Transition"))
-        {
-            Undo.RecordObject(animationPlayer, "Add transition to animation player");
-            layer.transitions.Add(new StateTransition {fromState = 0, toState = 0, transitionData = TransitionData.Instant()});
-        }
-    }
-
-    private void DrawTransition(StateTransition stateTransition, AnimationLayer layer)
-    {
-        string[] choices = layer.states.Select(state => state.name).ToArray(); //@TODO: obviously
-
-        stateTransition.fromState = EditorGUILayout.Popup("Transition from", stateTransition.fromState, choices);
-        stateTransition.toState = EditorGUILayout.Popup("Transition to", stateTransition.toState, choices);
-        stateTransition.transitionData = DrawTransitionData(stateTransition.transitionData);
     }
 
     public TransitionData DrawTransitionData(TransitionData transitionData)
@@ -234,7 +328,7 @@ public class AnimationPlayerEditor : Editor
             transitionData.curve = EditorGUILayout.CurveField(transitionData.curve);
 
         return transitionData;
-        
+
     }
 
     private const string rightArrow = "\u2192";
@@ -243,7 +337,25 @@ public class AnimationPlayerEditor : Editor
     private const float selectedLayerWidth = 108f;
 
     private const string persistedLayer = "APE_SelectedLayer_";
+    private const string persistedState = "APE_SelectedState_";
+    private const string persistedToState = "APE_SelectedToState_";
     private const string persistedEditMode = "APE_EditMode_";
+    
+    private class PersistedEditMode : PersistedVal<EditMode>
+    {
 
-    private static readonly string[] editModeChoices = {"Edit states", "Edit transitions"};
+        public PersistedEditMode(string key, int instanceID) : base(key, instanceID)
+        { }
+
+        protected override int ToInt(EditMode val)
+        {
+            return (int) val;
+        }
+
+        protected override EditMode ToType(int i)
+        {
+            return (EditMode) i;
+        }
+    }
+
 }

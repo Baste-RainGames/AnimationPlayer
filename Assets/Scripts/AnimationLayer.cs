@@ -22,7 +22,6 @@ public class AnimationLayer
 
     //blend info:
     private bool blending;
-    private int blendingFromClip; //for debug
     private TransitionData blendTransitionData;
     private float blendStartTime;
     private bool[] activeWhenBlendStarted;
@@ -71,7 +70,6 @@ public class AnimationLayer
 
     public void InitializeLayerBlending(PlayableGraph graph, int layerIndex, AnimationLayerMixerPlayable layerMixer)
     {
-        Debug.Log("connects on " + layerIndex);
         graph.Connect(mixer, 0, layerMixer, layerIndex);
 
         layerMixer.SetInputWeight(layerIndex, startWeight);
@@ -119,7 +117,6 @@ public class AnimationLayer
             }
 
             blending = true;
-            blendingFromClip = currentPlayedClip;
             currentPlayedClip = clip;
             blendTransitionData = transitionData;
             blendStartTime = Time.time;

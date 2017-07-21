@@ -1,0 +1,21 @@
+Animation states:
+    - Different kinds of states:
+        - blend trees (1D/2D, 3d?)
+        - flows (state A into state B into state C, etc.)
+            - this can be used to change into a specific idle state after standing still. Or other stuff!
+        - random (bunch of states, selects a random one when you enter)
+    - State speed multiplier
+    - Check if it's possible to loop/not loop in the state, and how expensive that is compared to the native (stupid) way of doing it
+    - Some way of adding a bunch from a file at the same time!
+    - Preview (oh my!)
+    - Animation events! Of some sort!
+
+Animation transitions:
+    * Better view - show one state and all transitions from it?
+    - Transition-by-clip:
+        If you're transitioning from A to B, specify a clip C so the transition is A->C->B.
+        This will be usefull for run-stops and such.
+        Have to figure out if C here is a clip, another state in the state view, or another state in a special view.
+    - Several ways of transitioning between two states
+        probably want default transition and named transition
+    

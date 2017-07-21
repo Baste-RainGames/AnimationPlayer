@@ -2,6 +2,7 @@
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 public class EditorUtilities
 {
@@ -17,12 +18,12 @@ public class EditorUtilities
         array[array.Length - 1] = CreateNew();
     }
 
-    public static T ObjectField<T>(string label, T obj) where T : UnityEngine.Object
+    public static T ObjectField<T>(string label, T obj) where T : Object
     {
         return (T) EditorGUILayout.ObjectField(label, obj, typeof(T), false);
     }
 
-    public static T ObjectField<T>(T obj) where T : UnityEngine.Object
+    public static T ObjectField<T>(T obj) where T : Object
     {
         return (T) EditorGUILayout.ObjectField(obj, typeof(T), false);
     }
@@ -92,4 +93,17 @@ public class EditorUtilities
 
     #endregion
 
+    public static Texture2D MakeTex(int width, int height, Color col)
+    {
+        Color[] pix = new Color[width*height];
+ 
+        for(int i = 0; i < pix.Length; i++)
+            pix[i] = col;
+ 
+        Texture2D result = new Texture2D(width, height);
+        result.SetPixels(pix);
+        result.Apply();
+ 
+        return result;
+    }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 [CustomEditor(typeof(AnimationPlayer))]
 public class AnimationPlayerEditor : Editor
@@ -271,34 +272,49 @@ public class AnimationPlayerEditor : Editor
 
         EditorGUILayout.Space();
 
-        if (GUILayout.Button("Add State"))
+        EditorGUILayout.BeginHorizontal();
+        
+        if (GUILayout.Button("Add Normal State"))
         {
             Undo.RecordObject(animationPlayer, "Add state to animation player");
-            layer.states.Add(new AnimationState());
+            layer.states.Add(AnimationState.Normal());
             shouldUpdateStateNames = true;
         }
+
+        if (GUILayout.Button("Add blend tree"))
+        {
+            Undo.RecordObject(animationPlayer, "Add blend tree to animation player");
+            layer.states.Add(AnimationState.BlendTree1D());
+        }
+        
+        EditorGUILayout.EndHorizontal();
+        
     }
 
     private bool DrawState(AnimationState state)
     {
         const float labelWidth = 55f;
+
+        state.name = TextField("Name", state.name, labelWidth);
+        state.speed = DoubleField("Speed", state.speed, labelWidth);
+
         
-        EditorGUILayout.BeginHorizontal();
-        EditorGUILayout.LabelField("Name", GUILayout.Width(labelWidth));
-        state.name = EditorGUILayout.TextField(state.name);
-        EditorGUILayout.EndHorizontal();
+        if (state.type == AnimationStateType.SingleClip)
+        {
+            state.clip = ObjectField("Clip", state.clip, labelWidth);
+            if (state.clip != null && (string.IsNullOrEmpty(state.name) || state.name == AnimationState.DefaultName))
+                state.name = state.clip.name;
+        }
 
-        EditorGUILayout.BeginHorizontal();
-        EditorGUILayout.LabelField("Clip", GUILayout.Width(labelWidth));
-        state.clip = EditorUtilities.ObjectField(state.clip);
-        if (state.clip != null && string.IsNullOrEmpty(state.name))
-            state.name = state.clip.name;
-        EditorGUILayout.EndHorizontal();
+        else
+        {
+            state.blendVariable = TextField("Blend with variable", state.blendVariable, 100f);
+            foreach (var blendTreeEntry in state.blendTree)
+            {
+                DrawBlendTreeEntry(blendTreeEntry);
+            }
+        }
 
-        EditorGUILayout.BeginHorizontal();
-        EditorGUILayout.LabelField("Speed", GUILayout.Width(labelWidth));
-        state.speed = EditorGUILayout.DoubleField(state.speed);
-        EditorGUILayout.EndHorizontal();
 
         EditorGUILayout.BeginHorizontal();
         GUILayout.Space(77f);
@@ -306,6 +322,11 @@ public class AnimationPlayerEditor : Editor
         EditorGUILayout.EndHorizontal();
             
         return delete;
+    }
+
+    private void DrawBlendTreeEntry(BlendTreeEntry blendTreeEntry)
+    {
+        
     }
 
     private void DrawTransitions()
@@ -385,6 +406,33 @@ public class AnimationPlayerEditor : Editor
         {
             EditorGUILayout.LabelField("weigh for " + i + ": " + animationPlayer.GetClipWeight(i, selectedLayer));
         }
+    }
+
+    private string TextField(string label, string text, float width)
+    {
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField(label, GUILayout.Width(width));
+        text = EditorGUILayout.TextField(text);
+        EditorGUILayout.EndHorizontal();
+        return text;
+    }
+    
+    private double DoubleField(string label, double value, float width)
+    {
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField(label, GUILayout.Width(width));
+        value = EditorGUILayout.DoubleField(value);
+        EditorGUILayout.EndHorizontal();
+        return value;
+    }
+    
+    private T ObjectField<T>(string label, T obj, float width) where T : Object
+    {
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField(label, GUILayout.Width(width));
+        obj = EditorUtilities.ObjectField(obj);
+        EditorGUILayout.EndHorizontal();
+        return obj;
     }
 
     private const string rightArrow = "\u2192";

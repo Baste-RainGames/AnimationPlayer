@@ -8,7 +8,7 @@ using Debug = UnityEngine.Debug;
 public class AnimationPlayer : MonoBehaviour
 {
     public AnimationLayer[] layers;
-    public AnimTransition defaultTransition;
+    public TransitionData defaultTransition;
     
     private PlayableGraph graph;
     
@@ -82,7 +82,7 @@ public class AnimationPlayer : MonoBehaviour
     /// <param name="layer">Layer the clip should be played on</param>
     public void SnapTo(int clip, int layer = 0)
     {
-        Play(clip, AnimTransition.Instant(), layer);
+        Play(clip, TransitionData.Instant(), layer);
     }
 
     /// <summary>
@@ -92,19 +92,20 @@ public class AnimationPlayer : MonoBehaviour
     /// <param name="layer">Layer the clip should be played on</param>
     public void Play(int clip, int layer = 0)
     {
-        Play(clip, defaultTransition, layer);
+        AssertLayerInBounds(layer, clip, "play a clip");
+        layers[layer].PlayUsingInternalTransition(clip, defaultTransition);
     }
 
     /// <summary>
     /// Play a clip. The clip will immediately be the current played clip. 
     /// </summary>
     /// <param name="clip">Clip index to play</param>
-    /// <param name="transition">How to transition into the clip</param>
+    /// <param name="transitionData">How to transition into the clip</param>
     /// <param name="layer">Layer the clip should be played on</param>
-    public void Play(int clip, AnimTransition transition, int layer = 0)
+    public void Play(int clip, TransitionData transitionData, int layer = 0)
     {
         AssertLayerInBounds(layer, clip, "play a clip");
-        layers[layer].Play(clip, transition);
+        layers[layer].PlayUsingExternalTransition(clip, transitionData);
     }
 
     public float GetClipWeight(int clip, int layer = 0)
@@ -119,7 +120,7 @@ public class AnimationPlayer : MonoBehaviour
         return layers[layer].currentPlayedClip;
     }
 
-    public int GetClipCount(int layer = 0)
+    public int GetStateCount(int layer = 0)
     {
         AssertLayerInBounds(layer, "get the clip count");
         return layers[layer].states.Count;

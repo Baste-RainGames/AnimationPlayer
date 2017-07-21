@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -7,16 +8,15 @@ using UnityEngine;
 public class AnimationPlayerEditor : Editor
 {
     private AnimationPlayer animationPlayer;
-    private int _selectedLayer;
-    private int selectedLayer
+
+    private enum EditMode
     {
-        get { return _selectedLayer; }
-        set
-        {
-            _selectedLayer = value;
-            SetPersistedSelectedLayer(animationPlayer.GetInstanceID(), value);
-        }
+        States,
+        Transitions
     }
+
+    private PersistedInt selectedLayer;
+    private PersistedInt selectedEditMode;
 
     void OnEnable()
     {
@@ -24,13 +24,12 @@ public class AnimationPlayerEditor : Editor
         animationPlayer.editTimeUpdateCallback -= Repaint;
         animationPlayer.editTimeUpdateCallback += Repaint;
 
-        _selectedLayer = GetPersistedSelectedLayer(animationPlayer.GetInstanceID());
+        selectedLayer = new PersistedInt(persistedLayer, animationPlayer.GetInstanceID());
+        selectedEditMode = new PersistedInt(persistedEditMode, animationPlayer.GetInstanceID());
     }
 
     public override void OnInspectorGUI()
     {
-        base.OnInspectorGUI();
-
         GUILayout.Space(30f);
 
         var numLayers = animationPlayer.layers.Length;
@@ -44,36 +43,52 @@ public class AnimationPlayerEditor : Editor
             }
             return;
         }
+        
+        EditorUtilities.Splitter();
 
-        selectedLayer = DrawLayerSelection(numLayers);
+        selectedLayer.SetTo(DrawLayerSelection(numLayers));
+
+        GUILayout.Space(10f);
+
+        DrawSelectedLayer();
         
         GUILayout.Space(20f);
+        EditorUtilities.Splitter();
         
-        DrawSelectedLayer();
+        EditorGUILayout.LabelField("Default transition");
+        
+        Undo.RecordObject(animationPlayer, "Change default transition");
+        animationPlayer.defaultTransition = DrawTransitionData(animationPlayer.defaultTransition);
+        
+        EditorUtilities.Splitter();
 
+        DrawRuntimeDebugData();
+    }
+
+    private void DrawRuntimeDebugData()
+    {
         if (!Application.isPlaying)
             return;
 
-        for (int i = animationPlayer.GetClipCount() - 1; i >= 0; i--)
+        for (int i = animationPlayer.GetStateCount(selectedLayer) - 1; i >= 0; i--)
         {
             EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("Snap to " + i))
-            {
-                animationPlayer.SnapTo(i, selectedLayer);
-            }
-            if (GUILayout.Button("Blend to " + i + " over .5 secs"))
-            {
-                animationPlayer.Play(i, AnimTransition.Linear(.5f), selectedLayer);
-            }
-            if (GUILayout.Button("Blend to " + i + " using default transition"))
-            {
+            string stateName = animationPlayer.layers[selectedLayer].states[i].name;
+            
+            if (GUILayout.Button($"Blend to {stateName} using default transition"))
                 animationPlayer.Play(i, selectedLayer);
-            }
+            
+            if (GUILayout.Button($"Blend to {stateName} over .5 secs"))
+                animationPlayer.Play(i, TransitionData.Linear(.5f), selectedLayer);
+            
+            if (GUILayout.Button($"Snap to {stateName}"))
+                animationPlayer.SnapTo(i, selectedLayer);
+            
             EditorGUILayout.EndHorizontal();
         }
 
         EditorGUILayout.LabelField("Playing clip " + animationPlayer.GetCurrentPlayingClip(selectedLayer));
-        for (int i = animationPlayer.GetClipCount() - 1; i >= 0; i--)
+        for (int i = animationPlayer.GetStateCount() - 1; i >= 0; i--)
         {
             EditorGUILayout.LabelField("weigh for " + i + ": " + animationPlayer.GetClipWeight(i, selectedLayer));
         }
@@ -81,29 +96,29 @@ public class AnimationPlayerEditor : Editor
 
     private int DrawLayerSelection(int numLayers)
     {
-        selectedLayer = Mathf.Clamp(selectedLayer, 0, numLayers);
+        selectedLayer.SetTo(Mathf.Clamp(selectedLayer, 0, numLayers));
 
         EditorGUILayout.BeginHorizontal();
-        
+
         GUILayout.FlexibleSpace();
-        
-        selectedLayer = DrawLeftButton(selectedLayer);
-        EditorGUILayout.LabelField("Selected layer: " + selectedLayer, GUILayout.Width(selectedLayerWidth));
-        selectedLayer = DrawRightButton(numLayers, selectedLayer);
-        
+
+        selectedLayer.SetTo(DrawLeftButton(selectedLayer));
+        EditorGUILayout.LabelField("Selected layer: " + selectedLayer.Get(), GUILayout.Width(selectedLayerWidth));
+        selectedLayer.SetTo(DrawRightButton(numLayers, selectedLayer));
+
         GUILayout.Space(10f);
-        
+
         if (GUILayout.Button("Add layer", GUILayout.MinWidth(100f)))
         {
-            ExpandArrayByOne(ref animationPlayer.layers, AnimationLayer.CreateLayer);
-            selectedLayer = animationPlayer.layers.Length - 1;
-            SetDirty();
+            Undo.RecordObject(animationPlayer, "Add layer to animation player");
+            EditorUtilities.ExpandArrayByOne(ref animationPlayer.layers, AnimationLayer.CreateLayer);
+            selectedLayer.SetTo(animationPlayer.layers.Length - 1);
         }
-        
+
         GUILayout.FlexibleSpace();
 
         EditorGUILayout.EndHorizontal();
-        
+
         return selectedLayer;
     }
 
@@ -127,15 +142,28 @@ public class AnimationPlayerEditor : Editor
         EditorGUI.EndDisabledGroup();
         return selectedLayer;
     }
-    
+
     private void DrawSelectedLayer()
     {
         var layer = animationPlayer.layers[selectedLayer];
 
         layer.startWeight = EditorGUILayout.Slider("Layer Weight", layer.startWeight, 0f, 1f);
-        layer.mask = ObjectField("Mask", layer.mask);
-        
+        layer.mask = EditorUtilities.ObjectField("Mask", layer.mask);
+
         GUILayout.Space(10f);
+
+        selectedEditMode.SetTo(EditorGUILayout.Popup(selectedEditMode, editModeChoices, GUILayout.Width(200f)));
+
+        GUILayout.Space(10f);
+
+        if (selectedEditMode == (int) EditMode.States)
+            DrawStates(layer);
+        else
+            DrawTransitions(layer);
+    }
+
+    private void DrawStates(AnimationLayer layer)
+    {
         EditorGUILayout.LabelField("States:");
 
         EditorGUI.indentLevel++;
@@ -145,12 +173,11 @@ public class AnimationPlayerEditor : Editor
             DrawState(state);
         }
         EditorGUI.indentLevel--;
-        
 
         if (GUILayout.Button("Add State"))
         {
+            Undo.RecordObject(animationPlayer, "Add state to animation player");
             layer.states.Add(new AnimationState());
-            SetDirty();
         }
     }
 
@@ -160,35 +187,54 @@ public class AnimationPlayerEditor : Editor
         EditorGUILayout.LabelField("Name", GUILayout.Width(55f));
         state.name = EditorGUILayout.TextField(state.name);
         EditorGUILayout.EndHorizontal();
-        
+
         EditorGUILayout.BeginHorizontal();
         EditorGUILayout.LabelField("Clip", GUILayout.Width(55f));
-        state.clip = ObjectField(state.clip);
+        state.clip = EditorUtilities.ObjectField(state.clip);
         if (state.clip != null && string.IsNullOrEmpty(state.name))
             state.name = state.clip.name;
         EditorGUILayout.EndHorizontal();
     }
 
-    private new void SetDirty()
+    private void DrawTransitions(AnimationLayer layer)
     {
-        EditorUtility.SetDirty(animationPlayer);
-        EditorSceneManager.MarkSceneDirty(animationPlayer.gameObject.scene);
+        EditorGUILayout.LabelField("Transitions:");
+
+        EditorGUI.indentLevel++;
+        foreach (var transition in layer.transitions)
+        {
+            GUILayout.Space(10f);
+            Undo.RecordObject(animationPlayer, "Edit transition in animation player");
+            DrawTransition(transition, layer);
+        }
+        EditorGUI.indentLevel--;
+
+        if (GUILayout.Button("Add Transition"))
+        {
+            Undo.RecordObject(animationPlayer, "Add transition to animation player");
+            layer.transitions.Add(new StateTransition {fromState = 0, toState = 0, transitionData = TransitionData.Instant()});
+        }
     }
-    
-    private void ExpandArrayByOne<T>(ref T[] array, Func<T> CreateNew)
+
+    private void DrawTransition(StateTransition stateTransition, AnimationLayer layer)
     {
-        Array.Resize(ref array, array.Length + 1);
-        array[array.Length - 1] = CreateNew();
+        string[] choices = layer.states.Select(state => state.name).ToArray(); //@TODO: obviously
+
+        stateTransition.fromState = EditorGUILayout.Popup("Transition from", stateTransition.fromState, choices);
+        stateTransition.toState = EditorGUILayout.Popup("Transition to", stateTransition.toState, choices);
+        stateTransition.transitionData = DrawTransitionData(stateTransition.transitionData);
     }
-    
-    private T ObjectField<T>(string label, T obj) where T : UnityEngine.Object
+
+    public TransitionData DrawTransitionData(TransitionData transitionData)
     {
-        return (T) EditorGUILayout.ObjectField(label, obj, typeof(T), false);
-    }
-    
-    private T ObjectField<T>(T obj) where T : UnityEngine.Object
-    {
-        return (T) EditorGUILayout.ObjectField(obj, typeof(T), false);
+        transitionData.type = (TransitionType) EditorGUILayout.EnumPopup("Type", transitionData.type);
+        transitionData.duration = EditorGUILayout.FloatField("Duration", transitionData.duration);
+
+        if (transitionData.type == TransitionType.Curve)
+            transitionData.curve = EditorGUILayout.CurveField(transitionData.curve);
+
+        return transitionData;
+        
     }
 
     private const string rightArrow = "\u2192";
@@ -197,13 +243,7 @@ public class AnimationPlayerEditor : Editor
     private const float selectedLayerWidth = 108f;
 
     private const string persistedLayer = "APE_SelectedLayer_";
-    private int GetPersistedSelectedLayer(int instanceId)
-    {
-        return EditorPrefs.GetInt(persistedLayer + instanceId, 0);
-    }
+    private const string persistedEditMode = "APE_EditMode_";
 
-    private void SetPersistedSelectedLayer(int instanceId, int value)
-    {
-        EditorPrefs.SetInt(persistedLayer + instanceId, value);
-    }
+    private static readonly string[] editModeChoices = {"Edit states", "Edit transitions"};
 }

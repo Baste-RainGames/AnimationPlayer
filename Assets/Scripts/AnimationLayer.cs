@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Animations;
@@ -10,7 +9,7 @@ public class AnimationLayer
 {
     [Header("Animation data")]
     public List<AnimationState> states;
-    public StateTransition[] transitions;
+    public List<StateTransition> transitions;
     public int startClip;
     
     [Header("Layer blending data")]
@@ -24,10 +23,13 @@ public class AnimationLayer
     //blend info:
     private bool blending;
     private int blendingFromClip; //for debug
-    private AnimTransition blendTransition;
+    private TransitionData blendTransitionData;
     private float blendStartTime;
     private bool[] activeWhenBlendStarted;
     private float[] valueWhenBlendStarted;
+
+    //transitionLookup[a, b] contains the index of the transition from a to b in transitions
+    private int[,] transitionLookup;
 
     public void InitializeSelf(PlayableGraph graph)
     {
@@ -44,6 +46,27 @@ public class AnimationLayer
 
         activeWhenBlendStarted = new bool[states.Count];
         valueWhenBlendStarted = new float[states.Count];
+
+        transitionLookup = new int[states.Count, states.Count];
+        for (int i = 0; i < states.Count; i++)
+            for (int j = 0; j < states.Count; j++)
+                transitionLookup[i, j] = -1;
+
+        for (var i = 0; i < transitions.Count; i++)
+        {
+            var transition = transitions[i];
+            if (transition.fromState < 0 || transition.toState < 0 || transition.fromState > states.Count - 1 || transition.toState > states.Count - 1)
+            {
+                Debug.LogError($"Got a transition from state number {transition.fromState} to state number {transition.toState}, but there's {states.Count} states!");
+                continue;
+            }
+            
+            if (transitionLookup[transition.fromState, transition.toState] != -1)
+                Debug.LogWarning("Found two transitions from " + states[transition.fromState] + " to " + states[transition.toState]);
+            
+            
+            transitionLookup[transition.fromState, transition.toState] = i;
+        }
     }
 
     public void InitializeLayerBlending(PlayableGraph graph, int layerIndex, AnimationLayerMixerPlayable layerMixer)
@@ -57,14 +80,27 @@ public class AnimationLayer
             layerMixer.SetLayerMaskFromAvatarMask((uint) layerIndex, mask);
     }
 
-    public void Play(int clip, AnimTransition transition)
+    public void PlayUsingExternalTransition(int clip, TransitionData transitionData)
+    {
+        Play(clip, transitionData);
+    }
+
+
+    public void PlayUsingInternalTransition(int clip, TransitionData defaultTransition)
+    {
+        var transitionToUse = transitionLookup[currentPlayedClip, clip];
+        var transition = transitionToUse == -1 ? defaultTransition : transitions[transitionToUse].transitionData;
+        Play(clip, transition);
+    }
+
+    private void Play(int clip, TransitionData transitionData)
     {
         Debug.Assert(clip >= 0 && clip < states.Count,
                      $"Trying to play out of bounds clip {clip}! There are {states.Count} clips in the animation player");
-        Debug.Assert(transition.type != TransitionType.Curve || transition.curve != null,
+        Debug.Assert(transitionData.type != TransitionType.Curve || transitionData.curve != null,
                      "Trying to play an animationCurve based transition, but the transition curve is null!");
 
-        if (transition.duration <= 0f)
+        if (transitionData.duration <= 0f)
         {
             for (int i = 0; i < states.Count; i++)
             {
@@ -85,7 +121,7 @@ public class AnimationLayer
             blending = true;
             blendingFromClip = currentPlayedClip;
             currentPlayedClip = clip;
-            blendTransition = transition;
+            blendTransitionData = transitionData;
             blendStartTime = Time.time;
         }
     }
@@ -95,10 +131,10 @@ public class AnimationLayer
         if (!blending)
             return;
 
-        var lerpVal = (Time.time - blendStartTime) / blendTransition.duration;
-        if (blendTransition.type == TransitionType.Curve)
+        var lerpVal = (Time.time - blendStartTime) / blendTransitionData.duration;
+        if (blendTransitionData.type == TransitionType.Curve)
         {
-            lerpVal = blendTransition.curve.Evaluate(lerpVal);
+            lerpVal = blendTransitionData.curve.Evaluate(lerpVal);
         }
 
         for (int i = 0; i < states.Count; i++)
@@ -129,19 +165,12 @@ public class AnimationLayer
         return blending;
     }
 
-    [Serializable]
-    public class StateTransition
-    {
-        public int fromState, toState;
-        public AnimTransition transition;
-    }
-
     public static AnimationLayer CreateLayer()
     {
         var layer = new AnimationLayer
         {
             states = new List<AnimationState>(),
-            transitions = new StateTransition[0],
+            transitions = new List<StateTransition>(),
             startWeight = 1f
         };
         return layer;

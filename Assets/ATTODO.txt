@@ -11,11 +11,15 @@ Animation states:
     - Animation events! Of some sort!
 
 Animation transitions:
-    * Better view - show one state and all transitions from it?
     - Transition-by-clip:
         If you're transitioning from A to B, specify a clip C so the transition is A->C->B.
         This will be usefull for run-stops and such.
         Have to figure out if C here is a clip, another state in the state view, or another state in a special view.
     - Several ways of transitioning between two states
         probably want default transition and named transition
-    
+    - Move the transitions to the states?
+
+- Delete options for everything
+    * layers
+    - states
+    - transitions

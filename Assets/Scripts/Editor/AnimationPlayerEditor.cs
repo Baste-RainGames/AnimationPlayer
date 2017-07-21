@@ -162,6 +162,12 @@ public class AnimationPlayerEditor : Editor
             EditorUtilities.ExpandArrayByOne(ref animationPlayer.layers, AnimationLayer.CreateLayer);
             selectedLayer.SetTo(animationPlayer.layers.Length - 1);
         }
+        if (GUILayout.Button("Delete layer", GUILayout.Width(100f)))
+        {
+            Undo.RecordObject(animationPlayer, "Delete layer from animation player");
+            EditorUtilities.DeleteIndexFromArray(ref animationPlayer.layers, selectedLayer);
+            selectedLayer.SetTo(Mathf.Max(0, selectedLayer - 1));
+        }
 
         GUILayout.FlexibleSpace();
 
@@ -296,7 +302,7 @@ public class AnimationPlayerEditor : Editor
         selectedState.SetTo(EditorGUILayout.Popup("Transitions from state", selectedState, allStateNames[selectedLayer]));
         
         EditorGUI.indentLevel++;
-        selectedToState.SetTo(EditorGUILayout.Popup("Transtion to state state", selectedToState, allStateNames[selectedLayer]));
+        selectedToState.SetTo(EditorGUILayout.Popup("Transtion to state", selectedToState, allStateNames[selectedLayer]));
         
         EditorGUILayout.Space();
         

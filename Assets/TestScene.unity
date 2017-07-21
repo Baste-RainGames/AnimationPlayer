@@ -793,7 +793,42 @@ MonoBehaviour:
       clip: {fileID: 7400000, guid: f2816587fa48a7f48a030f97ff7b205c, type: 2}
     - name: High
       clip: {fileID: 7400000, guid: 2ca257280f8273448bedb60eb9f7d5eb, type: 2}
-    transitions: []
+    transitions:
+    - fromState: 0
+      toState: 2
+      transitionData:
+        duration: 1
+        type: 1
+        curve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 2
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+          - serializedVersion: 2
+            time: 0.21592435
+            value: 0.89197695
+            inSlope: 0.3572367
+            outSlope: 0.3572367
+            tangentMode: 0
+          - serializedVersion: 2
+            time: 0.7138699
+            value: 0.29475945
+            inSlope: 1.1016428
+            outSlope: 1.1016428
+            tangentMode: 0
+          - serializedVersion: 2
+            time: 1
+            value: 1
+            inSlope: 2
+            outSlope: 2
+            tangentMode: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
     startClip: 0
     startWeight: 1
     mask: {fileID: 31900000, guid: b2ddc94bb6859d948b41ded85a31758e, type: 2}

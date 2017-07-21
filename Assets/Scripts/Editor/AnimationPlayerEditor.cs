@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Linq;
-using NUnit.Framework.Constraints;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
 
 [CustomEditor(typeof(AnimationPlayer))]
@@ -193,7 +190,7 @@ public class AnimationPlayerEditor : Editor
         GUILayout.Label("");
         var editTransitionsRect = GUILayoutUtility.GetLastRect();
         GUILayout.Label("");
-        var fooBarRect = GUILayoutUtility.GetLastRect();
+        var metaDataRect = GUILayoutUtility.GetLastRect();
 
         EditorGUILayout.EndHorizontal();
 
@@ -221,7 +218,7 @@ public class AnimationPlayerEditor : Editor
 
         Draw(editStatesRect, "Edit states", 0);
         Draw(editTransitionsRect, "Edit Transitions", 1);
-        Draw(fooBarRect, "Foo/Bar: FooBar", 2);
+        Draw(metaDataRect, "Metadata", 2);
 
         EditorGUILayout.BeginVertical(editLayerStyle);
 
@@ -231,6 +228,8 @@ public class AnimationPlayerEditor : Editor
             DrawStates();
         else if (selectedEditMode == (int) EditMode.Transitions)
             DrawTransitions();
+        else
+            EditorGUILayout.LabelField("Metadata should go here (clips used, etc.)");
 
         GUILayout.Space(20f);
         EditorGUILayout.EndVertical();

@@ -1,6 +1,12 @@
+- means "should do"
+* means "working on RIGHT THE FUCK NOW"
+
 Animation states:
     - Different kinds of states:
-        - blend trees (1D/2D, 3d?)
+        - blend trees
+            * 2D
+                - Nested!
+            - 3D
         - flows (state A into state B into state C, etc.)
             - this can be used to change into a specific idle state after standing still. Or other stuff!
         - random (bunch of states, selects a random one when you enter)
@@ -21,3 +27,11 @@ Animation transitions:
 Misc
     - Add "Are you sure" to all of the delete buttons
     - Make the cached values in the editor be per-layer where appropriate (selected from/to state for transitions)
+    - Add reorder support to things? Or better view for states
+    - Scroll views!
+    - Metadata:
+        - list all transitions (with go-to buttons)
+        - list all fbx/.anim files referenced
+        - list all clips used
+        - list all blend variables
+        - etc?

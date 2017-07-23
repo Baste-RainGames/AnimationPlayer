@@ -828,7 +828,7 @@ ModelImporter:
     - serializedVersion: 16
       name: jog_teri
       takeName: jog_teri
-      firstFrame: 0
+      firstFrame: 5
       lastFrame: 38
       wrapMode: 0
       orientationOffsetY: 0
@@ -836,7 +836,7 @@ ModelImporter:
       cycleOffset: 0
       loop: 0
       hasAdditiveReferencePose: 0
-      loopTime: 0
+      loopTime: 1
       loopBlend: 0
       loopBlendOrientation: 0
       loopBlendPositionY: 0
@@ -1284,7 +1284,7 @@ ModelImporter:
       cycleOffset: 0
       loop: 0
       hasAdditiveReferencePose: 0
-      loopTime: 0
+      loopTime: 1
       loopBlend: 0
       loopBlendOrientation: 0
       loopBlendPositionY: 0
@@ -1584,7 +1584,7 @@ ModelImporter:
     - serializedVersion: 16
       name: walk_teri
       takeName: walk_teri
-      firstFrame: 0
+      firstFrame: 2
       lastFrame: 52
       wrapMode: 0
       orientationOffsetY: 0
@@ -1592,7 +1592,7 @@ ModelImporter:
       cycleOffset: 0
       loop: 0
       hasAdditiveReferencePose: 0
-      loopTime: 0
+      loopTime: 1
       loopBlend: 0
       loopBlendOrientation: 0
       loopBlendPositionY: 0

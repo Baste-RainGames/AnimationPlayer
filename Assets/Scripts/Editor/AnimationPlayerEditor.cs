@@ -70,19 +70,6 @@ public class AnimationPlayerEditor : Editor
             stylesCreated = true;
         }
 
-        if (shouldUpdateStateNames)
-        {
-            shouldUpdateStateNames = false;
-            allStateNames = new string[animationPlayer.layers.Length][];
-            for (int i = 0; i < animationPlayer.layers.Length; i++)
-            {
-                var states = animationPlayer.layers[i].states;
-                allStateNames[i] = new string[states.Count];
-                for (int j = 0; j < states.Count; j++)
-                    allStateNames[i][j] = states[j].name;
-            }
-        }
-
         GUILayout.Space(30f);
 
         var numLayers = animationPlayer.layers.Length;
@@ -95,6 +82,19 @@ public class AnimationPlayerEditor : Editor
                 animationPlayer.layers[0] = AnimationLayer.CreateLayer();
             }
             return;
+        }
+        
+        if (shouldUpdateStateNames)
+        {
+            shouldUpdateStateNames = false;
+            allStateNames = new string[animationPlayer.layers.Length][];
+            for (int i = 0; i < animationPlayer.layers.Length; i++)
+            {
+                var states = animationPlayer.layers[i].states;
+                allStateNames[i] = new string[states.Count];
+                for (int j = 0; j < states.Count; j++)
+                    allStateNames[i][j] = states[j].name;
+            }
         }
 
         EditorUtilities.Splitter();
@@ -427,7 +427,7 @@ public class AnimationPlayerEditor : Editor
         
         EditorGUILayout.Space();
 
-        var newBlendVal = EditorGUILayout.Slider("Blend val", blendVal, 0f, 1f);
+        var newBlendVal = EditorGUILayout.Slider("Blend val", blendVal, -5f, 5f);
         if (newBlendVal != blendVal)
         {
             blendVal = newBlendVal;

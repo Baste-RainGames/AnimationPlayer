@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Runtime.Remoting.Messaging;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Assertions;
@@ -34,7 +35,7 @@ public class AnimationLayer
     //@TODO: string key: is slow
     private Dictionary<string, float> blendVars = new Dictionary<string, float>();
 
-    private Dictionary<string, List<AnimationMixerPlayable>> varToMixers = new Dictionary<string, List<AnimationMixerPlayable>>();
+    private Dictionary<string, List<RuntimeBlendVarController>> varToBlendControllers = new Dictionary<string, List<RuntimeBlendVarController>>();
 
     public void InitializeSelf(PlayableGraph graph, int layerIndexForDebug)
     {
@@ -59,18 +60,26 @@ public class AnimationLayer
             else if (state.type == AnimationStateType.BlendTree1D)
             {
                 var treeMixer = AnimationMixerPlayable.Create(graph, state.blendTree.Count, true);
-                if (!varToMixers.ContainsKey(state.blendVariable))
-                    varToMixers[state.blendVariable] = new List<AnimationMixerPlayable>();
-                varToMixers[state.blendVariable].Add(treeMixer);
+                float[] thresholds = new float[state.blendTree.Count];
+
                 for (int j = 0; j < state.blendTree.Count; j++)
                 {
-                    var clipPlayable = AnimationClipPlayable.Create(graph, state.blendTree[j].clip);
+                    var blendTreeEntry = state.blendTree[j];
+                    var clipPlayable = AnimationClipPlayable.Create(graph, blendTreeEntry.clip);
                     clipPlayable.SetSpeed(state.speed);
                     graph.Connect(clipPlayable, 0, treeMixer, j);
+                    thresholds[j] = blendTreeEntry.threshold;
                 }
-                if (state.blendTree.Count > 0)
-                    treeMixer.SetInputWeight(0, 1f);
+
                 graph.Connect(treeMixer, 0, layerMixer, i);
+
+                if (state.blendTree.Count > 0)
+                {
+                    treeMixer.SetInputWeight(0, 1f);
+                    if (!varToBlendControllers.ContainsKey(state.blendVariable))
+                        varToBlendControllers[state.blendVariable] = new List<RuntimeBlendVarController>();
+                    varToBlendControllers[state.blendVariable].Add(new RuntimeBlendVarController(treeMixer, thresholds));
+                }
             }
         }
 
@@ -205,15 +214,14 @@ public class AnimationLayer
 
     public void SetBlendVar(string var, float value)
     {
-        Assert.IsTrue(varToMixers.ContainsKey(var),
+        Assert.IsTrue(varToBlendControllers.ContainsKey(var),
                       $"Trying to set the blend var {var} on layer {layerIndexForDebug} but no blend tree exists with that blend var!");
 
         blendVars[var] = value;
-        var treeMixers = varToMixers[var];
-        foreach (var mixer in treeMixers)
+        var blendControllers = varToBlendControllers[var];
+        foreach (var controller in blendControllers)
         {
-            mixer.SetInputWeight(0, 1f - value);
-            mixer.SetInputWeight(1, value);
+            controller.SetValue(value);
         }
     }
 
@@ -222,6 +230,65 @@ public class AnimationLayer
         float result = 0f;
         blendVars.TryGetValue(var, out result);
         return result;
+    }
+
+    private class RuntimeBlendVarController
+    {
+        private AnimationMixerPlayable mixer;
+        private float[] thresholds;
+
+        public RuntimeBlendVarController(AnimationMixerPlayable mixer, float[] thresholds)
+        {
+            for (int i = 0; i < thresholds.Length - 2; i++)
+                //@TODO: should reorder these!
+                Assert.IsTrue(thresholds[i] < thresholds[i + 1], "The thresholds should be strictly increasing!");
+
+            this.mixer = mixer;
+            this.thresholds = thresholds;
+        }
+
+        public void SetValue(float value)
+        {
+            int idxOfLastLowerThanVal = -1;
+            for (int i = 0; i < thresholds.Length; i++)
+            {
+                var threshold = thresholds[i];
+                if (threshold <= value)
+                    idxOfLastLowerThanVal = i;
+                else
+                    break;
+            }
+
+            int idxBefore = idxOfLastLowerThanVal;
+            int idxAfter = idxOfLastLowerThanVal + 1;
+
+            float fractionTowardsAfter;
+            if (idxBefore == -1)
+                fractionTowardsAfter = 1f; //now after is 0
+            else if (idxAfter == thresholds.Length)
+                fractionTowardsAfter = 0f; //now before is the last
+            else
+            {
+                var range = (thresholds[idxAfter] - thresholds[idxBefore]);
+                var distFromStart = (value - thresholds[idxBefore]);
+                fractionTowardsAfter = distFromStart / range;
+            }
+
+            for (int i = 0; i < thresholds.Length; i++)
+            {
+                float inputWeight;
+
+                if (i == idxBefore)
+                    inputWeight = 1f - fractionTowardsAfter;
+                else if (i == idxAfter)
+                    inputWeight = fractionTowardsAfter;
+                else
+                    inputWeight = 0f;
+
+                mixer.SetInputWeight(i, inputWeight);
+            }
+
+        }
     }
 }
 

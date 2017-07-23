@@ -99,6 +99,12 @@ public class AnimationPlayerEditor : Editor
 
         selectedLayer.SetTo(DrawLayerSelection(numLayers));
 
+        if (animationPlayer.layers.Length == 0)
+        {
+            //Deleted last layer
+            return;
+        }
+
         GUILayout.Space(10f);
 
         DrawSelectedLayer();

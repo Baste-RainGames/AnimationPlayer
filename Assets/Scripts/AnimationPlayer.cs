@@ -9,9 +9,9 @@ public class AnimationPlayer : MonoBehaviour
 {
     public AnimationLayer[] layers;
     public TransitionData defaultTransition;
-    
+
     private PlayableGraph graph;
-    
+
     private Playable rootPlayable;
     private string visualizerClientName;
 
@@ -22,6 +22,9 @@ public class AnimationPlayer : MonoBehaviour
 
     private void Start()
     {
+        if (layers.Length == 0)
+            return;
+
         //The playable graph is a directed graph of Playables.
         graph = PlayableGraph.Create();
 
@@ -64,7 +67,8 @@ public class AnimationPlayer : MonoBehaviour
 
     private void OnDestroy()
     {
-        graph.Destroy();
+        if (graph.IsValid()) 
+            graph.Destroy();
     }
 
     /// <summary>

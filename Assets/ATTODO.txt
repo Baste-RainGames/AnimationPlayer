@@ -4,8 +4,7 @@
 Animation states:
     - Different kinds of states:
         - blend trees
-            * 1D
-                - Nested!
+            - Nested!
             - 2D
         - flows (state A into state B into state C, etc.)
             - this can be used to change into a specific idle state after standing still. Or other stuff!

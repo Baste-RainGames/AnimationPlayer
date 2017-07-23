@@ -39,6 +39,9 @@ public class AnimationLayer
     public void InitializeSelf(PlayableGraph graph, int layerIndexForDebug)
     {
         this.layerIndexForDebug = layerIndexForDebug;
+        if (states.Count == 0)
+            return;
+        
         layerMixer = AnimationMixerPlayable.Create(graph, states.Count, false);
         layerMixer.SetInputWeight(startClip, 1f);
         currentPlayedClip = startClip;

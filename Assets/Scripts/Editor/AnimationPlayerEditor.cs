@@ -20,7 +20,7 @@ public class AnimationPlayerEditor : Editor
     private PersistedEditMode selectedEditMode;
 
     private string[][] allStateNames;
-    private bool shouldUpdateStateNames = true;
+    private bool shouldUpdateStateNames;
 
     private static bool stylesCreated = false;
     private static GUIStyle editLayerStyle;
@@ -40,6 +40,8 @@ public class AnimationPlayerEditor : Editor
         selectedEditMode = new PersistedEditMode(persistedEditMode, instanceId);
         selectedState = new PersistedInt(persistedState, instanceId);
         selectedToState = new PersistedInt(persistedToState, instanceId);
+
+        shouldUpdateStateNames = true;
     }
 
     public override void OnInspectorGUI()
@@ -323,7 +325,7 @@ public class AnimationPlayerEditor : Editor
             
             EditorGUILayout.BeginHorizontal();
             GUILayout.Space(137f);
-            if (GUILayout.Button("Add blend var"))
+            if (GUILayout.Button("Add blend tree entry"))
                 state.blendTree.Add(new BlendTreeEntry());
             EditorGUILayout.EndHorizontal();
             
@@ -400,7 +402,7 @@ public class AnimationPlayerEditor : Editor
         if (!Application.isPlaying)
             return;
 
-        for (int i = animationPlayer.GetStateCount(selectedLayer) - 1; i >= 0; i--)
+        for (int i = 0; i < animationPlayer.GetStateCount(selectedLayer); i++)
         {
             EditorGUILayout.BeginHorizontal();
             string stateName = animationPlayer.layers[selectedLayer].states[i].name;
@@ -417,7 +419,7 @@ public class AnimationPlayerEditor : Editor
             EditorGUILayout.EndHorizontal();
         }
 
-        EditorGUILayout.LabelField("Playing clip " + animationPlayer.GetCurrentPlayingClip(selectedLayer));
+        EditorGUILayout.LabelField("Playing clip " + animationPlayer.GetCurrentPlayingState(selectedLayer));
         for (int i = animationPlayer.GetStateCount(selectedLayer) - 1; i >= 0; i--)
         {
             EditorGUILayout.LabelField("weigh for " + i + ": " + animationPlayer.GetClipWeight(i, selectedLayer));

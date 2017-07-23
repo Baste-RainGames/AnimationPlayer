@@ -18,7 +18,7 @@ public class AnimationLayer
     public AnimationLayerType type = AnimationLayerType.Override;
 
     public AnimationMixerPlayable layerMixer { get; private set; }
-    public int currentPlayedClip { get; private set; }
+    public int currentPlayedState { get; private set; }
 
     //blend info:
     private bool blending;
@@ -33,18 +33,18 @@ public class AnimationLayer
 
     //@TODO: string key: is slow
     private Dictionary<string, float> blendVars = new Dictionary<string, float>();
-    
-    private Dictionary<string, AnimationMixerPlayable> varToMixer = new Dictionary<string, AnimationMixerPlayable>();
+
+    private Dictionary<string, List<AnimationMixerPlayable>> varToMixers = new Dictionary<string, List<AnimationMixerPlayable>>();
 
     public void InitializeSelf(PlayableGraph graph, int layerIndexForDebug)
     {
         this.layerIndexForDebug = layerIndexForDebug;
         if (states.Count == 0)
             return;
-        
+
         layerMixer = AnimationMixerPlayable.Create(graph, states.Count, false);
         layerMixer.SetInputWeight(startClip, 1f);
-        currentPlayedClip = startClip;
+        currentPlayedState = startClip;
 
         // Add the clips to the graph
         for (int i = 0; i < states.Count; i++)
@@ -59,19 +59,21 @@ public class AnimationLayer
             else if (state.type == AnimationStateType.BlendTree1D)
             {
                 var treeMixer = AnimationMixerPlayable.Create(graph, state.blendTree.Count, true);
-                varToMixer[state.blendVariable] = treeMixer;
+                if (!varToMixers.ContainsKey(state.blendVariable))
+                    varToMixers[state.blendVariable] = new List<AnimationMixerPlayable>();
+                varToMixers[state.blendVariable].Add(treeMixer);
                 for (int j = 0; j < state.blendTree.Count; j++)
                 {
                     var clipPlayable = AnimationClipPlayable.Create(graph, state.blendTree[j].clip);
                     clipPlayable.SetSpeed(state.speed);
                     graph.Connect(clipPlayable, 0, treeMixer, j);
                 }
-                treeMixer.SetInputWeight(0, 1f);
+                if (state.blendTree.Count > 0)
+                    treeMixer.SetInputWeight(0, 1f);
                 graph.Connect(treeMixer, 0, layerMixer, i);
             }
         }
-        
-        
+
         activeWhenBlendStarted = new bool[states.Count];
         valueWhenBlendStarted = new float[states.Count];
 
@@ -114,7 +116,7 @@ public class AnimationLayer
 
     public void PlayUsingInternalTransition(int clip, TransitionData defaultTransition)
     {
-        var transitionToUse = transitionLookup[currentPlayedClip, clip];
+        var transitionToUse = transitionLookup[currentPlayedState, clip];
         var transition = transitionToUse == -1 ? defaultTransition : transitions[transitionToUse].transitionData;
         Play(clip, transition);
     }
@@ -132,10 +134,10 @@ public class AnimationLayer
             {
                 layerMixer.SetInputWeight(i, i == clip ? 1f : 0f);
             }
-            currentPlayedClip = clip;
+            currentPlayedState = clip;
             blending = false;
         }
-        else if (clip != currentPlayedClip)
+        else if (clip != currentPlayedState)
         {
             for (int i = 0; i < states.Count; i++)
             {
@@ -145,7 +147,7 @@ public class AnimationLayer
             }
 
             blending = true;
-            currentPlayedClip = clip;
+            currentPlayedState = clip;
             blendTransitionData = transitionData;
             blendStartTime = Time.time;
         }
@@ -164,7 +166,7 @@ public class AnimationLayer
 
         for (int i = 0; i < states.Count; i++)
         {
-            var isTargetClip = i == currentPlayedClip;
+            var isTargetClip = i == currentPlayedState;
             if (isTargetClip || activeWhenBlendStarted[i])
             {
                 var target = isTargetClip ? 1f : 0f;
@@ -203,13 +205,16 @@ public class AnimationLayer
 
     public void SetBlendVar(string var, float value)
     {
-        Assert.IsTrue(varToMixer.ContainsKey(var), 
+        Assert.IsTrue(varToMixers.ContainsKey(var),
                       $"Trying to set the blend var {var} on layer {layerIndexForDebug} but no blend tree exists with that blend var!");
-        
+
         blendVars[var] = value;
-        var treeMixer = varToMixer[var];
-        treeMixer.SetInputWeight(0, 1f - value);
-        treeMixer.SetInputWeight(1, value);
+        var treeMixers = varToMixers[var];
+        foreach (var mixer in treeMixers)
+        {
+            mixer.SetInputWeight(0, 1f - value);
+            mixer.SetInputWeight(1, value);
+        }
     }
 
     public float GetBlendVar(string var)

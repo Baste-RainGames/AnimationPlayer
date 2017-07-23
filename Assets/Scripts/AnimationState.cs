@@ -37,6 +37,11 @@ public class AnimationState
             blendTree = new List<BlendTreeEntry>()
         };
     }
+
+    public override string ToString()
+    {
+        return $"{name} ({type})";
+    }
 }
 
 [Serializable]

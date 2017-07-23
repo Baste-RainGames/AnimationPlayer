@@ -110,10 +110,11 @@ public class AnimationPlayer : MonoBehaviour
         return layers[layer].GetClipWeight(clip);
     }
 
-    public int GetCurrentPlayingClip(int layer = 0)
+    public AnimationState GetCurrentPlayingState(int layer = 0)
     {
         AssertLayerInBounds(layer, "get the current playing clip");
-        return layers[layer].currentPlayedClip;
+        var animationLayer = layers[layer];
+        return animationLayer.states[animationLayer.currentPlayedState];
     }
 
     public int GetStateCount(int layer = 0)

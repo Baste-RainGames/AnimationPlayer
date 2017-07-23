@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 [Serializable]
@@ -13,7 +14,7 @@ public class AnimationState
     public AnimationStateType type;
 
     public string blendVariable;
-    public BlendTreeEntry[] blendTree;
+    public List<BlendTreeEntry> blendTree;
 
     public static AnimationState Normal()
     {
@@ -33,7 +34,7 @@ public class AnimationState
             speed = 1d,
             type = AnimationStateType.BlendTree1D,
             blendVariable = "blend",
-            blendTree = new BlendTreeEntry[0]
+            blendTree = new List<BlendTreeEntry>()
         };
     }
 }
@@ -41,7 +42,7 @@ public class AnimationState
 [Serializable]
 public class BlendTreeEntry
 {
-    public float value;
+    public float threshold;
     public AnimationClip clip;
 }
 

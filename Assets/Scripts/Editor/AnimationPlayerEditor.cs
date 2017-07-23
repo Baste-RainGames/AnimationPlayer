@@ -309,24 +309,34 @@ public class AnimationPlayerEditor : Editor
         else
         {
             state.blendVariable = TextField("Blend with variable", state.blendVariable, 100f);
+            EditorGUI.indentLevel++;
             foreach (var blendTreeEntry in state.blendTree)
-            {
-                DrawBlendTreeEntry(blendTreeEntry);
-            }
+                DrawBlendTreeEntry(blendTreeEntry, state.blendVariable);
+
+            EditorGUI.indentLevel--;
+            
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.Space(137f);
+            if (GUILayout.Button("Add blend var"))
+                state.blendTree.Add(new BlendTreeEntry());
+            EditorGUILayout.EndHorizontal();
+            
+
         }
 
-
+        EditorGUILayout.Space();
         EditorGUILayout.BeginHorizontal();
         GUILayout.Space(77f);
-        bool delete = GUILayout.Button("delete");
+        bool delete = GUILayout.Button("delete state");
         EditorGUILayout.EndHorizontal();
             
         return delete;
     }
 
-    private void DrawBlendTreeEntry(BlendTreeEntry blendTreeEntry)
+    private void DrawBlendTreeEntry(BlendTreeEntry blendTreeEntry, string blendVarName)
     {
-        
+        blendTreeEntry.clip = ObjectField("Clip", blendTreeEntry.clip, 100f);
+        blendTreeEntry.threshold = FloatField($"When '{blendVarName}' =", blendTreeEntry.threshold, 100f);
     }
 
     private void DrawTransitions()
@@ -402,11 +412,22 @@ public class AnimationPlayerEditor : Editor
         }
 
         EditorGUILayout.LabelField("Playing clip " + animationPlayer.GetCurrentPlayingClip(selectedLayer));
-        for (int i = animationPlayer.GetStateCount() - 1; i >= 0; i--)
+        for (int i = animationPlayer.GetStateCount(selectedLayer) - 1; i >= 0; i--)
         {
             EditorGUILayout.LabelField("weigh for " + i + ": " + animationPlayer.GetClipWeight(i, selectedLayer));
         }
+        
+        EditorGUILayout.Space();
+
+        var newBlendVal = EditorGUILayout.Slider("Blend val", blendVal, 0f, 1f);
+        if (newBlendVal != blendVal)
+        {
+            blendVal = newBlendVal;
+            animationPlayer.SetBlendVar("blend", blendVal, selectedLayer);
+        }
     }
+
+    private float blendVal;
 
     private string TextField(string label, string text, float width)
     {
@@ -433,6 +454,27 @@ public class AnimationPlayerEditor : Editor
         obj = EditorUtilities.ObjectField(obj);
         EditorGUILayout.EndHorizontal();
         return obj;
+    }
+    
+    private T ObjectField<T>(string label, T obj) where T : Object
+    {
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField(label);
+        obj = EditorUtilities.ObjectField(obj);
+        EditorGUILayout.EndHorizontal();
+        return obj;
+    }
+
+    private float FloatField(string label, float value, float width)
+    {
+        EditorGUILayout.BeginHorizontal();
+        var rect = GUILayoutUtility.GetRect(new GUIContent(label), GUI.skin.label, GUILayout.Width(width));
+        rect.xMax += 35f; //Unity steals 35 pixels of space between horizontal elements for no fucking reason
+        EditorGUI.LabelField(rect, label);
+        
+        value = EditorGUILayout.FloatField(value);
+        EditorGUILayout.EndHorizontal();
+        return value;
     }
 
     private const string rightArrow = "\u2192";
@@ -463,3 +505,4 @@ public class AnimationPlayerEditor : Editor
     }
 
 }
+

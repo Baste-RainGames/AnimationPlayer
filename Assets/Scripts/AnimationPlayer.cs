@@ -29,12 +29,12 @@ public class AnimationPlayer : MonoBehaviour
         // I think we can ditch the animator, but the documentation is kinda sparse!
         AnimationPlayableOutput animOutput = AnimationPlayableOutput.Create(graph, $"{name}_animation_player", gameObject.AddComponent<Animator>());
 
-        foreach (AnimationLayer layer in layers)
-            layer.InitializeSelf(graph);
+        for (var i = 0; i < layers.Length; i++)
+            layers[i].InitializeSelf(graph, i);
 
         if (layers.Length <= 1)
         {
-            rootPlayable = layers[0].mixer;
+            rootPlayable = layers[0].layerMixer;
         }
         else
         {
@@ -116,6 +116,18 @@ public class AnimationPlayer : MonoBehaviour
     {
         AssertLayerInBounds(layer, "get the clip count");
         return layers[layer].states.Count;
+    }
+
+    public void SetBlendVar(string var, float value, int layer = 0)
+    {
+        AssertLayerInBounds(layer, "Set blend var");
+        layers[layer].SetBlendVar(var, value);
+    }
+
+    public float GetBlendVar(string var, int layer = 0)
+    {
+        AssertLayerInBounds(layer, "Get blend var");
+        return layers[layer].GetBlendVar(var);
     }
 
     [Conditional("UNITY_ASSERTIONS")]

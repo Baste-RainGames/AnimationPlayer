@@ -13,6 +13,7 @@ Animation states:
     - Some way of adding a bunch from a file at the same time!
     - Preview (oh my!)
     - Animation events! Of some sort!
+    - copy over the view from Mesmer's text stuff where all the things are selectable on the left, and the selected thing is on the right
 
 Animation transitions:
     - Transition-by-clip:
@@ -26,7 +27,6 @@ Animation transitions:
 Misc
     - Make the cached values in the editor be per-layer where appropriate (selected from/to state for transitions)
     - Add re-order support to things? Or better view for states
-    - Scroll views!
     - Metadata:
         - list all transitions (with go-to buttons)
         - list all fbx/.anim files referenced

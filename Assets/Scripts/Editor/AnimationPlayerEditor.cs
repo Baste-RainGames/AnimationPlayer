@@ -15,7 +15,7 @@ public class AnimationPlayerEditor : Editor
     }
 
     private PersistedInt selectedLayer;
-    private PersistedInt selectedState; //for now in transition view
+    private PersistedInt selectedState;
     private PersistedInt selectedToState;
     private PersistedEditMode selectedEditMode;
 
@@ -46,6 +46,36 @@ public class AnimationPlayerEditor : Editor
 
     public override void OnInspectorGUI()
     {
+        HandleInitialization();
+
+        if (animationPlayer.layers.Length == 0)
+            return;
+
+        EditorUtilities.Splitter();
+
+        DrawLayerSelection();
+
+        if (animationPlayer.layers.Length == 0)
+            return; //Deleted last layer in DrawLayerSelection
+
+        GUILayout.Space(10f);
+
+        DrawSelectedLayer();
+
+        EditorUtilities.Splitter();
+
+        EditorGUILayout.LabelField("Default transition");
+
+        Undo.RecordObject(animationPlayer, "Change default transition");
+        animationPlayer.defaultTransition = DrawTransitionData(animationPlayer.defaultTransition);
+
+        EditorUtilities.Splitter();
+
+        DrawRuntimeDebugData();
+    }
+
+    private void HandleInitialization()
+    {
         if (!stylesCreated)
         {
             var backgroundTex = EditorUtilities.MakeTex(1, 1, new Color(1.0f, 1.0f, 1.0f, .1f));
@@ -70,11 +100,11 @@ public class AnimationPlayerEditor : Editor
             stylesCreated = true;
         }
 
-        GUILayout.Space(30f);
-
         var numLayers = animationPlayer.layers.Length;
         if (animationPlayer.layers == null || numLayers == 0)
         {
+            GUILayout.Space(30f);
+
             EditorGUILayout.LabelField("No layers in the animation player!");
             if (GUILayout.Button("Fix that!"))
             {
@@ -96,35 +126,12 @@ public class AnimationPlayerEditor : Editor
                     allStateNames[i][j] = states[j].name;
             }
         }
-
-        EditorUtilities.Splitter();
-
-        selectedLayer.SetTo(DrawLayerSelection(numLayers));
-
-        if (animationPlayer.layers.Length == 0)
-        {
-            //Deleted last layer
-            return;
-        }
-
-        GUILayout.Space(10f);
-
-        DrawSelectedLayer();
-
-        EditorUtilities.Splitter();
-
-        EditorGUILayout.LabelField("Default transition");
-
-        Undo.RecordObject(animationPlayer, "Change default transition");
-        animationPlayer.defaultTransition = DrawTransitionData(animationPlayer.defaultTransition);
-
-        EditorUtilities.Splitter();
-
-        DrawRuntimeDebugData();
     }
 
-    private int DrawLayerSelection(int numLayers)
+    private void DrawLayerSelection()
     {
+        var numLayers = animationPlayer.layers.Length;
+        
         selectedLayer.SetTo(Mathf.Clamp(selectedLayer, 0, numLayers));
 
         EditorGUILayout.BeginHorizontal();
@@ -155,8 +162,6 @@ public class AnimationPlayerEditor : Editor
         GUILayout.FlexibleSpace();
 
         EditorGUILayout.EndHorizontal();
-
-        return selectedLayer;
     }
 
     private int DrawRightButton(int numLayers, int selectedLayer)
@@ -303,7 +308,11 @@ public class AnimationPlayerEditor : Editor
     {
         const float labelWidth = 55f;
 
+        var old = state.name;
         state.name = TextField("Name", state.name, labelWidth);
+        if (old != state.name)
+            shouldUpdateStateNames = true;
+        
         state.speed = DoubleField("Speed", state.speed, labelWidth);
 
         if (state.type == AnimationStateType.SingleClip)
@@ -349,12 +358,14 @@ public class AnimationPlayerEditor : Editor
     {
         var layer = animationPlayer.layers[selectedLayer];
         selectedState.SetTo(EditorGUILayout.Popup("Transitions from state", selectedState, allStateNames[selectedLayer]));
+        selectedState.SetTo(Mathf.Clamp(selectedState, 0, layer.states.Count - 1));
 
         EditorGUILayout.Space();
 
         EditorUtilities.DrawIndented(() =>
         {
             selectedToState.SetTo(EditorGUILayout.Popup("Transtion to state", selectedToState, allStateNames[selectedLayer]));
+            selectedToState.SetTo(Mathf.Clamp(selectedToState, 0, layer.states.Count - 1));
 
             EditorGUILayout.Space();
 

@@ -83,7 +83,7 @@ public class AnimationPlayerEditor : Editor
             }
             return;
         }
-        
+
         if (shouldUpdateStateNames)
         {
             shouldUpdateStateNames = false;
@@ -144,7 +144,7 @@ public class AnimationPlayerEditor : Editor
             selectedLayer.SetTo(animationPlayer.layers.Length - 1);
             shouldUpdateStateNames = true;
         }
-        if (GUILayout.Button("Delete layer", GUILayout.Width(100f)))
+        if (EditorUtilities.AreYouSureButton("Delete layer", "Are you sure?", "DeleteLayer" + selectedLayer.Get(), 1f, GUILayout.Width(100f)))
         {
             Undo.RecordObject(animationPlayer, "Delete layer from animation player");
             EditorUtilities.DeleteIndexFromArray(ref animationPlayer.layers, selectedLayer);
@@ -254,10 +254,10 @@ public class AnimationPlayerEditor : Editor
         int deleteIndex = -1;
         for (var i = 0; i < layer.states.Count; i++)
         {
-            if (DrawState(layer.states[i]))
+            if (DrawState(layer.states[i], i))
                 deleteIndex = i;
-            
-            if(i != layer.states.Count - 1)
+
+            if (i != layer.states.Count - 1)
                 GUILayout.Space(20f);
         }
         EditorGUI.indentLevel--;
@@ -281,7 +281,7 @@ public class AnimationPlayerEditor : Editor
         EditorGUILayout.Space();
 
         EditorGUILayout.BeginHorizontal();
-        
+
         if (GUILayout.Button("Add Normal State"))
         {
             Undo.RecordObject(animationPlayer, "Add state to animation player");
@@ -294,19 +294,18 @@ public class AnimationPlayerEditor : Editor
             Undo.RecordObject(animationPlayer, "Add blend tree to animation player");
             layer.states.Add(AnimationState.BlendTree1D());
         }
-        
+
         EditorGUILayout.EndHorizontal();
-        
+
     }
 
-    private bool DrawState(AnimationState state)
+    private bool DrawState(AnimationState state, int stateIndex)
     {
         const float labelWidth = 55f;
 
         state.name = TextField("Name", state.name, labelWidth);
         state.speed = DoubleField("Speed", state.speed, labelWidth);
 
-        
         if (state.type == AnimationStateType.SingleClip)
         {
             state.clip = ObjectField("Clip", state.clip, labelWidth);
@@ -322,22 +321,21 @@ public class AnimationPlayerEditor : Editor
                 DrawBlendTreeEntry(blendTreeEntry, state.blendVariable);
 
             EditorGUI.indentLevel--;
-            
+
             EditorGUILayout.BeginHorizontal();
             GUILayout.Space(137f);
             if (GUILayout.Button("Add blend tree entry"))
                 state.blendTree.Add(new BlendTreeEntry());
             EditorGUILayout.EndHorizontal();
-            
 
         }
 
         EditorGUILayout.Space();
         EditorGUILayout.BeginHorizontal();
         GUILayout.Space(77f);
-        bool delete = GUILayout.Button("delete state");
+        bool delete = EditorUtilities.AreYouSureButton("delete state", "are you sure", "DeleteState_" + stateIndex + "_" + selectedLayer.Get(), 1f);
         EditorGUILayout.EndHorizontal();
-            
+
         return delete;
     }
 
@@ -351,38 +349,50 @@ public class AnimationPlayerEditor : Editor
     {
         var layer = animationPlayer.layers[selectedLayer];
         selectedState.SetTo(EditorGUILayout.Popup("Transitions from state", selectedState, allStateNames[selectedLayer]));
-        
-        EditorGUILayout.Space();
-
-        EditorGUI.indentLevel++;
-        selectedToState.SetTo(EditorGUILayout.Popup("Transtion to state", selectedToState, allStateNames[selectedLayer]));
 
         EditorGUILayout.Space();
 
-        var transition = layer.transitions.Find(state => state.fromState == selectedState && state.toState == selectedToState);
-        if (transition == null)
+        EditorUtilities.DrawIndented(() =>
         {
-            EditorGUILayout.LabelField("No transition defined!");
-            if (GUILayout.Button("Create transition"))
-            {
-                Undo.RecordObject(animationPlayer, $"Add transition from {layer.states[selectedState].name} to {layer.states[selectedToState].name}");
-                layer.transitions.Add(new StateTransition {fromState = selectedState, toState = selectedToState, transitionData = TransitionData.Linear(1f)});
-            }
-        }
-        else
-        {
-            Undo.RecordObject(animationPlayer, $"Edit of transition from  {layer.states[selectedState].name} to {layer.states[selectedToState].name}");
-            transition.transitionData = DrawTransitionData(transition.transitionData);
-            
-            if (GUILayout.Button("Clear transition"))
-            {
-                Undo.RecordObject(animationPlayer, $"Clear transition from  {layer.states[selectedState].name} to {layer.states[selectedToState].name}");
-                layer.transitions.Remove(transition);
-            }
-        }
+            selectedToState.SetTo(EditorGUILayout.Popup("Transtion to state", selectedToState, allStateNames[selectedLayer]));
 
+            EditorGUILayout.Space();
 
-        EditorGUI.indentLevel--;
+            var transition = layer.transitions.Find(state => state.fromState == selectedState && state.toState == selectedToState);
+            var fromStateName = layer.states[selectedState].name;
+            var toStateName = layer.states[selectedToState].name;
+
+            if (transition == null)
+            {
+                EditorGUILayout.LabelField("No transition defined!");
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Button($"Create transition from {fromStateName} to {toStateName}"))
+                {
+                    Undo.RecordObject(animationPlayer, $"Add transition from {fromStateName} to {toStateName}");
+                    layer.transitions.Add(
+                        new StateTransition {fromState = selectedState, toState = selectedToState, transitionData = TransitionData.Linear(1f)});
+                }
+                GUILayout.FlexibleSpace();
+                EditorGUILayout.EndHorizontal();
+            }
+            else
+            {
+                Undo.RecordObject(animationPlayer, $"Edit of transition from  {fromStateName} to {toStateName}");
+                transition.transitionData = DrawTransitionData(transition.transitionData);
+
+                GUILayout.Space(20f);
+                EditorGUILayout.BeginHorizontal();
+                GUILayout.FlexibleSpace();
+                if (EditorUtilities.AreYouSureButton("Clear transition", "Are you sure?", 
+                                                     "Clear_Transition_" + fromStateName + "_" +toStateName,
+                                                     1f, GUILayout.Width(150f)))
+                {
+                    Undo.RecordObject(animationPlayer, $"Clear transition from  {fromStateName} to {toStateName}");
+                    layer.transitions.Remove(transition);
+                }
+                EditorGUILayout.EndHorizontal();
+            }
+        });
     }
 
     public TransitionData DrawTransitionData(TransitionData transitionData)
@@ -424,7 +434,7 @@ public class AnimationPlayerEditor : Editor
         {
             EditorGUILayout.LabelField("weigh for " + i + ": " + animationPlayer.GetClipWeight(i, selectedLayer));
         }
-        
+
         EditorGUILayout.Space();
 
         var newBlendVal = EditorGUILayout.Slider("Blend val", blendVal, -5f, 5f);
@@ -445,7 +455,7 @@ public class AnimationPlayerEditor : Editor
         EditorGUILayout.EndHorizontal();
         return text;
     }
-    
+
     private double DoubleField(string label, double value, float width)
     {
         EditorGUILayout.BeginHorizontal();
@@ -454,7 +464,7 @@ public class AnimationPlayerEditor : Editor
         EditorGUILayout.EndHorizontal();
         return value;
     }
-    
+
     private T ObjectField<T>(string label, T obj, float width) where T : Object
     {
         EditorGUILayout.BeginHorizontal();
@@ -463,7 +473,7 @@ public class AnimationPlayerEditor : Editor
         EditorGUILayout.EndHorizontal();
         return obj;
     }
-    
+
     private T ObjectField<T>(string label, T obj) where T : Object
     {
         EditorGUILayout.BeginHorizontal();
@@ -479,7 +489,7 @@ public class AnimationPlayerEditor : Editor
         var rect = GUILayoutUtility.GetRect(new GUIContent(label), GUI.skin.label, GUILayout.Width(width));
         rect.xMax += 35f; //Unity steals 35 pixels of space between horizontal elements for no fucking reason
         EditorGUI.LabelField(rect, label);
-        
+
         value = EditorGUILayout.FloatField(value);
         EditorGUILayout.EndHorizontal();
         return value;
@@ -511,6 +521,4 @@ public class AnimationPlayerEditor : Editor
             return (EditMode) i;
         }
     }
-
 }
-

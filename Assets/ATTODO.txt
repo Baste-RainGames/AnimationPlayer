@@ -24,9 +24,8 @@ Animation transitions:
     - Move the transitions to the states?
 
 Misc
-    - Add "Are you sure" to all of the delete buttons
     - Make the cached values in the editor be per-layer where appropriate (selected from/to state for transitions)
-    - Add reorder support to things? Or better view for states
+    - Add re-order support to things? Or better view for states
     - Scroll views!
     - Metadata:
         - list all transitions (with go-to buttons)

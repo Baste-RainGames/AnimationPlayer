@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -10,6 +11,16 @@ public class EditorUtilities
     {
         EditorUtility.SetDirty(c);
         EditorSceneManager.MarkSceneDirty(c.gameObject.scene);
+    }
+
+    public static void DrawIndented(Action drawAction)
+    {
+        EditorGUILayout.BeginHorizontal();
+        GUILayout.Space(10f);
+        EditorGUILayout.BeginVertical();
+        drawAction();
+        EditorGUILayout.EndVertical();
+        EditorGUILayout.EndHorizontal();
     }
 
     public static void ExpandArrayByOne<T>(ref T[] array, Func<T> CreateNew)
@@ -39,8 +50,6 @@ public class EditorUtilities
     {
         return (T) EditorGUILayout.ObjectField(obj, typeof(T), false);
     }
-
-    #region splitter
 
     //Editor splitter, taken from http://answers.unity3d.com/questions/216584/horizontal-line.html
     static EditorUtilities()
@@ -103,8 +112,6 @@ public class EditorUtilities
         }
     }
 
-    #endregion
-
     public static Texture2D MakeTex(int width, int height, Color col)
     {
         Color[] pix = new Color[width * height];
@@ -117,5 +124,78 @@ public class EditorUtilities
         result.Apply();
 
         return result;
+    }
+
+    private static readonly Dictionary<string, float> buttonClickTime = new Dictionary<string, float>();
+    private static GUIStyle areYouSureStyle;
+
+    public static bool AreYouSureButton(string text, string areYouSureText, string uniqueID, float timeout, params GUILayoutOption[] options)
+    {
+        if (areYouSureStyle == null)
+        {
+            var buttonTexture = GetReadableCopyOf(GUI.skin.button.normal.background);
+            var pixels = buttonTexture.GetPixels();
+            for (var i = 0; i < pixels.Length; i++)
+                pixels[i] *= new Color(1f, 0f, 0f, 1f);
+            var areYouSureTexture = new Texture2D(buttonTexture.width, buttonTexture.height);
+            areYouSureTexture.SetPixels(pixels);
+
+            areYouSureStyle = new GUIStyle(GUI.skin.button)
+            {
+                normal = {background = areYouSureTexture}
+            };
+        }
+
+        float timeSinceLastClick = float.PositiveInfinity;
+        float timeFromDict;
+        if (buttonClickTime.TryGetValue(uniqueID, out timeFromDict))
+            timeSinceLastClick = Time.realtimeSinceStartup - timeFromDict;
+
+        var inAreYouSureMode = timeSinceLastClick < timeout;
+
+        if (inAreYouSureMode)
+        {
+            var clicked = GUILayout.Button(areYouSureText, areYouSureStyle, options);
+            if (clicked)
+                buttonClickTime.Remove(uniqueID);
+            return clicked;
+        }
+
+        if (GUILayout.Button(text, options))
+            buttonClickTime[uniqueID] = Time.realtimeSinceStartup;
+
+        return false;
+    }
+
+    // Why is this so hard? It's insane that there's a flag on Texture2D that we can't touch that means
+    // "you can't do anything with this texture".
+    public static Texture2D GetReadableCopyOf(Texture2D texture)
+    {
+        // Create a temporary RenderTexture of the same size as the texture
+        RenderTexture tmp = RenderTexture.GetTemporary( 
+            texture.width,
+            texture.height,
+            0,
+            RenderTextureFormat.Default,
+            RenderTextureReadWrite.Linear);
+
+        // Blit the pixels on texture to the RenderTexture
+        Graphics.Blit(texture, tmp);
+        // Backup the currently set RenderTexture
+        RenderTexture previous = RenderTexture.active;
+        // Set the current RenderTexture to the temporary one we created
+        RenderTexture.active = tmp;
+        // Create a new readable Texture2D to copy the pixels to it
+        Texture2D myTexture2D = new Texture2D(texture.width, texture.height);
+        // Copy the pixels from the RenderTexture to the new Texture
+        myTexture2D.ReadPixels(new Rect(0, 0, tmp.width, tmp.height), 0, 0);
+        myTexture2D.Apply();
+        // Reset the active RenderTexture
+        RenderTexture.active = previous;
+        // Release the temporary RenderTexture
+        RenderTexture.ReleaseTemporary(tmp);
+
+        // "myTexture2D" now has the same pixels from "texture" and it's readable.
+        return myTexture2D;
     }
 }

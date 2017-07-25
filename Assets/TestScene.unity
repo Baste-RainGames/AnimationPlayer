@@ -207,6 +207,51 @@ Prefab:
     - {fileID: 9500000, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
   m_ParentPrefab: {fileID: 100100000, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
   m_IsPrefabParent: 0
+--- !u!1 &424359793 stripped
+GameObject:
+  m_PrefabParentObject: {fileID: 100256, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+  m_PrefabInternal: {fileID: 2083846930}
+--- !u!114 &424359794
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 424359793}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 191094f4537c4be1a92ab451fc346126, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  layers:
+  - states:
+    - name: Movement
+      speed: 1
+      clip: {fileID: 0}
+      type: 1
+      blendVariable: blend
+      blendTree:
+      - threshold: 0
+        clip: {fileID: 7400026, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+      - threshold: 1
+        clip: {fileID: 7400088, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+      - threshold: 2
+        clip: {fileID: 7400034, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+      - threshold: 3
+        clip: {fileID: 7400066, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+    transitions: []
+    startClip: 0
+    startWeight: 1
+    mask: {fileID: 0}
+    type: 0
+  defaultTransition:
+    duration: 0
+    type: 0
+    curve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
 --- !u!1 &580631138
 GameObject:
   m_ObjectHideFlags: 0
@@ -717,6 +762,101 @@ MeshFilter:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1869562713}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1001 &2083846930
+Prefab:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 400256, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400256, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400256, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400256, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400256, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400256, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400256, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 400256, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+      propertyPath: m_RootOrder
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 100256, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+      propertyPath: m_Name
+      value: Teri_63_Allanimations (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 400104, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.5542205
+      objectReference: {fileID: 0}
+    - target: {fileID: 400104, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.6205171
+      objectReference: {fileID: 0}
+    - target: {fileID: 400104, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0.53965914
+      objectReference: {fileID: 0}
+    - target: {fileID: 400104, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.12871051
+      objectReference: {fileID: 0}
+    - target: {fileID: 400090, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.19555971
+      objectReference: {fileID: 0}
+    - target: {fileID: 400090, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0.64122665
+      objectReference: {fileID: 0}
+    - target: {fileID: 400090, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.08278962
+      objectReference: {fileID: 0}
+    - target: {fileID: 400090, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7373809
+      objectReference: {fileID: 0}
+    - target: {fileID: 400102, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.67430866
+      objectReference: {fileID: 0}
+    - target: {fileID: 400102, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.5007139
+      objectReference: {fileID: 0}
+    - target: {fileID: 400102, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.5390928
+      objectReference: {fileID: 0}
+    - target: {fileID: 400102, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.06302865
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 9500000, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+  m_ParentPrefab: {fileID: 100100000, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+  m_IsPrefabParent: 0
 --- !u!1 &2085270702
 GameObject:
   m_ObjectHideFlags: 0
@@ -746,73 +886,40 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   layers:
   - states:
-    - name: Low
-      speed: 1
-      clip: {fileID: 7400000, guid: 60fcf93512bebac4f890c3ebe54ac175, type: 2}
-      type: 0
-      blendVariable: 
-      blendTree: []
-    - name: Mid
-      speed: 1
-      clip: {fileID: 7400000, guid: f2816587fa48a7f48a030f97ff7b205c, type: 2}
-      type: 0
-      blendVariable: 
-      blendTree: []
-    - name: High
-      speed: 1
-      clip: {fileID: 7400000, guid: 2ca257280f8273448bedb60eb9f7d5eb, type: 2}
-      type: 0
-      blendVariable: 
-      blendTree: []
-    transitions:
-    - fromState: 0
-      toState: 2
-      transitionData:
-        duration: 1
-        type: 1
-        curve:
-          serializedVersion: 2
-          m_Curve:
-          - serializedVersion: 2
-            time: 0
-            value: 0
-            inSlope: 17.972593
-            outSlope: 17.972593
-            tangentMode: 34
-          - serializedVersion: 2
-            time: 0.049878925
-            value: 0.8964536
-            inSlope: 0.34664127
-            outSlope: 0.34664127
-            tangentMode: 0
-          - serializedVersion: 2
-            time: 1
-            value: 1
-            inSlope: 0.1089823
-            outSlope: 0.1089823
-            tangentMode: 34
-          m_PreInfinity: 2
-          m_PostInfinity: 2
-          m_RotationOrder: 4
-    startClip: 0
-    startWeight: 1
-    mask: {fileID: 0}
-    type: 0
-  - states:
-    - name: new state
+    - name: State A
       speed: 1
       clip: {fileID: 0}
       type: 1
       blendVariable: blend
       blendTree:
-      - threshold: 0
+      - threshold: -3
         clip: {fileID: 7400000, guid: 60fcf93512bebac4f890c3ebe54ac175, type: 2}
       - threshold: 1
+        clip: {fileID: 7400000, guid: f2816587fa48a7f48a030f97ff7b205c, type: 2}
+      - threshold: 2
         clip: {fileID: 7400000, guid: 2ca257280f8273448bedb60eb9f7d5eb, type: 2}
+    - name: new statezzzzzzz
+      speed: 1
+      clip: {fileID: 0}
+      type: 0
+      blendVariable: 
+      blendTree: []
+    - name: new state 2
+      speed: 1
+      clip: {fileID: 0}
+      type: 0
+      blendVariable: 
+      blendTree: []
     transitions: []
     startClip: 0
     startWeight: 1
-    mask: {fileID: 31900000, guid: b2ddc94bb6859d948b41ded85a31758e, type: 2}
+    mask: {fileID: 0}
+    type: 0
+  - states: []
+    transitions: []
+    startClip: 0
+    startWeight: 1
+    mask: {fileID: 0}
     type: 0
   defaultTransition:
     duration: 1

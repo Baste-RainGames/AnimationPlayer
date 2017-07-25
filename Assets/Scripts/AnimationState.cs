@@ -5,7 +5,8 @@ using UnityEngine;
 [Serializable]
 public class AnimationState
 {
-    public const string DefaultName = "new state";
+    public const string DefaultName = "New State";
+    public const string DefaultTreeName = "New Blend Tree";
     
     public string name;
     public double speed;
@@ -16,21 +17,21 @@ public class AnimationState
     public string blendVariable;
     public List<BlendTreeEntry> blendTree;
 
-    public static AnimationState Normal()
+    public static AnimationState Normal(string name = DefaultName)
     {
         return new AnimationState
         {
-            name = DefaultName,
+            name = name,
             speed = 1d,
             type = AnimationStateType.SingleClip
         };
     }
 
-    public static AnimationState BlendTree1D()
+    public static AnimationState BlendTree1D(string name = DefaultTreeName)
     {
         return new AnimationState
         {
-            name = DefaultName,
+            name = name,
             speed = 1d,
             type = AnimationStateType.BlendTree1D,
             blendVariable = "blend",

@@ -23,6 +23,20 @@ public class EditorUtilities
         EditorGUILayout.EndHorizontal();
     }
 
+    public static void DrawHorizontal(Action drawAction, params GUILayoutOption[] options)
+    {
+        EditorGUILayout.BeginHorizontal(options);
+        drawAction();
+        EditorGUILayout.EndHorizontal();
+    }
+
+    public static void DrawVertical(Action drawAction, params GUILayoutOption[] options)
+    {
+        EditorGUILayout.BeginVertical();
+        drawAction();
+        EditorGUILayout.EndVertical();
+    }
+
     public static void ExpandArrayByOne<T>(ref T[] array, Func<T> CreateNew)
     {
         Array.Resize(ref array, array.Length + 1);
@@ -39,16 +53,6 @@ public class EditorUtilities
             if (i != index)
                 array[i > index ? i - 1 : i] = old[i];
         }
-    }
-
-    public static T ObjectField<T>(string label, T obj) where T : Object
-    {
-        return (T) EditorGUILayout.ObjectField(label, obj, typeof(T), false);
-    }
-
-    public static T ObjectField<T>(T obj) where T : Object
-    {
-        return (T) EditorGUILayout.ObjectField(obj, typeof(T), false);
     }
 
     //Editor splitter, taken from http://answers.unity3d.com/questions/216584/horizontal-line.html
@@ -146,7 +150,7 @@ public class EditorUtilities
             };
         }
 
-        float timeSinceLastClick = float.PositiveInfinity;
+        float timeSinceLastClick = Single.PositiveInfinity;
         float timeFromDict;
         if (buttonClickTime.TryGetValue(uniqueID, out timeFromDict))
             timeSinceLastClick = Time.realtimeSinceStartup - timeFromDict;
@@ -198,4 +202,98 @@ public class EditorUtilities
         // "myTexture2D" now has the same pixels from "texture" and it's readable.
         return myTexture2D;
     }
+
+    public static string TextField(string label, string text, float width)
+    {
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField(label, GUILayout.Width(width));
+        text = EditorGUILayout.TextField(text);
+        EditorGUILayout.EndHorizontal();
+        return text;
+    }
+
+    public static double DoubleField(string label, double value, float width)
+    {
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField(label, GUILayout.Width(width));
+        value = EditorGUILayout.DoubleField(value);
+        EditorGUILayout.EndHorizontal();
+        return value;
+    }
+    
+
+    public static T ObjectField<T>(T obj, params GUILayoutOption[] options) where T : Object
+    {
+        return (T) EditorGUILayout.ObjectField(obj, typeof(T), false, options);
+    }
+    
+    public static T ObjectField<T>(string label, T obj, params GUILayoutOption[] options) where T : Object
+    {
+        return (T) EditorGUILayout.ObjectField(label, obj, typeof(T), false, options);
+    }
+
+    public static T ObjectField<T>(string label, T obj, float labelWidth) where T : Object
+    {
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField(label, GUILayout.Width(labelWidth));
+        obj = ObjectField(obj);
+        EditorGUILayout.EndHorizontal();
+        return obj;
+    }
+    
+    public static T ObjectField<T>(string label, T obj, float labelWidth, float objectSelectWidth) where T : Object
+    {
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField(label, GUILayout.Width(labelWidth));
+        obj = ObjectField(obj, GUILayout.Width(objectSelectWidth));
+        EditorGUILayout.EndHorizontal();
+        return obj;
+    }
+
+    public static float FloatField(string label, float value, float width)
+    {
+        EditorGUILayout.BeginHorizontal();
+        LabelWithNoGap(label, width);
+        value = EditorGUILayout.FloatField(value);
+        EditorGUILayout.EndHorizontal();
+        return value;
+    }
+    
+    public static float FloatField(string label, float value, float width, float floatSelectWidth)
+    {
+        EditorGUILayout.BeginHorizontal();
+        LabelWithNoGap(label, width);
+        value = EditorGUILayout.FloatField(value, GUILayout.Width(floatSelectWidth));
+        EditorGUILayout.EndHorizontal();
+        return value;
+    }
+
+    private static void LabelWithNoGap(string label, float width)
+    {
+        var rect = GUILayoutUtility.GetRect(new GUIContent(label), GUI.skin.label, GUILayout.Width(width));
+        rect.xMax += 35f; //Unity steals 35 pixels of space between horizontal elements for no fucking reason
+        EditorGUI.LabelField(rect, label);
+    }
+
+    public static int DrawRightButton(int currentValue, int maxValue)
+    {
+        var disabled = maxValue == 1 || currentValue == maxValue - 1;
+
+        EditorGUI.BeginDisabledGroup(disabled);
+        if (GUILayout.Button("\u2192", GUILayout.Width(24f)))
+            currentValue++;
+        EditorGUI.EndDisabledGroup();
+        return currentValue;
+    }
+
+    public static int DrawLeftButton(int currentValue)
+    {
+        var disabled = currentValue == 0;
+        EditorGUI.BeginDisabledGroup(disabled);
+        if (GUILayout.Button("\u2190", GUILayout.Width(24f)))
+            currentValue--;
+        EditorGUI.EndDisabledGroup();
+        return currentValue;
+    }
+
 }

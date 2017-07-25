@@ -890,7 +890,7 @@ MonoBehaviour:
       speed: 1
       clip: {fileID: 0}
       type: 1
-      blendVariable: blend
+      blendVariable: derp_derp
       blendTree:
       - threshold: -3
         clip: {fileID: 7400000, guid: 60fcf93512bebac4f890c3ebe54ac175, type: 2}
@@ -898,13 +898,9 @@ MonoBehaviour:
         clip: {fileID: 7400000, guid: f2816587fa48a7f48a030f97ff7b205c, type: 2}
       - threshold: 2
         clip: {fileID: 7400000, guid: 2ca257280f8273448bedb60eb9f7d5eb, type: 2}
-    - name: new statezzzzzzz
-      speed: 1
-      clip: {fileID: 0}
-      type: 0
-      blendVariable: 
-      blendTree: []
-    - name: new state 2
+      - threshold: 0
+        clip: {fileID: 0}
+    - name: New State
       speed: 1
       clip: {fileID: 0}
       type: 0
@@ -915,7 +911,13 @@ MonoBehaviour:
     startWeight: 1
     mask: {fileID: 0}
     type: 0
-  - states: []
+  - states:
+    - name: New State
+      speed: 1
+      clip: {fileID: 0}
+      type: 0
+      blendVariable: 
+      blendTree: []
     transitions: []
     startClip: 0
     startWeight: 1

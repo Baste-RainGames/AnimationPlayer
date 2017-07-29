@@ -26,19 +26,25 @@ public abstract class PersistedVal<T>
         }
     }
 
-    public T Get()
+    private T Get()
     {
         return ToType(EditorPrefs.GetInt(key, 0));
     }
 
-    public static implicit operator int(PersistedVal<T> p)
+    public static implicit operator T(PersistedVal<T> p)
     {
-        return p.ToInt(p.Get());
+        return p.Get();
     }
     
     protected abstract int ToInt(T val);
 
     protected abstract T ToType(int i);
+    
+    
+    public override string ToString()
+    {
+        return cachedVal.ToString();
+    }
 }
 
 public class PersistedInt : PersistedVal<int>

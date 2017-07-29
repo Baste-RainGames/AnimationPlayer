@@ -159,7 +159,7 @@ public class AnimationPlayerEditor : Editor
         GUILayout.FlexibleSpace();
 
         selectedLayer.SetTo(EditorUtilities.DrawLeftButton(selectedLayer));
-        EditorGUILayout.LabelField("Selected layer: " + selectedLayer.Get(), GUILayout.Width(selectedLayerWidth));
+        EditorGUILayout.LabelField("Selected layer: " + selectedLayer, GUILayout.Width(selectedLayerWidth));
         selectedLayer.SetTo(EditorUtilities.DrawRightButton(selectedLayer, numLayers));
 
         GUILayout.Space(10f);
@@ -171,7 +171,7 @@ public class AnimationPlayerEditor : Editor
             selectedLayer.SetTo(animationPlayer.layers.Length - 1);
             shouldUpdateStateNames = true;
         }
-        if (EditorUtilities.AreYouSureButton("Delete layer", "Are you sure?", "DeleteLayer" + selectedLayer.Get(), 1f, GUILayout.Width(100f)))
+        if (EditorUtilities.AreYouSureButton("Delete layer", "Are you sure?", "DeleteLayer" + selectedLayer, 1f, GUILayout.Width(100f)))
         {
             Undo.RecordObject(animationPlayer, "Delete layer from animation player");
             EditorUtilities.DeleteIndexFromArray(ref animationPlayer.layers, selectedLayer);
@@ -188,13 +188,17 @@ public class AnimationPlayerEditor : Editor
     {
         var layer = animationPlayer.layers[selectedLayer];
 
-        layer.startWeight = EditorGUILayout.Slider($"Layer {selectedLayer.Get()} Weight", layer.startWeight, 0f, 1f);
-        layer.mask = EditorUtilities.ObjectField($"Layer {selectedLayer.Get()} Mask", layer.mask);
+        layer.startWeight = EditorGUILayout.Slider($"Layer {selectedLayer} Weight", layer.startWeight, 0f, 1f);
+        layer.mask = EditorUtilities.ObjectField($"Layer {selectedLayer} Mask", layer.mask);
     }
 
     private void DrawStateSelection(GUILayoutOption width)
     {
-        EditorGUILayout.LabelField("Select state:", width);
+        if ((EditMode) selectedEditMode == EditMode.Transitions)
+            EditorGUILayout.LabelField("Edit transitions for:", width);
+        else
+            EditorGUILayout.LabelField("Edit state:", width);
+        
         GUILayout.Space(10f);
 
         var layer = animationPlayer.layers[selectedLayer];
@@ -255,7 +259,7 @@ public class AnimationPlayerEditor : Editor
                 rect.xMin -= 4;
             }
 
-            var isSelected = index == selectedEditMode;
+            var isSelected = index == (int) selectedEditMode;
             var style = isSelected ? editLayerButton_Selected : editLayerButton_NotSelected;
             if (GUI.Button(rect, label, style))
                 selectedEditMode.SetTo((EditMode) index);
@@ -329,7 +333,7 @@ public class AnimationPlayerEditor : Editor
             
             EditorGUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
-            deleteThisState = EditorUtilities.AreYouSureButton("Delete state", "are you sure", "DeleteState_" + (int) selectedState + "_" + selectedLayer.Get(), 1f);
+            deleteThisState = EditorUtilities.AreYouSureButton("Delete state", "are you sure", "DeleteState_" + selectedState + "_" + selectedLayer, 1f);
             EditorGUILayout.EndHorizontal();
         });
 
@@ -377,9 +381,9 @@ public class AnimationPlayerEditor : Editor
 
             if (transition == null)
             {
-                EditorGUILayout.LabelField("No transition defined!");
+                EditorGUILayout.LabelField($"No ({fromStateName}->{toStateName}) transition defined!");
                 EditorGUILayout.BeginHorizontal();
-                if (GUILayout.Button($"Create transition from {fromStateName} to {toStateName}"))
+                if (GUILayout.Button($"Create one!"))
                 {
                     Undo.RecordObject(animationPlayer, $"Add transition from {fromStateName} to {toStateName}");
                     layer.transitions.Add(
@@ -481,6 +485,11 @@ public class AnimationPlayerEditor : Editor
         protected override EditMode ToType(int i)
         {
             return (EditMode) i;
+        }
+
+        public static implicit operator int(PersistedEditMode p)
+        {
+            return p.ToInt(p); //look at it go!
         }
     }
     

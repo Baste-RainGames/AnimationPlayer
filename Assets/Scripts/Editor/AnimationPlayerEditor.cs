@@ -143,7 +143,7 @@ public class AnimationPlayerEditor : Editor
                 var states = animationPlayer.layers[i].states;
                 allStateNames[i] = new string[states.Count];
                 for (int j = 0; j < states.Count; j++)
-                    allStateNames[i][j] = states[j].name;
+                    allStateNames[i][j] = states[j].Name;
             }
         }
     }
@@ -202,7 +202,7 @@ public class AnimationPlayerEditor : Editor
         for (int i = 0; i < layer.states.Count; i++)
         {
             EditorGUI.BeginDisabledGroup(i == selectedState);
-            if (GUILayout.Button(layer.states[i].name, width))
+            if (GUILayout.Button(layer.states[i].Name, width))
                 selectedState.SetTo(i);
             EditorGUI.EndDisabledGroup();
         }
@@ -212,14 +212,15 @@ public class AnimationPlayerEditor : Editor
         if (GUILayout.Button("Add Normal State", width))
         {
             Undo.RecordObject(animationPlayer, "Add state to animation player");
-            layer.states.Add(AnimationState.Normal(GetUniqueStateName("New State", layer.states)));
+            layer.states.Add(AnimationState.SingleClip(GetUniqueStateName(AnimationState.DefaultSingleClipName, layer.states)));
+            selectedState.SetTo(layer.states.Count - 1);
             shouldUpdateStateNames = true;
         }
 
         if (GUILayout.Button("Add blend tree", width))
         {
             Undo.RecordObject(animationPlayer, "Add blend tree to animation player");
-            layer.states.Add(AnimationState.BlendTree1D());
+            layer.states.Add(AnimationState.BlendTree1D(GetUniqueStateName(AnimationState.DefaultBlendTreeName, layer.states)));
         }
     }
 
@@ -291,18 +292,19 @@ public class AnimationPlayerEditor : Editor
         {
             const float labelWidth = 55f;
 
-            var old = state.name;
-            state.name = EditorUtilities.TextField("Name", state.name, labelWidth);
-            if (old != state.name)
+            var old = state.Name;
+            state.Name = EditorUtilities.TextField("Name", state.Name, labelWidth);
+            if (old != state.Name)
                 shouldUpdateStateNames = true;
 
             state.speed = EditorUtilities.DoubleField("Speed", state.speed, labelWidth);
 
             if (state.type == AnimationStateType.SingleClip)
             {
+                var oldClip = state.clip;
                 state.clip = EditorUtilities.ObjectField("Clip", state.clip, labelWidth);
-                if (state.clip != null && (string.IsNullOrEmpty(state.name) || state.name == AnimationState.DefaultName))
-                    state.name = state.clip.name;
+                if (state.clip != null && state.clip != oldClip)
+                    state.OnClipAssigned();
             }
 
             else
@@ -333,7 +335,7 @@ public class AnimationPlayerEditor : Editor
 
         if (deleteThisState)
         {
-            Undo.RecordObject(animationPlayer, "Deleting state " + layer.states[selectedState].name);
+            Undo.RecordObject(animationPlayer, "Deleting state " + layer.states[selectedState].Name);
             layer.states.RemoveAt(selectedState);
             layer.transitions.RemoveAll(transition => transition.fromState == selectedState || transition.toState == selectedState);
             foreach (var transition in layer.transitions)
@@ -358,7 +360,7 @@ public class AnimationPlayerEditor : Editor
     private void DrawTransitions()
     {
         var layer = animationPlayer.layers[selectedLayer];
-        EditorGUILayout.LabelField("Transitions from " + layer.states[selectedState].name);
+        EditorGUILayout.LabelField("Transitions from " + layer.states[selectedState].Name);
 
         EditorGUILayout.Space();
 
@@ -370,8 +372,8 @@ public class AnimationPlayerEditor : Editor
             EditorGUILayout.Space();
 
             var transition = layer.transitions.Find(state => state.fromState == selectedState && state.toState == selectedToState);
-            var fromStateName = layer.states[selectedState].name;
-            var toStateName = layer.states[selectedToState].name;
+            var fromStateName = layer.states[selectedState].Name;
+            var toStateName = layer.states[selectedToState].Name;
 
             if (transition == null)
             {
@@ -426,7 +428,7 @@ public class AnimationPlayerEditor : Editor
         for (int i = 0; i < animationPlayer.GetStateCount(selectedLayer); i++)
         {
             EditorGUILayout.BeginHorizontal();
-            string stateName = animationPlayer.layers[selectedLayer].states[i].name;
+            string stateName = animationPlayer.layers[selectedLayer].states[i].Name;
 
             if (GUILayout.Button($"Blend to {stateName} using default transition"))
                 animationPlayer.Play(i, selectedLayer);
@@ -484,12 +486,12 @@ public class AnimationPlayerEditor : Editor
     
     private static string GetUniqueStateName(string wantedName, List<AnimationState> otherStates)
     {
-        if (!otherStates.Any(state => state.name == wantedName))
+        if (!otherStates.Any(state => state.Name == wantedName))
         {
             return wantedName;
         }
 
-        var allNamesSorted = otherStates.Select(layer => layer.name).Where(name => name != wantedName && name.StartsWith(wantedName));
+        var allNamesSorted = otherStates.Select(layer => layer.Name).Where(name => name != wantedName && name.StartsWith(wantedName));
         
         int greatestIndex = 0;
         foreach (var name in allNamesSorted)

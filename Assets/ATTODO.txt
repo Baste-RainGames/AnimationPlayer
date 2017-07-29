@@ -3,7 +3,7 @@
 
 Animation states:
     - Different kinds of states:
-        - blend trees
+        * blend trees
             - Nested!
             - 2D
         - flows (state A into state B into state C, etc.)
@@ -13,7 +13,7 @@ Animation states:
     - Some way of adding a bunch from a file at the same time!
     - Preview (oh my!)
     - Animation events! Of some sort!
-    - copy over the view from Mesmer's text stuff where all the things are selectable on the left, and the selected thing is on the right
+    - Make it possible to play an animation relative to the current position. This will make Unity-created animations for eg. doors be a _LOT_ easier.
 
 Animation transitions:
     - Transition-by-clip:

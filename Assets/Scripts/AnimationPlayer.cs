@@ -30,7 +30,7 @@ public class AnimationPlayer : MonoBehaviour
 
         // The AnimationPlayableOutput links the graph with an animator that plays the graph.
         // I think we can ditch the animator, but the documentation is kinda sparse!
-        AnimationPlayableOutput animOutput = AnimationPlayableOutput.Create(graph, $"{name}_animation_player", gameObject.AddComponent<Animator>());
+	    AnimationPlayableOutput animOutput = AnimationPlayableOutput.Create(graph, $"{name}_animation_player", gameObject.EnsureComponent<Animator>());
 
         for (var i = 0; i < layers.Length; i++)
             layers[i].InitializeSelf(graph, i);
@@ -70,7 +70,7 @@ public class AnimationPlayer : MonoBehaviour
         if (graph.IsValid()) 
             graph.Destroy();
     }
-
+	
     /// <summary>
     /// Play a clip, using an instant transition. The clip will immediately be the current played clip. 
     /// </summary>
@@ -80,6 +80,23 @@ public class AnimationPlayer : MonoBehaviour
     {
         Play(clip, TransitionData.Instant(), layer);
     }
+	
+	/// <summary>
+    /// Play a clip, using the player's default transition. The clip will immediately be the current played clip. 
+    /// </summary>
+    /// <param name="clip">Name of the clip to play</param>
+    /// <param name="layer">Layer the clip should be played on</param>
+	public void Play(string state, int layer = 0) 
+	{
+		AssertLayerInBounds(layer, state, "play a clip");
+		int clipIdx = layers[layer].GetStateIdx(state);
+        
+		if(clipIdx == -1) {
+			Debug.LogError($"AnimationPlayer asked to play state {state} on layer {layer}, but that doesn't exist!", gameObject);
+			return;
+		}
+		layers[layer].PlayUsingInternalTransition(clipIdx, defaultTransition);
+	}
 
     /// <summary>
     /// Play a clip, using the player's default transition. The clip will immediately be the current played clip. 
@@ -150,4 +167,12 @@ public class AnimationPlayer : MonoBehaviour
                      $"Trying to {action} on an out of bounds layer! (Clip {clip} on layer {layer}, but there are {layers.Length} layers!)",
                      gameObject);
     }
+	
+	[Conditional("UNITY_ASSERTIONS")]
+	public void AssertLayerInBounds(int layer, string clip, string action)
+	{
+		Debug.Assert(layer >= 0 && layer < layers.Length,
+			$"Trying to {action} on an out of bounds layer! (Clip {clip} on layer {layer}, but there are {layers.Length} layers!)",
+			gameObject);
+	}
 }

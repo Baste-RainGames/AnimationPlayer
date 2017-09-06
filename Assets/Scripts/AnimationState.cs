@@ -67,6 +67,17 @@ public class AnimationState
         else if (!hasUpdatedName)
             name = clip.name;
     }
+	
+	public float Duration {
+		get {
+			if(type == AnimationStateType.SingleClip)
+				return clip?.length ?? 0f;
+			else {
+				Debug.LogError("Length for blend trees not implemented yet!");
+				return 0f;
+			}
+		}
+	}
 
     public override string ToString()
     {

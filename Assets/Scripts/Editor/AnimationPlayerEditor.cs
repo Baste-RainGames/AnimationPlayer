@@ -49,7 +49,7 @@ public class AnimationPlayerEditor : Editor
     {
         HandleInitialization();
 
-        if (animationPlayer.layers.Length == 0)
+        if (animationPlayer.layers == null || animationPlayer.layers.Length == 0)
             return;
 
         EditorUtilities.Splitter();
@@ -57,7 +57,12 @@ public class AnimationPlayerEditor : Editor
         DrawLayerSelection();
 
         if (animationPlayer.layers.Length == 0)
-            return; //Deleted last layer in DrawLayerSelection
+	        return; //Deleted last layer in DrawLayerSelection
+	    
+	    if(selectedState == -1 && animationPlayer.layers[selectedLayer].states.Count > 0) {
+	    	//Handle adding a state for the first time.
+	    	selectedState.SetTo(0);
+	    }
 
         GUILayout.Space(10f);
 
@@ -120,8 +125,7 @@ public class AnimationPlayerEditor : Editor
             stylesCreated = true;
         }
 
-        var numLayers = animationPlayer.layers.Length;
-        if (animationPlayer.layers == null || numLayers == 0)
+        if (animationPlayer.layers == null || animationPlayer.layers.Length == 0)
         {
             GUILayout.Space(30f);
 
@@ -286,8 +290,19 @@ public class AnimationPlayerEditor : Editor
     }
 
     private void DrawStateData()
-    {
-        var layer = animationPlayer.layers[selectedLayer];
+	{
+		var layer = animationPlayer.layers[selectedLayer];
+		
+		if(layer.states.Count == 0) {
+			EditorGUILayout.LabelField("No states");
+			return;
+		}
+		
+		if(!layer.states.IsInBounds(selectedState)) {
+			Debug.LogError("Out of bounds: " + selectedState + " out of " + layer.states.Count);
+			return;
+		}
+		
         var state = layer.states[selectedState];
 
         EditorGUILayout.LabelField("State");
@@ -363,7 +378,12 @@ public class AnimationPlayerEditor : Editor
 
     private void DrawTransitions()
     {
-        var layer = animationPlayer.layers[selectedLayer];
+	    var layer = animationPlayer.layers[selectedLayer];
+	    if(layer.states.Count == 0) {
+		    EditorGUILayout.LabelField("No states, can't define transitions");
+		    return;
+	    }
+	    
         EditorGUILayout.LabelField("Transitions from " + layer.states[selectedState].Name);
 
         EditorGUILayout.Space();
@@ -474,7 +494,7 @@ public class AnimationPlayerEditor : Editor
     private class PersistedEditMode : PersistedVal<EditMode>
     {
 
-        public PersistedEditMode(string key, int instanceID) : base(key, instanceID)
+	    public PersistedEditMode(string key, int instanceID) : base(key + instanceID)
         { }
 
         protected override int ToInt(EditMode val)

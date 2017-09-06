@@ -30,19 +30,21 @@ public class AnimationLayer
 
     //transitionLookup[a, b] contains the index of the transition from a to b in transitions
     private int[,] transitionLookup;
-    private int layerIndexForDebug;
+	private int layerIndexForDebug;
+	private Playable[] runtimePlayables;
 
     //@TODO: string key: is slow
     private Dictionary<string, float> blendVars = new Dictionary<string, float>();
-
-    private Dictionary<string, List<RuntimeBlendVarController>> varToBlendControllers = new Dictionary<string, List<RuntimeBlendVarController>>();
+	private Dictionary<string, List<RuntimeBlendVarController>> varToBlendControllers = new Dictionary<string, List<RuntimeBlendVarController>>();
 
     public void InitializeSelf(PlayableGraph graph, int layerIndexForDebug)
     {
         this.layerIndexForDebug = layerIndexForDebug;
         if (states.Count == 0)
             return;
-
+	    
+	    runtimePlayables = new Playable[states.Count];
+	    
         layerMixer = AnimationMixerPlayable.Create(graph, states.Count, false);
         layerMixer.SetInputWeight(startClip, 1f);
         currentPlayedState = startClip;
@@ -53,13 +55,15 @@ public class AnimationLayer
             var state = states[i];
             if (state.type == AnimationStateType.SingleClip)
             {
-                var clipPlayable = AnimationClipPlayable.Create(graph, state.clip);
+	            var clipPlayable = AnimationClipPlayable.Create(graph, state.clip);
+	            runtimePlayables[i] = clipPlayable;
                 clipPlayable.SetSpeed(state.speed);
                 graph.Connect(clipPlayable, 0, layerMixer, i);
             }
             else if (state.type == AnimationStateType.BlendTree1D)
             {
-                var treeMixer = AnimationMixerPlayable.Create(graph, state.blendTree.Count, true);
+	            var treeMixer = AnimationMixerPlayable.Create(graph, state.blendTree.Count, true);
+	            runtimePlayables[i] = treeMixer;
                 float[] thresholds = new float[state.blendTree.Count];
 
                 for (int j = 0; j < state.blendTree.Count; j++)
@@ -135,7 +139,13 @@ public class AnimationLayer
         Debug.Assert(clip >= 0 && clip < states.Count,
                      $"Trying to play out of bounds clip {clip}! There are {states.Count} clips in the animation player");
         Debug.Assert(transitionData.type != TransitionType.Curve || transitionData.curve != null,
-                     "Trying to play an animationCurve based transition, but the transition curve is null!");
+	        "Trying to play an animationCurve based transition, but the transition curve is null!");
+	    
+	    var isCurrentlyPlaying = layerMixer.GetInputWeight(clip) > 0f;
+	    if(!isCurrentlyPlaying) {
+	    	runtimePlayables[clip].SetTime(0f);
+	    }
+	    
 
         if (transitionData.duration <= 0f)
         {
@@ -195,6 +205,16 @@ public class AnimationLayer
                      $"Trying to get the clip weight for {clip}, which is out of bounds! There are {states.Count} clips!");
         return layerMixer.GetInputWeight(clip);
     }
+	
+	public int GetStateIdx(string stateName) 
+	{
+		for(int i = 0; i < states.Count; i++) {
+			if(states[i].Name == stateName) {
+				return i;
+			}
+		}
+		return -1;
+	}
 
     public bool IsBlending()
     {

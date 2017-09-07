@@ -75,10 +75,7 @@ public class AnimationPlayerEditor : Editor
         EditorUtilities.DrawHorizontal(() =>
         {
             var stateSelectionWidth = GUILayout.Width(200f);
-            EditorUtilities.DrawVertical(() =>
-            {
-                DrawStateSelection(stateSelectionWidth);
-            }, stateSelectionWidth);
+            EditorUtilities.DrawVertical(() => { DrawStateSelection(stateSelectionWidth); }, stateSelectionWidth);
 
             EditorUtilities.DrawVertical(DrawSelectedState);
         });
@@ -100,41 +97,23 @@ public class AnimationPlayerEditor : Editor
         if (!stylesCreated)
         {
             var backgroundTex = EditorUtilities.MakeTex(1, 1, new Color(1.0f, 1.0f, 1.0f, .1f));
-            editLayerStyle = new GUIStyle
-            {
-                normal =
-                {
-                    background = backgroundTex
-                }
-            };
+            editLayerStyle = new GUIStyle { normal = { background = backgroundTex } };
 
             var buttonBackgroundTex = EditorUtilities.MakeTex(1, 1, new Color(1.0f, 1.0f, 1.0f, 0.05f));
             var buttonSelectedTex = EditorUtilities.MakeTex(1, 1, new Color(1.0f, 1.0f, 1.0f, 0.05f));
             var buttonNotSelectedText = EditorUtilities.MakeTex(1, 1, new Color(1.0f, 1.0f, 1.0f, 0.2f));
 
-            editLayerButton_Background = new GUIStyle
-            {
-                normal =
-                {
-                    background = buttonBackgroundTex
-                }
-            };
+            editLayerButton_Background = new GUIStyle { normal = { background = buttonBackgroundTex } };
 
             editLayerButton_NotSelected = new GUIStyle(GUI.skin.label)
             {
-                normal =
-                {
-                    background = buttonNotSelectedText
-                },
+                normal = { background = buttonNotSelectedText },
                 alignment = TextAnchor.MiddleCenter
             };
 
             editLayerButton_Selected = new GUIStyle(GUI.skin.label)
             {
-                normal =
-                {
-                    background = buttonSelectedTex
-                },
+                normal = { background = buttonSelectedTex },
                 alignment = TextAnchor.MiddleCenter
             };
 
@@ -143,14 +122,8 @@ public class AnimationPlayerEditor : Editor
 
         if (animationPlayer.layers == null || animationPlayer.layers.Length == 0)
         {
-            GUILayout.Space(30f);
-
-            EditorGUILayout.LabelField("No layers in the animation player!");
-            if (GUILayout.Button("Fix that!"))
-            {
-                animationPlayer.layers = new AnimationLayer[1];
-                animationPlayer.layers[0] = AnimationLayer.CreateLayer();
-            }
+            animationPlayer.layers = new AnimationLayer[1];
+            animationPlayer.layers[0] = AnimationLayer.CreateLayer();
             return;
         }
 
@@ -191,6 +164,7 @@ public class AnimationPlayerEditor : Editor
             selectedLayer.SetTo(animationPlayer.layers.Length - 1);
             shouldUpdateStateNames = true;
         }
+        EditorGUI.BeginDisabledGroup(numLayers < 2);
         if (EditorUtilities.AreYouSureButton("Delete layer", "Are you sure?", "DeleteLayer" + selectedLayer, 1f, GUILayout.Width(100f)))
         {
             Undo.RecordObject(animationPlayer, "Delete layer from animation player");
@@ -198,6 +172,7 @@ public class AnimationPlayerEditor : Editor
             selectedLayer.SetTo(Mathf.Max(0, selectedLayer - 1));
             shouldUpdateStateNames = true;
         }
+        EditorGUI.EndDisabledGroup();
 
         GUILayout.FlexibleSpace();
 
@@ -426,12 +401,7 @@ public class AnimationPlayerEditor : Editor
                 {
                     Undo.RecordObject(animationPlayer, $"Add transition from {fromStateName} to {toStateName}");
                     layer.transitions.Add(
-                        new StateTransition
-                        {
-                            fromState = selectedState,
-                            toState = selectedToState,
-                            transitionData = TransitionData.Linear(1f)
-                        });
+                        new StateTransition { fromState = selectedState, toState = selectedToState, transitionData = TransitionData.Linear(1f) });
                 }
                 GUILayout.FlexibleSpace();
                 EditorGUILayout.EndHorizontal();

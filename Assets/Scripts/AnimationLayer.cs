@@ -11,7 +11,7 @@ public class AnimationLayer
     [Header("Animation data")]
     public List<AnimationState> states;
     public List<StateTransition> transitions;
-    public int startClip;
+    public int startState;
 
     [Header("Layer blending data")]
     public float startWeight;
@@ -33,6 +33,8 @@ public class AnimationLayer
 	private int layerIndexForDebug;
 	private Playable[] runtimePlayables;
 
+    private Dictionary<string, int> stateNameToIdx = new Dictionary<string, int>();
+
     //@TODO: string key: is slow
     private Dictionary<string, float> blendVars = new Dictionary<string, float>();
 	private Dictionary<string, List<RuntimeBlendVarController>> varToBlendControllers = new Dictionary<string, List<RuntimeBlendVarController>>();
@@ -46,13 +48,14 @@ public class AnimationLayer
 	    runtimePlayables = new Playable[states.Count];
 	    
         layerMixer = AnimationMixerPlayable.Create(graph, states.Count, false);
-        layerMixer.SetInputWeight(startClip, 1f);
-        currentPlayedState = startClip;
+        layerMixer.SetInputWeight(startState, 1f);
+        currentPlayedState = startState;
 
-        // Add the clips to the graph
+        // Add the statess to the graph
         for (int i = 0; i < states.Count; i++)
         {
             var state = states[i];
+            stateNameToIdx[state.Name] = i;
             if (state.type == AnimationStateType.SingleClip)
             {
 	            var clipPlayable = AnimationClipPlayable.Create(graph, state.clip);
@@ -122,28 +125,28 @@ public class AnimationLayer
             layerMixer.SetLayerMaskFromAvatarMask((uint) layerIndex, mask);
     }
 
-    public void PlayUsingExternalTransition(int clip, TransitionData transitionData)
+    public void PlayUsingExternalTransition(int state, TransitionData transitionData)
     {
-        Play(clip, transitionData);
+        Play(state, transitionData);
     }
 
-    public void PlayUsingInternalTransition(int clip, TransitionData defaultTransition)
+    public void PlayUsingInternalTransition(int state, TransitionData defaultTransition)
     {
-        var transitionToUse = transitionLookup[currentPlayedState, clip];
+        var transitionToUse = transitionLookup[currentPlayedState, state];
         var transition = transitionToUse == -1 ? defaultTransition : transitions[transitionToUse].transitionData;
-        Play(clip, transition);
+        Play(state, transition);
     }
 
-    private void Play(int clip, TransitionData transitionData)
+    private void Play(int state, TransitionData transitionData)
     {
-        Debug.Assert(clip >= 0 && clip < states.Count,
-                     $"Trying to play out of bounds clip {clip}! There are {states.Count} clips in the animation player");
+        Debug.Assert(state >= 0 && state < states.Count,
+                     $"Trying to play out of bounds clip {state}! There are {states.Count} clips in the animation player");
         Debug.Assert(transitionData.type != TransitionType.Curve || transitionData.curve != null,
 	        "Trying to play an animationCurve based transition, but the transition curve is null!");
 	    
-	    var isCurrentlyPlaying = layerMixer.GetInputWeight(clip) > 0f;
+	    var isCurrentlyPlaying = layerMixer.GetInputWeight(state) > 0f;
 	    if(!isCurrentlyPlaying) {
-	    	runtimePlayables[clip].SetTime(0f);
+	    	runtimePlayables[state].SetTime(0f);
 	    }
 	    
 
@@ -151,12 +154,12 @@ public class AnimationLayer
         {
             for (int i = 0; i < states.Count; i++)
             {
-                layerMixer.SetInputWeight(i, i == clip ? 1f : 0f);
+                layerMixer.SetInputWeight(i, i == state ? 1f : 0f);
             }
-            currentPlayedState = clip;
+            currentPlayedState = state;
             blending = false;
         }
-        else if (clip != currentPlayedState)
+        else if (state != currentPlayedState)
         {
             for (int i = 0; i < states.Count; i++)
             {
@@ -166,7 +169,7 @@ public class AnimationLayer
             }
 
             blending = true;
-            currentPlayedState = clip;
+            currentPlayedState = state;
             blendTransitionData = transitionData;
             blendStartTime = Time.time;
         }
@@ -199,21 +202,19 @@ public class AnimationLayer
         blending = false;
     }
 
-    public float GetClipWeight(int clip)
+    public float GetStateWeight(int state)
     {
-        Debug.Assert(clip >= 0 && clip < states.Count,
-                     $"Trying to get the clip weight for {clip}, which is out of bounds! There are {states.Count} clips!");
-        return layerMixer.GetInputWeight(clip);
+        Debug.Assert(state >= 0 && state < states.Count,
+                     $"Trying to get the state weight for {state}, which is out of bounds! There are {states.Count} states!");
+        return layerMixer.GetInputWeight(state);
     }
 	
-	public int GetStateIdx(string stateName) 
+	public int GetStateIdx(string stateName)
 	{
-		for(int i = 0; i < states.Count; i++) {
-			if(states[i].Name == stateName) {
-				return i;
-			}
-		}
-		return -1;
+	    int idx;
+	    if (stateNameToIdx.TryGetValue(stateName, out idx))
+	        return idx;
+	    return -1;
 	}
 
     public bool IsBlending()

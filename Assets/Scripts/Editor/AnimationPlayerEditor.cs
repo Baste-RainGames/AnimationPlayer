@@ -216,7 +216,7 @@ public class AnimationPlayerEditor : Editor
             shouldUpdateStateNames = true;
         }
 
-        if (GUILayout.Button("Add blend tree", width))
+        if (GUILayout.Button("Add Blend Tree", width))
         {
             Undo.RecordObject(animationPlayer, "Add blend tree to animation player");
             layer.states.Add(AnimationState.BlendTree1D(GetUniqueStateName(AnimationState.DefaultBlendTreeName, layer.states)));
@@ -463,7 +463,7 @@ public class AnimationPlayerEditor : Editor
         EditorGUILayout.LabelField("Playing clip " + animationPlayer.GetCurrentPlayingState(selectedLayer));
         for (int i = animationPlayer.GetStateCount(selectedLayer) - 1; i >= 0; i--)
         {
-            EditorGUILayout.LabelField("weigh for " + i + ": " + animationPlayer.GetClipWeight(i, selectedLayer));
+            EditorGUILayout.LabelField("weigh for " + i + ": " + animationPlayer.GetStateWeight(i, selectedLayer));
         }
 
         EditorGUILayout.Space();

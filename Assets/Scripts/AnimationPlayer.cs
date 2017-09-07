@@ -70,73 +70,91 @@ public class AnimationPlayer : MonoBehaviour
         if (graph.IsValid()) 
             graph.Destroy();
     }
+
+    /// <summary>
+    /// Play a state, using an instant transition. The state will immediately be the current played state. 
+    /// </summary>
+    /// <param name="state">Name of the state to play</param>
+    /// <param name="layer">Layer the state should be played on</param>
+    public void SnapTo(string state, int layer = 0)
+    {
+        AssertLayerInBounds(layer, state, "Snap to state");
+        int stateIdx = layers[layer].GetStateIdx(state);
+        
+        if(stateIdx == -1) {
+            Debug.LogError($"AnimationPlayer asked to play state {state} on layer {layer}, but that doesn't exist!", gameObject);
+            return;
+        }
+        SnapTo(stateIdx, layer);
+    }
 	
     /// <summary>
-    /// Play a clip, using an instant transition. The clip will immediately be the current played clip. 
+    /// Play a state, using an instant transition. The state will immediately be the current played state. 
     /// </summary>
-    /// <param name="clip">Clip index to play</param>
-    /// <param name="layer">Layer the clip should be played on</param>
-    public void SnapTo(int clip, int layer = 0)
+    /// <param name="state">state index to play</param>
+    /// <param name="layer">Layer the state should be played on</param>
+    public void SnapTo(int state, int layer = 0)
     {
-        Play(clip, TransitionData.Instant(), layer);
+        AssertLayerInBounds(layer, state, "Snap to state");
+        Play(state, TransitionData.Instant(), layer);
     }
 	
 	/// <summary>
-    /// Play a clip, using the player's default transition. The clip will immediately be the current played clip. 
+    /// Play a state, using the player's default transition. The state will immediately be the current played state. 
     /// </summary>
-    /// <param name="clip">Name of the clip to play</param>
-    /// <param name="layer">Layer the clip should be played on</param>
+    /// <param name="state">Name of the state to play</param>
+    /// <param name="layer">Layer the state should be played on</param>
 	public void Play(string state, int layer = 0) 
 	{
-		AssertLayerInBounds(layer, state, "play a clip");
-		int clipIdx = layers[layer].GetStateIdx(state);
+		AssertLayerInBounds(layer, state, "play a state");
+		int stateIdx = layers[layer].GetStateIdx(state);
         
-		if(clipIdx == -1) {
+		if(stateIdx == -1) {
 			Debug.LogError($"AnimationPlayer asked to play state {state} on layer {layer}, but that doesn't exist!", gameObject);
 			return;
 		}
-		layers[layer].PlayUsingInternalTransition(clipIdx, defaultTransition);
+		Play(stateIdx, defaultTransition, layer);
 	}
 
     /// <summary>
-    /// Play a clip, using the player's default transition. The clip will immediately be the current played clip. 
+    /// Play a state, using the player's default transition. The state will immediately be the current played state. 
     /// </summary>
-    /// <param name="clip">Clip index to play</param>
-    /// <param name="layer">Layer the clip should be played on</param>
-    public void Play(int clip, int layer = 0)
+    /// <param name="state">state index to play</param>
+    /// <param name="layer">Layer the state should be played on</param>
+    public void Play(int state, int layer = 0)
     {
-        AssertLayerInBounds(layer, clip, "play a clip");
-        layers[layer].PlayUsingInternalTransition(clip, defaultTransition);
+        AssertLayerInBounds(layer, state, "play a state");
+        layers[layer].PlayUsingInternalTransition(state, defaultTransition);
     }
 
     /// <summary>
-    /// Play a clip. The clip will immediately be the current played clip. 
+    /// Play a state. The state will immediately be the current played state. 
     /// </summary>
-    /// <param name="clip">Clip index to play</param>
-    /// <param name="transitionData">How to transition into the clip</param>
-    /// <param name="layer">Layer the clip should be played on</param>
-    public void Play(int clip, TransitionData transitionData, int layer = 0)
+    /// <param name="state">state index to play</param>
+    /// <param name="transitionData">How to transition into the state</param>
+    /// <param name="layer">Layer the state should be played on</param>
+    public void Play(int state, TransitionData transitionData, int layer = 0)
     {
-        AssertLayerInBounds(layer, clip, "play a clip");
-        layers[layer].PlayUsingExternalTransition(clip, transitionData);
+        AssertLayerInBounds(layer, state, "play a state");
+        layers[layer].PlayUsingExternalTransition(state, transitionData);
     }
 
-    public float GetClipWeight(int clip, int layer = 0)
+    public float GetStateWeight(int state, int layer = 0)
     {
-        AssertLayerInBounds(layer, clip, "get a clip weight");
-        return layers[layer].GetClipWeight(clip);
+        AssertLayerInBounds(layer, state, "get a state weight");
+        return layers[layer].GetStateWeight(state);
     }
 
     public AnimationState GetCurrentPlayingState(int layer = 0)
     {
-        AssertLayerInBounds(layer, "get the current playing clip");
+        AssertLayerInBounds(layer, "get the current playing state");
         var animationLayer = layers[layer];
         return animationLayer.states[animationLayer.currentPlayedState];
     }
 
     public int GetStateCount(int layer = 0)
     {
-        AssertLayerInBounds(layer, "get the clip count");
+        AssertLayerInBounds(layer, "get the state count");
         return layers[layer].states.Count;
     }
 
@@ -161,18 +179,18 @@ public class AnimationPlayer : MonoBehaviour
     }
 
     [Conditional("UNITY_ASSERTIONS")]
-    public void AssertLayerInBounds(int layer, int clip, string action)
+    public void AssertLayerInBounds(int layer, int state, string action)
     {
         Debug.Assert(layer >= 0 && layer < layers.Length,
-                     $"Trying to {action} on an out of bounds layer! (Clip {clip} on layer {layer}, but there are {layers.Length} layers!)",
+                     $"Trying to {action} on an out of bounds layer! (state {state} on layer {layer}, but there are {layers.Length} layers!)",
                      gameObject);
     }
 	
 	[Conditional("UNITY_ASSERTIONS")]
-	public void AssertLayerInBounds(int layer, string clip, string action)
+	public void AssertLayerInBounds(int layer, string state, string action)
 	{
 		Debug.Assert(layer >= 0 && layer < layers.Length,
-			$"Trying to {action} on an out of bounds layer! (Clip {clip} on layer {layer}, but there are {layers.Length} layers!)",
+			$"Trying to {action} on an out of bounds layer! (state {state} on layer {layer}, but there are {layers.Length} layers!)",
 			gameObject);
 	}
 }

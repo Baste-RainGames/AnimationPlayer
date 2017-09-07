@@ -18,7 +18,7 @@ public class AnimationLayer
     public AvatarMask mask;
     public AnimationLayerType type = AnimationLayerType.Override;
 
-    public AnimationMixerPlayable layerMixer { get; private set; }
+    public AnimationMixerPlayable stateMixer { get; private set; }
     public int currentPlayedState { get; private set; }
 
     //blend info:
@@ -30,25 +30,25 @@ public class AnimationLayer
 
     //transitionLookup[a, b] contains the index of the transition from a to b in transitions
     private int[,] transitionLookup;
-	private int layerIndexForDebug;
-	private Playable[] runtimePlayables;
+    private int layerIndexForDebug;
+    private Playable[] runtimePlayables;
 
-    private Dictionary<string, int> stateNameToIdx = new Dictionary<string, int>();
+    private readonly Dictionary<string, int> stateNameToIdx = new Dictionary<string, int>();
 
-    //@TODO: string key: is slow
-    private Dictionary<string, float> blendVars = new Dictionary<string, float>();
-	private Dictionary<string, List<RuntimeBlendVarController>> varToBlendControllers = new Dictionary<string, List<RuntimeBlendVarController>>();
+    //@TODO: string key is slow
+    private readonly Dictionary<string, float> blendVars = new Dictionary<string, float>();
+    private readonly Dictionary<string, List<RuntimeBlendVarController>> varToBlendControllers = new Dictionary<string, List<RuntimeBlendVarController>>();
 
     public void InitializeSelf(PlayableGraph graph, int layerIndexForDebug)
     {
         this.layerIndexForDebug = layerIndexForDebug;
         if (states.Count == 0)
             return;
-	    
-	    runtimePlayables = new Playable[states.Count];
-	    
-        layerMixer = AnimationMixerPlayable.Create(graph, states.Count, false);
-        layerMixer.SetInputWeight(startState, 1f);
+
+        runtimePlayables = new Playable[states.Count];
+
+        stateMixer = AnimationMixerPlayable.Create(graph, states.Count, false);
+        stateMixer.SetInputWeight(startState, 1f);
         currentPlayedState = startState;
 
         // Add the statess to the graph
@@ -58,15 +58,15 @@ public class AnimationLayer
             stateNameToIdx[state.Name] = i;
             if (state.type == AnimationStateType.SingleClip)
             {
-	            var clipPlayable = AnimationClipPlayable.Create(graph, state.clip);
-	            runtimePlayables[i] = clipPlayable;
+                var clipPlayable = AnimationClipPlayable.Create(graph, state.clip);
+                runtimePlayables[i] = clipPlayable;
                 clipPlayable.SetSpeed(state.speed);
-                graph.Connect(clipPlayable, 0, layerMixer, i);
+                graph.Connect(clipPlayable, 0, stateMixer, i);
             }
             else if (state.type == AnimationStateType.BlendTree1D)
             {
-	            var treeMixer = AnimationMixerPlayable.Create(graph, state.blendTree.Count, true);
-	            runtimePlayables[i] = treeMixer;
+                var treeMixer = AnimationMixerPlayable.Create(graph, state.blendTree.Count, true);
+                runtimePlayables[i] = treeMixer;
                 float[] thresholds = new float[state.blendTree.Count];
 
                 for (int j = 0; j < state.blendTree.Count; j++)
@@ -78,7 +78,7 @@ public class AnimationLayer
                     thresholds[j] = blendTreeEntry.threshold;
                 }
 
-                graph.Connect(treeMixer, 0, layerMixer, i);
+                graph.Connect(treeMixer, 0, stateMixer, i);
 
                 if (state.blendTree.Count > 0)
                 {
@@ -117,7 +117,7 @@ public class AnimationLayer
 
     public void InitializeLayerBlending(PlayableGraph graph, int layerIndex, AnimationLayerMixerPlayable layerMixer)
     {
-        graph.Connect(this.layerMixer, 0, layerMixer, layerIndex);
+        graph.Connect(this.stateMixer, 0, layerMixer, layerIndex);
 
         layerMixer.SetInputWeight(layerIndex, startWeight);
         layerMixer.SetLayerAdditive((uint) layerIndex, type == AnimationLayerType.Additive);
@@ -140,21 +140,21 @@ public class AnimationLayer
     private void Play(int state, TransitionData transitionData)
     {
         Debug.Assert(state >= 0 && state < states.Count,
-                     $"Trying to play out of bounds clip {state}! There are {states.Count} clips in the animation player");
+            $"Trying to play out of bounds clip {state}! There are {states.Count} clips in the animation player");
         Debug.Assert(transitionData.type != TransitionType.Curve || transitionData.curve != null,
-	        "Trying to play an animationCurve based transition, but the transition curve is null!");
-	    
-	    var isCurrentlyPlaying = layerMixer.GetInputWeight(state) > 0f;
-	    if(!isCurrentlyPlaying) {
-	    	runtimePlayables[state].SetTime(0f);
-	    }
-	    
+            "Trying to play an animationCurve based transition, but the transition curve is null!");
+
+        var isCurrentlyPlaying = stateMixer.GetInputWeight(state) > 0f;
+        if (!isCurrentlyPlaying)
+        {
+            runtimePlayables[state].SetTime(0f);
+        }
 
         if (transitionData.duration <= 0f)
         {
             for (int i = 0; i < states.Count; i++)
             {
-                layerMixer.SetInputWeight(i, i == state ? 1f : 0f);
+                stateMixer.SetInputWeight(i, i == state ? 1f : 0f);
             }
             currentPlayedState = state;
             blending = false;
@@ -163,7 +163,7 @@ public class AnimationLayer
         {
             for (int i = 0; i < states.Count; i++)
             {
-                var currentMixVal = layerMixer.GetInputWeight(i);
+                var currentMixVal = stateMixer.GetInputWeight(i);
                 activeWhenBlendStarted[i] = currentMixVal > 0f;
                 valueWhenBlendStarted[i] = currentMixVal;
             }
@@ -192,7 +192,7 @@ public class AnimationLayer
             if (isTargetClip || activeWhenBlendStarted[i])
             {
                 var target = isTargetClip ? 1f : 0f;
-                layerMixer.SetInputWeight(i, Mathf.Lerp(valueWhenBlendStarted[i], target, lerpVal));
+                stateMixer.SetInputWeight(i, Mathf.Lerp(valueWhenBlendStarted[i], target, lerpVal));
             }
         }
 
@@ -205,17 +205,17 @@ public class AnimationLayer
     public float GetStateWeight(int state)
     {
         Debug.Assert(state >= 0 && state < states.Count,
-                     $"Trying to get the state weight for {state}, which is out of bounds! There are {states.Count} states!");
-        return layerMixer.GetInputWeight(state);
+            $"Trying to get the state weight for {state}, which is out of bounds! There are {states.Count} states!");
+        return stateMixer.GetInputWeight(state);
     }
-	
-	public int GetStateIdx(string stateName)
-	{
-	    int idx;
-	    if (stateNameToIdx.TryGetValue(stateName, out idx))
-	        return idx;
-	    return -1;
-	}
+
+    public int GetStateIdx(string stateName)
+    {
+        int idx;
+        if (stateNameToIdx.TryGetValue(stateName, out idx))
+            return idx;
+        return -1;
+    }
 
     public bool IsBlending()
     {
@@ -236,7 +236,7 @@ public class AnimationLayer
     public void SetBlendVar(string var, float value)
     {
         Assert.IsTrue(varToBlendControllers.ContainsKey(var),
-                      $"Trying to set the blend var {var} on layer {layerIndexForDebug} but no blend tree exists with that blend var!");
+            $"Trying to set the blend var {var} on layer {layerIndexForDebug} but no blend tree exists with that blend var!");
 
         blendVars[var] = value;
         var blendControllers = varToBlendControllers[var];
@@ -253,10 +253,26 @@ public class AnimationLayer
         return result;
     }
 
+    public void AddAllPlayingStatesTo(List<AnimationState> results)
+    {
+        results.Add(states[currentPlayedState]);
+
+        for (var i = 0; i < states.Count; i++)
+        {
+            if (i == currentPlayedState)
+                return;
+            var state = states[i];
+            if (stateMixer.GetInputWeight(i) > 0f)
+            {
+                results.Add(state);
+            }
+        }
+    }
+
     private class RuntimeBlendVarController
     {
         private AnimationMixerPlayable mixer;
-        private float[] thresholds;
+        private readonly float[] thresholds;
 
         public RuntimeBlendVarController(AnimationMixerPlayable mixer, float[] thresholds)
         {

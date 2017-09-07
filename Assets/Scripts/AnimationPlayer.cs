@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using UnityEngine;
 using UnityEngine.Animations;
@@ -37,7 +38,7 @@ public class AnimationPlayer : MonoBehaviour
 
         if (layers.Length <= 1)
         {
-            rootPlayable = layers[0].layerMixer;
+            rootPlayable = layers[0].stateMixer;
         }
         else
         {
@@ -79,13 +80,7 @@ public class AnimationPlayer : MonoBehaviour
     public void SnapTo(string state, int layer = 0)
     {
         AssertLayerInBounds(layer, state, "Snap to state");
-        int stateIdx = layers[layer].GetStateIdx(state);
-        
-        if(stateIdx == -1) {
-            Debug.LogError($"AnimationPlayer asked to play state {state} on layer {layer}, but that doesn't exist!", gameObject);
-            return;
-        }
-        SnapTo(stateIdx, layer);
+        Play(state, TransitionData.Instant(), layer);
     }
 	
     /// <summary>
@@ -107,13 +102,7 @@ public class AnimationPlayer : MonoBehaviour
 	public void Play(string state, int layer = 0) 
 	{
 		AssertLayerInBounds(layer, state, "play a state");
-		int stateIdx = layers[layer].GetStateIdx(state);
-        
-		if(stateIdx == -1) {
-			Debug.LogError($"AnimationPlayer asked to play state {state} on layer {layer}, but that doesn't exist!", gameObject);
-			return;
-		}
-		Play(stateIdx, defaultTransition, layer);
+		Play(state, defaultTransition, layer);
 	}
 
     /// <summary>
@@ -124,7 +113,20 @@ public class AnimationPlayer : MonoBehaviour
     public void Play(int state, int layer = 0)
     {
         AssertLayerInBounds(layer, state, "play a state");
-        layers[layer].PlayUsingInternalTransition(state, defaultTransition);
+        Play(state, defaultTransition, layer);
+    }
+    
+    /// <summary>
+    /// Play a state. The state will immediately be the current played state. 
+    /// </summary>
+    /// <param name="state">Name of the state to play</param>
+    /// <param name="transitionData">How to transition into the state</param>
+    /// <param name="layer">Layer the state should be played on</param>
+    public void Play(string state, TransitionData transitionData, int layer = 0)
+    {
+        AssertLayerInBounds(layer, state, "play a state");
+        int stateIdx = GetStateIdxFromName(state, layer);
+        Play(stateIdx, transitionData, layer);
     }
 
     /// <summary>
@@ -136,20 +138,62 @@ public class AnimationPlayer : MonoBehaviour
     public void Play(int state, TransitionData transitionData, int layer = 0)
     {
         AssertLayerInBounds(layer, state, "play a state");
+        AssertStateInBounds(layer, state, "play a state");
+        AssertTransitionDataFine(transitionData);
         layers[layer].PlayUsingExternalTransition(state, transitionData);
     }
-
+    
+    /// <summary>
+    /// Finds the weight of a state in the layer's blend, eg. how much the state is playing.
+    /// This is a number between 0 and 1, with 0 for "not playing" and 1 for "playing completely"
+    /// These do not neccessarilly sum to 1.
+    /// </summary>
+    /// <param name="state">State to check for</param>
+    /// <param name="layer">Layer to check in</param>
+    /// <returns>The weight for state in layer</returns>
+    public float GetStateWeight(string state, int layer = 0)
+    {
+        AssertLayerInBounds(layer, state, "get a state weight");
+        int stateIdx = GetStateIdxFromName(state, layer);
+        return layers[layer].GetStateWeight(stateIdx);
+    }
+    
+    /// <summary>
+    /// Finds the weight of a state in the layer's blend, eg. how much the state is playing.
+    /// This is a number between 0 and 1, with 0 for "not playing" and 1 for "playing completely"
+    /// These do not neccessarilly sum to 1.
+    /// </summary>
+    /// <param name="state">State to check for</param>
+    /// <param name="layer">Layer to check in</param>
+    /// <returns>The weight for state in layer</returns>
     public float GetStateWeight(int state, int layer = 0)
     {
         AssertLayerInBounds(layer, state, "get a state weight");
         return layers[layer].GetStateWeight(state);
     }
 
+    /// <summary>
+    /// Gets the currently playing state. This is the last state you called Play on, and might not even have started blending in yet.
+    /// </summary>
+    /// <param name="layer">Layer to check in</param>
     public AnimationState GetCurrentPlayingState(int layer = 0)
     {
         AssertLayerInBounds(layer, "get the current playing state");
         var animationLayer = layers[layer];
         return animationLayer.states[animationLayer.currentPlayedState];
+    }
+
+    /// <summary>
+    /// Retrives all of the currently playing states. The first element in the list will be the currently played state. All
+    /// other results will be states that are not finished blending out
+    /// </summary>
+    /// <param name="results">result container</param>
+    /// <param name="layer">Layer to chedck in</param>
+    public void GetAllPlayingStates(List<AnimationState> results, int layer = 0)
+    {
+        AssertLayerInBounds(layer, "get all playing states");
+        results.Clear();
+        layers[layer].AddAllPlayingStatesTo(results);
     }
 
     public int GetStateCount(int layer = 0)
@@ -168,6 +212,18 @@ public class AnimationPlayer : MonoBehaviour
     {
         AssertLayerInBounds(layer, "Get blend var");
         return layers[layer].GetBlendVar(var);
+    }
+    
+    /// <summary>
+    /// Gets the index of a state from it's name.
+    /// This method is used internally whenever you send in a string Play("Idle"), so it's recommended to cache the result
+    /// of this method instead of sending in strings.
+    /// </summary>
+    public int GetStateIdxFromName(string state, int layer = 0)
+    {
+        int stateIdx = layers[layer].GetStateIdx(state);
+        Debug.Assert(stateIdx != -1, $"Trying to get the state \"{state}\" on layer {layer}, but that doesn't exist!");
+        return stateIdx;
     }
 
     [Conditional("UNITY_ASSERTIONS")]
@@ -193,4 +249,19 @@ public class AnimationPlayer : MonoBehaviour
 			$"Trying to {action} on an out of bounds layer! (state {state} on layer {layer}, but there are {layers.Length} layers!)",
 			gameObject);
 	}
+    
+    [Conditional("UNITY_ASSERTIONS")]
+    public void AssertTransitionDataFine(TransitionData transitionData)
+    {
+        if(transitionData.type == TransitionType.Curve)
+            Debug.Assert(transitionData.curve != null, "Trying to transition using a curve, but the curve is null!");
+    }
+
+    [Conditional("UNITY_ASSERTIONS")]
+    public void AssertStateInBounds(int layer, int state, string action)
+    {
+        Debug.Assert(state >= 0 && state < layers[layer].states.Count, 
+            $"Trying to {action} on an out of bounds state! (state {state} on layer {layer}, but there are {layers[layer].states.Count} states on that layer!)",
+            gameObject);
+    }
 }

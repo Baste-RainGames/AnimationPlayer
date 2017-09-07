@@ -2,6 +2,9 @@
 .idea/
 .vs/
 
+#IDE integration
+Assets/Plugins/Editor/JetBrains/
+
 #Unity temp folders
 Library/
 obj/

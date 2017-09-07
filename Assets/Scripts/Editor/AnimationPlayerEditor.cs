@@ -37,10 +37,10 @@ public class AnimationPlayerEditor : Editor
 
         var instanceId = animationPlayer.GetInstanceID();
 
-        selectedLayer = new PersistedInt(persistedLayer, instanceId);
-        selectedEditMode = new PersistedEditMode(persistedEditMode, instanceId);
-        selectedState = new PersistedInt(persistedState, instanceId);
-        selectedToState = new PersistedInt(persistedToState, instanceId);
+        selectedLayer = new PersistedInt(persistedLayer + instanceId);
+        selectedEditMode = new PersistedEditMode(persistedEditMode + instanceId);
+        selectedState = new PersistedInt(persistedState + instanceId);
+        selectedToState = new PersistedInt(persistedToState + instanceId);
 
         shouldUpdateStateNames = true;
     }
@@ -57,12 +57,13 @@ public class AnimationPlayerEditor : Editor
         DrawLayerSelection();
 
         if (animationPlayer.layers.Length == 0)
-	        return; //Deleted last layer in DrawLayerSelection
-	    
-	    if(selectedState == -1 && animationPlayer.layers[selectedLayer].states.Count > 0) {
-	    	//Handle adding a state for the first time.
-	    	selectedState.SetTo(0);
-	    }
+            return; //Deleted last layer in DrawLayerSelection
+
+        if (selectedState == -1 && animationPlayer.layers[selectedLayer].states.Count > 0)
+        {
+            //Handle adding a state for the first time.
+            selectedState.SetTo(0);
+        }
 
         GUILayout.Space(10f);
 
@@ -79,10 +80,7 @@ public class AnimationPlayerEditor : Editor
                 DrawStateSelection(stateSelectionWidth);
             }, stateSelectionWidth);
 
-            EditorUtilities.DrawVertical(() =>
-            {
-                DrawSelectedState();
-            });
+            EditorUtilities.DrawVertical(DrawSelectedState);
         });
 
         EditorUtilities.Splitter();
@@ -102,23 +100,41 @@ public class AnimationPlayerEditor : Editor
         if (!stylesCreated)
         {
             var backgroundTex = EditorUtilities.MakeTex(1, 1, new Color(1.0f, 1.0f, 1.0f, .1f));
-            editLayerStyle = new GUIStyle {normal = {background = backgroundTex}};
+            editLayerStyle = new GUIStyle
+            {
+                normal =
+                {
+                    background = backgroundTex
+                }
+            };
 
             var buttonBackgroundTex = EditorUtilities.MakeTex(1, 1, new Color(1.0f, 1.0f, 1.0f, 0.05f));
             var buttonSelectedTex = EditorUtilities.MakeTex(1, 1, new Color(1.0f, 1.0f, 1.0f, 0.05f));
             var buttonNotSelectedText = EditorUtilities.MakeTex(1, 1, new Color(1.0f, 1.0f, 1.0f, 0.2f));
 
-            editLayerButton_Background = new GUIStyle {normal = {background = buttonBackgroundTex}};
+            editLayerButton_Background = new GUIStyle
+            {
+                normal =
+                {
+                    background = buttonBackgroundTex
+                }
+            };
 
             editLayerButton_NotSelected = new GUIStyle(GUI.skin.label)
             {
-                normal = {background = buttonNotSelectedText},
+                normal =
+                {
+                    background = buttonNotSelectedText
+                },
                 alignment = TextAnchor.MiddleCenter
             };
 
             editLayerButton_Selected = new GUIStyle(GUI.skin.label)
             {
-                normal = {background = buttonSelectedTex},
+                normal =
+                {
+                    background = buttonSelectedTex
+                },
                 alignment = TextAnchor.MiddleCenter
             };
 
@@ -202,7 +218,7 @@ public class AnimationPlayerEditor : Editor
             EditorGUILayout.LabelField("Edit transitions for:", width);
         else
             EditorGUILayout.LabelField("Edit state:", width);
-        
+
         GUILayout.Space(10f);
 
         var layer = animationPlayer.layers[selectedLayer];
@@ -290,19 +306,21 @@ public class AnimationPlayerEditor : Editor
     }
 
     private void DrawStateData()
-	{
-		var layer = animationPlayer.layers[selectedLayer];
-		
-		if(layer.states.Count == 0) {
-			EditorGUILayout.LabelField("No states");
-			return;
-		}
-		
-		if(!layer.states.IsInBounds(selectedState)) {
-			Debug.LogError("Out of bounds: " + selectedState + " out of " + layer.states.Count);
-			return;
-		}
-		
+    {
+        var layer = animationPlayer.layers[selectedLayer];
+
+        if (layer.states.Count == 0)
+        {
+            EditorGUILayout.LabelField("No states");
+            return;
+        }
+
+        if (!layer.states.IsInBounds(selectedState))
+        {
+            Debug.LogError("Out of bounds: " + selectedState + " out of " + layer.states.Count);
+            return;
+        }
+
         var state = layer.states[selectedState];
 
         EditorGUILayout.LabelField("State");
@@ -334,7 +352,7 @@ public class AnimationPlayerEditor : Editor
                     DrawBlendTreeEntry(blendTreeEntry, state.blendVariable);
 
                 EditorGUI.indentLevel--;
-                
+
                 GUILayout.Space(10f);
                 EditorGUILayout.BeginHorizontal();
                 if (GUILayout.Button("Add blend tree entry", GUILayout.Width(150f)))
@@ -345,7 +363,7 @@ public class AnimationPlayerEditor : Editor
             }
 
             GUILayout.Space(20f);
-            
+
             EditorGUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
             deleteThisState = EditorUtilities.AreYouSureButton("Delete state", "are you sure", "DeleteState_" + selectedState + "_" + selectedLayer, 1f);
@@ -378,12 +396,13 @@ public class AnimationPlayerEditor : Editor
 
     private void DrawTransitions()
     {
-	    var layer = animationPlayer.layers[selectedLayer];
-	    if(layer.states.Count == 0) {
-		    EditorGUILayout.LabelField("No states, can't define transitions");
-		    return;
-	    }
-	    
+        var layer = animationPlayer.layers[selectedLayer];
+        if (layer.states.Count == 0)
+        {
+            EditorGUILayout.LabelField("No states, can't define transitions");
+            return;
+        }
+
         EditorGUILayout.LabelField("Transitions from " + layer.states[selectedState].Name);
 
         EditorGUILayout.Space();
@@ -407,7 +426,12 @@ public class AnimationPlayerEditor : Editor
                 {
                     Undo.RecordObject(animationPlayer, $"Add transition from {fromStateName} to {toStateName}");
                     layer.transitions.Add(
-                        new StateTransition {fromState = selectedState, toState = selectedToState, transitionData = TransitionData.Linear(1f)});
+                        new StateTransition
+                        {
+                            fromState = selectedState,
+                            toState = selectedToState,
+                            transitionData = TransitionData.Linear(1f)
+                        });
                 }
                 GUILayout.FlexibleSpace();
                 EditorGUILayout.EndHorizontal();
@@ -421,8 +445,8 @@ public class AnimationPlayerEditor : Editor
                 EditorGUILayout.BeginHorizontal();
                 GUILayout.FlexibleSpace();
                 if (EditorUtilities.AreYouSureButton("Clear transition", "Are you sure?",
-                                                     "Clear_Transition_" + fromStateName + "_" + toStateName,
-                                                     1f, GUILayout.Width(150f)))
+                    "Clear_Transition_" + fromStateName + "_" + toStateName,
+                    1f, GUILayout.Width(150f)))
                 {
                     Undo.RecordObject(animationPlayer, $"Clear transition from  {fromStateName} to {toStateName}");
                     layer.transitions.Remove(transition);
@@ -493,9 +517,7 @@ public class AnimationPlayerEditor : Editor
 
     private class PersistedEditMode : PersistedVal<EditMode>
     {
-
-	    public PersistedEditMode(string key, int instanceID) : base(key + instanceID)
-        { }
+        public PersistedEditMode(string key) : base(key) { }
 
         protected override int ToInt(EditMode val)
         {
@@ -512,7 +534,7 @@ public class AnimationPlayerEditor : Editor
             return p.ToInt(p); //look at it go!
         }
     }
-    
+
     private static string GetUniqueStateName(string wantedName, List<AnimationState> otherStates)
     {
         if (!otherStates.Any(state => state.Name == wantedName))
@@ -521,7 +543,7 @@ public class AnimationPlayerEditor : Editor
         }
 
         var allNamesSorted = otherStates.Select(layer => layer.Name).Where(name => name != wantedName && name.StartsWith(wantedName));
-        
+
         int greatestIndex = 0;
         foreach (var name in allNamesSorted)
         {
@@ -532,8 +554,6 @@ public class AnimationPlayerEditor : Editor
                     greatestIndex = numericPostFix;
             }
         }
-        
-        
 
         return wantedName + (greatestIndex + 1);
     }

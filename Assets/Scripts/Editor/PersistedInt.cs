@@ -11,9 +11,9 @@ public abstract class PersistedVal<T>
     private readonly string key;
     private T cachedVal;
 
-    protected PersistedVal(string key, int instanceID)
+    protected PersistedVal(string key)
     {
-        this.key = key + instanceID;
+        this.key = key;
         cachedVal = Get();
     }
 
@@ -50,7 +50,7 @@ public abstract class PersistedVal<T>
 public class PersistedInt : PersistedVal<int>
 {
 
-    public PersistedInt(string key, int instanceID) : base(key, instanceID)
+    public PersistedInt(string key) : base(key)
     { }
 
     protected override int ToInt(int val)

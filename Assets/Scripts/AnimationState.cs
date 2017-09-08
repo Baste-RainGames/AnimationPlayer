@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Policy;
 using UnityEngine;
 
 [Serializable]
+//@TODO: This should be done with inheritance and custom serialization, because we now end up with single-clip states having a lot of garbage data around,
+// and anso BlendTreeEntries having 2D data even when it's a 1D state
 public class AnimationState
 {
     public const string DefaultSingleClipName = "New State";
-    public const string DefaultBlendTreeName = "New Blend Tree";
+    public const string Default1DBlendTreeName = "New Blend Tree";
+    public const string Default2DBlendTreeName = "New 2D Blend Tree";
 
     [SerializeField]
     private string name;
@@ -18,6 +22,7 @@ public class AnimationState
     public AnimationStateType type;
 
     public string blendVariable;
+    public string blendVariable2;
     public List<BlendTreeEntry> blendTree;
 
     public string Name
@@ -53,7 +58,21 @@ public class AnimationState
             type = AnimationStateType.BlendTree1D,
             blendVariable = "blend",
             blendTree = new List<BlendTreeEntry>(),
-            hasUpdatedName = !name.StartsWith(DefaultBlendTreeName)
+            hasUpdatedName = !name.StartsWith(Default1DBlendTreeName)
+        };
+    }
+
+    public static AnimationState BlendTree2D(string name)
+    {
+        return new AnimationState
+        {
+            name = name,
+            speed = 1d,
+            type = AnimationStateType.BlendTree2D,
+            blendVariable = "blend1",
+            blendVariable2 = "blend1",
+            blendTree = new List<BlendTreeEntry>(),
+            hasUpdatedName = !name.StartsWith(Default1DBlendTreeName)
         };
     }
 
@@ -73,6 +92,7 @@ public class AnimationState
 			if(type == AnimationStateType.SingleClip)
 				return clip?.length ?? 0f;
 			else {
+			    ////@TODO: fix this
 				Debug.LogError("Length for blend trees not implemented yet!");
 				return 0f;
 			}
@@ -90,12 +110,13 @@ public class AnimationState
 public class BlendTreeEntry
 {
     public float threshold;
+    public float threshold2;
     public AnimationClip clip;
 }
 
-//@TODO: This could be done with inheritance + custom serialization. That'd reduce size and complexity... maybe?
 public enum AnimationStateType
 {
     SingleClip,
     BlendTree1D,
+    BlendTree2D
 }

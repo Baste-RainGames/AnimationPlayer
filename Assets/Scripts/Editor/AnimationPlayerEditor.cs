@@ -216,10 +216,16 @@ public class AnimationPlayerEditor : Editor
             shouldUpdateStateNames = true;
         }
 
-        if (GUILayout.Button("Add Blend Tree", width))
+        if (GUILayout.Button("Add 1D Blend Tree", width))
         {
             Undo.RecordObject(animationPlayer, "Add blend tree to animation player");
-            layer.states.Add(AnimationState.BlendTree1D(GetUniqueStateName(AnimationState.DefaultBlendTreeName, layer.states)));
+            layer.states.Add(AnimationState.BlendTree1D(GetUniqueStateName(AnimationState.Default1DBlendTreeName, layer.states)));
+        }
+        
+        if (GUILayout.Button("Add 2D Blend Tree", width))
+        {
+            Undo.RecordObject(animationPlayer, "Add 2D blend tree to animation player");
+            layer.states.Add(AnimationState.BlendTree2D(GetUniqueStateName(AnimationState.Default1DBlendTreeName, layer.states)));
         }
     }
 
@@ -311,30 +317,47 @@ public class AnimationPlayerEditor : Editor
 
             state.speed = EditorUtilities.DoubleField("Speed", state.speed, labelWidth);
 
-            if (state.type == AnimationStateType.SingleClip)
-            {
-                var oldClip = state.clip;
-                state.clip = EditorUtilities.ObjectField("Clip", state.clip, labelWidth);
-                if (state.clip != null && state.clip != oldClip)
-                    state.OnClipAssigned();
-            }
+            switch (state.type) {
+                case AnimationStateType.SingleClip:
+                    var oldClip = state.clip;
+                    state.clip = EditorUtilities.ObjectField("Clip", state.clip, labelWidth);
+                    if (state.clip != null && state.clip != oldClip)
+                        state.OnClipAssigned();
+                    break;
+                case AnimationStateType.BlendTree1D:
+                    state.blendVariable = EditorUtilities.TextField("Blend with variable", state.blendVariable, 120f);
+                    EditorGUI.indentLevel++;
+                    foreach (var blendTreeEntry in state.blendTree)
+                        DrawBlendTreeEntry(blendTreeEntry, state.blendVariable);
 
-            else
-            {
-                state.blendVariable = EditorUtilities.TextField("Blend with variable", state.blendVariable, 120f);
-                EditorGUI.indentLevel++;
-                foreach (var blendTreeEntry in state.blendTree)
-                    DrawBlendTreeEntry(blendTreeEntry, state.blendVariable);
+                    EditorGUI.indentLevel--;
 
-                EditorGUI.indentLevel--;
+                    GUILayout.Space(10f);
+                    EditorGUILayout.BeginHorizontal();
+                    if (GUILayout.Button("Add blend tree entry", GUILayout.Width(150f)))
+                        state.blendTree.Add(new BlendTreeEntry());
+                    GUILayout.FlexibleSpace();
+                    EditorGUILayout.EndHorizontal();
+                    break;
+                case AnimationStateType.BlendTree2D:
+                    state.blendVariable = EditorUtilities.TextField("First blend variable", state.blendVariable, 120f);
+                    state.blendVariable2 = EditorUtilities.TextField("Second blend variable", state.blendVariable2, 120f);
+                    EditorGUI.indentLevel++;
+                    foreach (var blendTreeEntry in state.blendTree)
+                        DrawBlendTreeEntry(blendTreeEntry, state.blendVariable, state.blendVariable2);
 
-                GUILayout.Space(10f);
-                EditorGUILayout.BeginHorizontal();
-                if (GUILayout.Button("Add blend tree entry", GUILayout.Width(150f)))
-                    state.blendTree.Add(new BlendTreeEntry());
-                GUILayout.FlexibleSpace();
-                EditorGUILayout.EndHorizontal();
+                    EditorGUI.indentLevel--;
 
+                    GUILayout.Space(10f);
+                    EditorGUILayout.BeginHorizontal();
+                    if (GUILayout.Button("Add blend tree entry", GUILayout.Width(150f)))
+                        state.blendTree.Add(new BlendTreeEntry());
+                    GUILayout.FlexibleSpace();
+                    EditorGUILayout.EndHorizontal();
+                    break;
+                default:
+                    EditorGUILayout.LabelField("Unknown animation state type: " + state.type);
+                    break;
             }
 
             GUILayout.Space(20f);
@@ -363,10 +386,12 @@ public class AnimationPlayerEditor : Editor
         }
     }
 
-    private void DrawBlendTreeEntry(BlendTreeEntry blendTreeEntry, string blendVarName)
+    private void DrawBlendTreeEntry(BlendTreeEntry blendTreeEntry, string blendVarName, string blendVarName2 = null)
     {
         blendTreeEntry.clip = EditorUtilities.ObjectField("Clip", blendTreeEntry.clip, 150f, 200f);
         blendTreeEntry.threshold = EditorUtilities.FloatField($"When '{blendVarName}' =", blendTreeEntry.threshold, 150f, 200f);
+        if(blendVarName2 != null)
+            blendTreeEntry.threshold2 = EditorUtilities.FloatField($"When '{blendVarName2}' =", blendTreeEntry.threshold2, 150f, 200f);
     }
 
     private void DrawTransitions()
@@ -467,16 +492,24 @@ public class AnimationPlayerEditor : Editor
         }
 
         EditorGUILayout.Space();
-
-        var newBlendVal = EditorGUILayout.Slider("Blend val", blendVal, -5f, 5f);
+        
+        var newBlendVal = EditorGUILayout.Slider("Forward", blendVal, 0f, 1f);
         if (newBlendVal != blendVal)
         {
             blendVal = newBlendVal;
-            animationPlayer.SetBlendVar("blend", blendVal, selectedLayer);
+            animationPlayer.SetBlendVar("Forward", blendVal, selectedLayer);
+        }
+        
+        var newBlendVal2 = EditorGUILayout.Slider("Turn", blendVal2, -1f, 1f);
+        if (newBlendVal2 != blendVal2)
+        {
+            blendVal2 = newBlendVal2;
+            animationPlayer.SetBlendVar("Turn", blendVal2, selectedLayer);
         }
     }
 
     private float blendVal;
+    private float blendVal2;
 
     private const float selectedLayerWidth = 108f;
 

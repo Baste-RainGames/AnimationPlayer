@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Remoting.Messaging;
 using UnityEngine;
 using UnityEngine.Animations;
@@ -11,7 +13,7 @@ public class AnimationLayer
     [Header("Animation data")]
     public List<AnimationState> states;
     public List<StateTransition> transitions;
-    public int startState;
+    //public int startState;
 
     [Header("Layer blending data")]
     public float startWeight;
@@ -37,7 +39,8 @@ public class AnimationLayer
 
     //@TODO: string key is slow
     private readonly Dictionary<string, float> blendVars = new Dictionary<string, float>();
-    private readonly Dictionary<string, List<RuntimeBlendVarController>> varToBlendControllers = new Dictionary<string, List<RuntimeBlendVarController>>();
+    private readonly Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers = new Dictionary<string, List<BlendTreeController1D>>();
+    private readonly Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers = new Dictionary<string, List<BlendTreeController2D>>();
 
     public void InitializeSelf(PlayableGraph graph, int layerIndexForDebug)
     {
@@ -48,45 +51,69 @@ public class AnimationLayer
         runtimePlayables = new Playable[states.Count];
 
         stateMixer = AnimationMixerPlayable.Create(graph, states.Count, false);
-        stateMixer.SetInputWeight(startState, 1f);
-        currentPlayedState = startState;
+        stateMixer.SetInputWeight(0, 1f);
+        currentPlayedState = 0;
 
         // Add the statess to the graph
         for (int i = 0; i < states.Count; i++)
         {
             var state = states[i];
             stateNameToIdx[state.Name] = i;
-            if (state.type == AnimationStateType.SingleClip)
+            switch (state.type)
             {
-                var clipPlayable = AnimationClipPlayable.Create(graph, state.clip);
-                runtimePlayables[i] = clipPlayable;
-                clipPlayable.SetSpeed(state.speed);
-                graph.Connect(clipPlayable, 0, stateMixer, i);
-            }
-            else if (state.type == AnimationStateType.BlendTree1D)
-            {
-                var treeMixer = AnimationMixerPlayable.Create(graph, state.blendTree.Count, true);
-                runtimePlayables[i] = treeMixer;
-                float[] thresholds = new float[state.blendTree.Count];
-
-                for (int j = 0; j < state.blendTree.Count; j++)
-                {
-                    var blendTreeEntry = state.blendTree[j];
-                    var clipPlayable = AnimationClipPlayable.Create(graph, blendTreeEntry.clip);
+                case AnimationStateType.SingleClip:
+                    var clipPlayable = AnimationClipPlayable.Create(graph, state.clip);
+                    runtimePlayables[i] = clipPlayable;
                     clipPlayable.SetSpeed(state.speed);
-                    graph.Connect(clipPlayable, 0, treeMixer, j);
-                    thresholds[j] = blendTreeEntry.threshold;
-                }
+                    graph.Connect(clipPlayable, 0, stateMixer, i);
+                    break;
+                case AnimationStateType.BlendTree1D:
+                    var treeMixer = AnimationMixerPlayable.Create(graph, state.blendTree.Count, true);
+                    runtimePlayables[i] = treeMixer;
+                    if (state.blendTree.Count == 0)
+                        break;
 
-                graph.Connect(treeMixer, 0, stateMixer, i);
+                    float[] thresholds = new float[state.blendTree.Count];
 
-                if (state.blendTree.Count > 0)
-                {
+                    for (int j = 0; j < state.blendTree.Count; j++)
+                    {
+                        var blendTreeEntry = state.blendTree[j];
+                        clipPlayable = AnimationClipPlayable.Create(graph, blendTreeEntry.clip);
+                        clipPlayable.SetSpeed(state.speed);
+                        graph.Connect(clipPlayable, 0, treeMixer, j);
+                        thresholds[j] = blendTreeEntry.threshold;
+                    }
+
+                    graph.Connect(treeMixer, 0, stateMixer, i);
+
                     treeMixer.SetInputWeight(0, 1f);
-                    if (!varToBlendControllers.ContainsKey(state.blendVariable))
-                        varToBlendControllers[state.blendVariable] = new List<RuntimeBlendVarController>();
-                    varToBlendControllers[state.blendVariable].Add(new RuntimeBlendVarController(treeMixer, thresholds));
-                }
+                    varTo1DBlendControllers.GetOrAdd(state.blendVariable).Add(new BlendTreeController1D(treeMixer, thresholds));
+
+                    break;
+                case AnimationStateType.BlendTree2D:
+                    treeMixer = AnimationMixerPlayable.Create(graph, state.blendTree.Count, true);
+                    runtimePlayables[i] = treeMixer;
+                    if (state.blendTree.Count == 0)
+                        break;
+
+                    var controller = new BlendTreeController2D(state.blendVariable, state.blendVariable2, treeMixer, state.blendTree.Count);
+                    varTo2DBlendControllers.GetOrAdd(state.blendVariable).Add(controller);
+                    varTo2DBlendControllers.GetOrAdd(state.blendVariable2).Add(controller);
+
+                    for (int j = 0; j < state.blendTree.Count; j++)
+                    {
+                        var blendTreeEntry = state.blendTree[j];
+                        clipPlayable = AnimationClipPlayable.Create(graph, blendTreeEntry.clip);
+                        clipPlayable.SetSpeed(state.speed);
+                        graph.Connect(clipPlayable, 0, treeMixer, j);
+
+                        controller.Add(j, blendTreeEntry.threshold, blendTreeEntry.threshold2);
+                    }
+
+                    graph.Connect(treeMixer, 0, stateMixer, i);
+                    treeMixer.SetInputWeight(0, 1f);
+
+                    break;
             }
         }
 
@@ -235,15 +262,28 @@ public class AnimationLayer
 
     public void SetBlendVar(string var, float value)
     {
-        Assert.IsTrue(varToBlendControllers.ContainsKey(var),
+        Assert.IsTrue(varTo1DBlendControllers.ContainsKey(var) || varTo2DBlendControllers.ContainsKey(var),
             $"Trying to set the blend var {var} on layer {layerIndexForDebug} but no blend tree exists with that blend var!");
 
         blendVars[var] = value;
-        var blendControllers = varToBlendControllers[var];
+
+        List<BlendTreeController1D> blendControllers1D;
+        if (varTo1DBlendControllers.TryGetValue(var, out blendControllers1D))
+            foreach (var controller in blendControllers1D)
+                controller.SetValue(value);
+        
+        List<BlendTreeController2D> blendControllers2D;
+        if (varTo2DBlendControllers.TryGetValue(var, out blendControllers2D))
+            foreach (var controller in blendControllers2D)
+                controller.SetValue(var, value);
+        
+        /*var blendControllers = varTo1DBlendControllers[var];
         foreach (var controller in blendControllers)
-        {
             controller.SetValue(value);
-        }
+
+        var blendControllers2D = varTo2DBlendControllers[var];
+        foreach (var controller in blendControllers2D)
+            controller.SetValue(var, value);*/
     }
 
     public float GetBlendVar(string var)
@@ -269,12 +309,12 @@ public class AnimationLayer
         }
     }
 
-    private class RuntimeBlendVarController
+    private class BlendTreeController1D
     {
         private AnimationMixerPlayable mixer;
         private readonly float[] thresholds;
 
-        public RuntimeBlendVarController(AnimationMixerPlayable mixer, float[] thresholds)
+        public BlendTreeController1D(AnimationMixerPlayable mixer, float[] thresholds)
         {
             for (int i = 0; i < thresholds.Length - 2; i++)
                 //@TODO: should reorder these!
@@ -324,7 +364,83 @@ public class AnimationLayer
 
                 mixer.SetInputWeight(i, inputWeight);
             }
+        }
+    }
 
+    private class BlendTreeController2D
+    {
+        private readonly string blendVar1;
+        private readonly string blendVar2;
+        private float minVal1, minVal2, maxVal1, maxVal2;
+        private Vector2 currentBlendVector;
+
+        private readonly AnimationMixerPlayable treeMixer;
+        private readonly BlendTree2DMotion[] motions;
+        private readonly float[] motionInfluences;
+
+        public BlendTreeController2D(string blendVar1, string blendVar2, AnimationMixerPlayable treeMixer, int numClips)
+        {
+            this.blendVar1 = blendVar1;
+            this.blendVar2 = blendVar2;
+            this.treeMixer = treeMixer;
+            motions = new BlendTree2DMotion[numClips];
+            motionInfluences = new float[numClips];
+        }
+
+        public void Add(int clipIdx, float threshold, float threshold2)
+        {
+            motions[clipIdx] = new BlendTree2DMotion(new Vector2(threshold, threshold2));
+
+            minVal1 = Mathf.Min(threshold, minVal1);
+            minVal2 = Mathf.Min(threshold2, minVal2);
+            maxVal1 = Mathf.Max(threshold, maxVal1);
+            maxVal2 = Mathf.Max(threshold2, maxVal2);
+        }
+
+        public void SetValue(string blendVar, float value)
+        {
+            Debug.Assert(blendVar == blendVar1 || blendVar == blendVar2,
+                $"Blend tree controller got the value for {blendVar}, but it only cares about {blendVar1} and {blendVar2}");
+
+            if (blendVar == blendVar1)
+                currentBlendVector.x = Mathf.Clamp(value, minVal1, maxVal1);
+            else
+                currentBlendVector.y = Mathf.Clamp(value, minVal2, maxVal2);
+            
+            //Recalculate weights, based on Rune Skovbo Johansen's thesis (http://runevision.com/thesis/rune_skovbo_johansen_thesis.pdf)
+            //For now, using the very simplified, bad version from 6.2.1
+            //@TODO: use the better solutions from the same chapter
+
+            float influenceSum = 0f;
+            for (int i = 0; i < motions.Length; i++)
+            {
+                var influence = Influence(currentBlendVector, motions[i].thresholdPoint);
+                if (float.IsInfinity(influence))
+                    influence = 10000f; //Lazy, but we're ditching this algorithm soon
+                motionInfluences[i] = influence;
+                influenceSum += influence;
+            }
+
+            for (int i = 0; i < motions.Length; i++)
+            {
+                treeMixer.SetInputWeight(i, motionInfluences[i] / influenceSum);
+            }
+        }
+
+        //The "influence function" h(p) from the paper
+        private float Influence(Vector2 inputPoint, Vector2 referencePoint)
+        {
+            return 1f / (Mathf.Pow(Vector2.Distance(inputPoint, referencePoint), 2f));
+        }
+
+        private class BlendTree2DMotion
+        {
+            public readonly Vector2 thresholdPoint;
+
+            public BlendTree2DMotion(Vector2 thresholdPoint)
+            {
+                this.thresholdPoint = thresholdPoint;
+            }
         }
     }
 }

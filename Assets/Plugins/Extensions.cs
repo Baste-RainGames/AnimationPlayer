@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices.ComTypes;
 using UnityEngine;
 
 public static class Extensions {
@@ -28,5 +29,14 @@ public static class Extensions {
 		if (arr.Count == 0)
 			return false;
 		return index >= 0 && index < arr.Count;
+	}
+
+	public static V GetOrAdd<K, V>(this Dictionary<K, V> dict, K key) where V : new()
+	{
+		V value;
+		if (dict.TryGetValue(key, out value))
+			return value;
+		
+		return dict[key] = new V();
 	}
 }

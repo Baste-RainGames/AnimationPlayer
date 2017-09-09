@@ -407,16 +407,14 @@ public class AnimationLayer
             else
                 currentBlendVector.y = Mathf.Clamp(value, minVal2, maxVal2);
             
-            //Recalculate weights, based on Rune Skovbo Johansen's thesis (http://runevision.com/thesis/rune_skovbo_johansen_thesis.pdf)
-            //For now, using the very simplified, bad version from 6.2.1
-            //@TODO: use the better solutions from the same chapter
+            //Recalculate weights, based on Rune Skovbo Johansen's thesis (Docs/rune_skovbo_johansen_thesis.pdf)
+            //For now, using the version without polar coordinates
+            //@TODO: use the polar coordinate version, looks better
 
             float influenceSum = 0f;
             for (int i = 0; i < motions.Length; i++)
             {
-                var influence = Influence(currentBlendVector, motions[i].thresholdPoint);
-                if (float.IsInfinity(influence))
-                    influence = 10000f; //Lazy, but we're ditching this algorithm soon
+                var influence = InfluenceFunc(currentBlendVector, i);
                 motionInfluences[i] = influence;
                 influenceSum += influence;
             }
@@ -426,11 +424,41 @@ public class AnimationLayer
                 treeMixer.SetInputWeight(i, motionInfluences[i] / influenceSum);
             }
         }
-
-        //The "influence function" h(p) from the paper
-        private float Influence(Vector2 inputPoint, Vector2 referencePoint)
+        
+        //See chapter 6.3 in Docs/rune_skovbo_johansen_thesis.pdf
+        private float InfluenceFunc(Vector2 inputPoint, int referencePointIdx)
         {
-            return 1f / (Mathf.Pow(Vector2.Distance(inputPoint, referencePoint), 2f));
+            if (motions.Length == 1)
+                return 1f;
+        
+            var referencePoint = motions[referencePointIdx].thresholdPoint;
+            Func<int, float> subFunc = idx =>
+            {
+                var toPointAtIdx = motions[idx].thresholdPoint - referencePoint;
+            
+                var dotProd = Vector2.Dot(inputPoint - referencePoint, toPointAtIdx);
+                var magSqr = Mathf.Pow(toPointAtIdx.magnitude, 2);
+            
+                var val = dotProd / magSqr;
+                return 1f - val;
+            };
+
+            var minVal = Mathf.Infinity;
+            for (int i = 0; i < motions.Length; i++)
+            {
+                // Note that we will get infinity values if there are two motions with the same thresholdPoint.
+                // But having two motions at the same point should error further up, as it's kinda meaningless.
+                if (i == referencePointIdx)
+                    continue;
+                var val = subFunc(i);
+                if (val < minVal)
+                    minVal = val;
+            
+                //This is not mentioned in the thesis, but seems to be neccessary.
+                if (minVal < 0f)
+                    minVal = 0f; 
+            }
+            return minVal;
         }
 
         private class BlendTree2DMotion

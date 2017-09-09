@@ -1,0 +1,35 @@
+- means "should do"
+* means "working on RIGHT THE FUCK NOW"
+
+Animation states:
+    - Different kinds of states:
+        * blend trees
+            - Nested!
+            * 2D (need to implement the good algo!)
+        - flows (state A into state B into state C, etc.)
+            - this can be used to change into a specific idle state after standing still. Or other stuff!
+        - random (bunch of states, selects a random one when you enter)
+    - Check if it's possible to loop/not loop in the state, and how expensive that is compared to the native (stupid) way of doing it
+    - Some way of adding a bunch from a file at the same time!
+    - Preview (oh my!)
+    - Animation events! Of some sort!
+    - Make it possible to play an animation relative to the current position. This will make Unity-created animations for eg. doors be a _LOT_ easier.
+
+Animation transitions:
+    - Transition-by-clip:
+        If you're transitioning from A to B, specify a clip C so the transition is A->C->B.
+        This will be usefull for run-stops and such.
+        Have to figure out if C here is a clip, another state in the state view, or another state in a special view.
+    - Several ways of transitioning between two states
+        probably want default transition and named transition
+    - Move the transitions to the states?
+
+Misc
+    - Make the cached values in the editor be per-layer where appropriate (selected from/to state for transitions)
+    - Add re-order support to things? Or better view for states
+    - Metadata:
+        - list all transitions (with go-to buttons)
+        - list all fbx/.anim files referenced
+        - list all clips used
+        - list all blend variables
+        - etc?

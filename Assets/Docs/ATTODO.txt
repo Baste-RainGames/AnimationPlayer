@@ -24,7 +24,11 @@ Animation transitions:
         Have to figure out if C here is a clip, another state in the state view, or another state in a special view.
     - Several ways of transitioning between two states
         probably want default transition and named transition
+    
     - Move the transitions to the states?
+        -I'm note sure about this. It would require less bookkeeping when deleting/reordering states (deleting a state would auto-delete
+         all transitions from that state), but some bookkeeping will always be neccessary. Keeping the transitions seperate also makes
+         them easier to iterate, which is nice.
 
 Misc
     - Make the cached values in the editor be per-layer where appropriate (selected from/to state for transitions)

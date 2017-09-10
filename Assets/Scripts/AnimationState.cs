@@ -77,11 +77,8 @@ public class AnimationState
         };
     }
 
-    public void OnClipAssigned()
+    public void OnClipAssigned(AnimationClip clip)
     {
-        if (type != AnimationStateType.SingleClip)
-            return;
-
         if (string.IsNullOrEmpty(name))
             name = clip.name;
         else if (!hasUpdatedName)
@@ -92,10 +89,14 @@ public class AnimationState
 		get {
 			if(type == AnimationStateType.SingleClip)
 				return clip?.length ?? 0f;
-			else {
-			    ////@TODO: fix this
-				Debug.LogError("Length for blend trees not implemented yet!");
-				return 0f;
+			else
+			{
+			    var duration = 0f;
+			    for (int i = 0; i < blendTree.Count; i++)
+			    {
+			        duration = Mathf.Max(duration, blendTree[i].clip?.length ?? 0f);
+			    }
+				return duration;
 			}
 		}
 	}

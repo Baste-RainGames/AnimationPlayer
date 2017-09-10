@@ -1208,26 +1208,7 @@ MonoBehaviour:
       - threshold: -0.5
         threshold2: 1
         clip: {fileID: 7400002, guid: 1062212255550964e974f3ffb3cbaae3, type: 3}
-    - name: Crouch
-      hasUpdatedName: 1
-      speed: 1
-      clip: {fileID: 7400002, guid: d89ea37480b6d75458aa38843e9688dc, type: 3}
-      type: 0
-      blendVariable: 
-      blendVariable2: 
-      blendTree: []
-    transitions:
-    - fromState: 0
-      toState: 1
-      transitionData:
-        duration: 0.5
-        type: 0
-        curve:
-          serializedVersion: 2
-          m_Curve: []
-          m_PreInfinity: 2
-          m_PostInfinity: 2
-          m_RotationOrder: 4
+    transitions: []
     startWeight: 1
     mask: {fileID: 0}
     type: 0

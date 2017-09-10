@@ -55,12 +55,16 @@ public static class StateSelectionAndAdditionDrawer
         {
             Undo.RecordObject(animationPlayer, "Add blend tree to animation player");
             layer.states.Add(AnimationState.BlendTree1D(GetUniqueStateName(AnimationState.Default1DBlendTreeName, layer.states)));
+            selectedState.SetTo(layer.states.Count - 1);
+            shouldUpdateStateNames = true;
         }
 
         if (GUILayout.Button("Add 2D Blend Tree", width))
         {
             Undo.RecordObject(animationPlayer, "Add 2D blend tree to animation player");
-            layer.states.Add(AnimationState.BlendTree2D(GetUniqueStateName(AnimationState.Default1DBlendTreeName, layer.states)));
+            layer.states.Add(AnimationState.BlendTree2D(GetUniqueStateName(AnimationState.Default2DBlendTreeName, layer.states)));
+            selectedState.SetTo(layer.states.Count - 1);
+            shouldUpdateStateNames = true;
         }
 
         return shouldUpdateStateNames;

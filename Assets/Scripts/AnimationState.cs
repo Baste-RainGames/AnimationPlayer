@@ -77,12 +77,19 @@ public class AnimationState
         };
     }
 
-    public void OnClipAssigned(AnimationClip clip)
+    public bool OnClipAssigned(AnimationClip clip)
     {
         if (string.IsNullOrEmpty(name))
+        {
             name = clip.name;
+            return true;
+        }
         else if (!hasUpdatedName)
+        {
             name = clip.name;
+            return true;
+        }
+        return false;
     }
 	
 	public float Duration {

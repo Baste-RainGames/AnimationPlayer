@@ -41,13 +41,13 @@ public static class StateDataDrawer
                     var oldClip = state.clip;
                     state.clip = EditorUtilities.ObjectField("Clip", state.clip, labelWidth);
                     if (state.clip != null && state.clip != oldClip)
-                        state.OnClipAssigned(state.clip);
+                        updateStateNames |= state.OnClipAssigned(state.clip);
                     break;
                 case AnimationStateType.BlendTree1D:
                     state.blendVariable = EditorUtilities.TextField("Blend with variable", state.blendVariable, 120f);
                     EditorGUI.indentLevel++;
                     foreach (var blendTreeEntry in state.blendTree)
-                        DrawBlendTreeEntry(state, blendTreeEntry, state.blendVariable);
+                        updateStateNames |= DrawBlendTreeEntry(state, blendTreeEntry, state.blendVariable);
 
                     EditorGUI.indentLevel--;
 
@@ -63,7 +63,7 @@ public static class StateDataDrawer
                     state.blendVariable2 = EditorUtilities.TextField("Second blend variable", state.blendVariable2, 120f);
                     EditorGUI.indentLevel++;
                     foreach (var blendTreeEntry in state.blendTree)
-                        DrawBlendTreeEntry(state, blendTreeEntry, state.blendVariable, state.blendVariable2);
+                        updateStateNames |= DrawBlendTreeEntry(state, blendTreeEntry, state.blendVariable, state.blendVariable2);
 
                     EditorGUI.indentLevel--;
 
@@ -108,15 +108,17 @@ public static class StateDataDrawer
         shouldUpdateStateNames |= updateStateNames;
     }
 
-    private static void DrawBlendTreeEntry(AnimationState state, BlendTreeEntry blendTreeEntry, string blendVarName, string blendVarName2 = null)
+    private static bool DrawBlendTreeEntry(AnimationState state, BlendTreeEntry blendTreeEntry, string blendVarName, string blendVarName2 = null)
     {
+        bool changedName = false;
         var oldClip = blendTreeEntry.clip;
         blendTreeEntry.clip = EditorUtilities.ObjectField("Clip", blendTreeEntry.clip, 150f, 200f);
         if(blendTreeEntry.clip != oldClip && blendTreeEntry.clip != null)
-            state.OnClipAssigned(blendTreeEntry.clip);
+            changedName = state.OnClipAssigned(blendTreeEntry.clip);
         
         blendTreeEntry.threshold = EditorUtilities.FloatField($"When '{blendVarName}' =", blendTreeEntry.threshold, 150f, 200f);
         if (blendVarName2 != null)
             blendTreeEntry.threshold2 = EditorUtilities.FloatField($"When '{blendVarName2}' =", blendTreeEntry.threshold2, 150f, 200f);
+        return changedName;
     }
 }

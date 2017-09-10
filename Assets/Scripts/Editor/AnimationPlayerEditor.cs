@@ -12,7 +12,8 @@ public class AnimationPlayerEditor : Editor
     private enum EditMode
     {
         States,
-        Transitions
+        Transitions,
+        MetaData
     }
 
     private PersistedInt selectedLayer;
@@ -29,6 +30,10 @@ public class AnimationPlayerEditor : Editor
     private static GUIStyle editLayerButton_NotSelected;
     private static GUIStyle editLayerButton_Selected;
 
+    private PersistedBool usedClipsFoldout;
+    private bool usedClipsCached;
+    private List<AnimationClip> animationClipsUsed = new List<AnimationClip>();
+
     void OnEnable()
     {
         animationPlayer = (AnimationPlayer) target;
@@ -41,6 +46,7 @@ public class AnimationPlayerEditor : Editor
         selectedEditMode = new PersistedEditMode(persistedEditMode + instanceId);
         selectedState = new PersistedInt(persistedState + instanceId);
         selectedToState = new PersistedInt(persistedToState + instanceId);
+        usedClipsFoldout = new PersistedBool(persistedFoldoutUsedClips + instanceId);
 
         shouldUpdateStateNames = true;
     }
@@ -124,6 +130,9 @@ public class AnimationPlayerEditor : Editor
         {
             animationPlayer.layers = new AnimationLayer[1];
             animationPlayer.layers[0] = AnimationLayer.CreateLayer();
+
+            if (animationPlayer.defaultTransition.duration == 0f && animationPlayer.defaultTransition.type == TransitionType.Linear)
+                animationPlayer.defaultTransition = TransitionData.Linear(.1f); //default shouldn't be snap
             return;
         }
 
@@ -205,7 +214,7 @@ public class AnimationPlayerEditor : Editor
                 selectedState.SetTo(i);
             EditorGUI.EndDisabledGroup();
         }
-
+        
         GUILayout.Space(30f);
 
         if (GUILayout.Button("Add Normal State", width))
@@ -221,7 +230,7 @@ public class AnimationPlayerEditor : Editor
             Undo.RecordObject(animationPlayer, "Add blend tree to animation player");
             layer.states.Add(AnimationState.BlendTree1D(GetUniqueStateName(AnimationState.Default1DBlendTreeName, layer.states)));
         }
-        
+
         if (GUILayout.Button("Add 2D Blend Tree", width))
         {
             Undo.RecordObject(animationPlayer, "Add 2D blend tree to animation player");
@@ -234,13 +243,9 @@ public class AnimationPlayerEditor : Editor
         EditorGUILayout.BeginHorizontal(editLayerButton_Background);
 
         //Making tabbed views are hard!
-        //HACK: Reseve the rects for later use
-        GUILayout.Label("");
-        var editStatesRect = GUILayoutUtility.GetLastRect();
-        GUILayout.Label("");
-        var editTransitionsRect = GUILayoutUtility.GetLastRect();
-        GUILayout.Label("");
-        var metaDataRect = GUILayoutUtility.GetLastRect();
+        var editStatesRect = EditorUtilities.ReserveRect();
+        var editTransitionsRect = EditorUtilities.ReserveRect();
+        var metaDataRect = EditorUtilities.ReserveRect();
 
         EditorGUILayout.EndHorizontal();
 
@@ -274,124 +279,21 @@ public class AnimationPlayerEditor : Editor
 
         GUILayout.Space(10f);
 
-        if (selectedEditMode == (int) EditMode.States)
-            DrawStateData();
-        else if (selectedEditMode == (int) EditMode.Transitions)
-            DrawTransitions();
-        else
-            for (int i = 0; i < 30; i++)
-                EditorGUILayout.LabelField("Metadata should go here (clips used, etc.)");
+        switch ((EditMode) selectedEditMode)
+        {
+            case EditMode.States:
+                StateDataDrawer.DrawStateData(animationPlayer, selectedLayer, selectedState, ref shouldUpdateStateNames);
+                break;
+            case EditMode.Transitions:
+                DrawTransitions();
+                break;
+            case EditMode.MetaData:
+                DrawMetaData();
+                break;
+        }
 
         GUILayout.Space(20f);
         EditorGUILayout.EndVertical();
-    }
-
-    private void DrawStateData()
-    {
-        var layer = animationPlayer.layers[selectedLayer];
-
-        if (layer.states.Count == 0)
-        {
-            EditorGUILayout.LabelField("No states");
-            return;
-        }
-
-        if (!layer.states.IsInBounds(selectedState))
-        {
-            Debug.LogError("Out of bounds: " + selectedState + " out of " + layer.states.Count);
-            return;
-        }
-
-        var state = layer.states[selectedState];
-
-        EditorGUILayout.LabelField("State");
-        var deleteThisState = false;
-        EditorUtilities.DrawIndented(() =>
-        {
-            const float labelWidth = 55f;
-
-            var old = state.Name;
-            state.Name = EditorUtilities.TextField("Name", state.Name, labelWidth);
-            if (old != state.Name)
-                shouldUpdateStateNames = true;
-
-            state.speed = EditorUtilities.DoubleField("Speed", state.speed, labelWidth);
-
-            switch (state.type) {
-                case AnimationStateType.SingleClip:
-                    var oldClip = state.clip;
-                    state.clip = EditorUtilities.ObjectField("Clip", state.clip, labelWidth);
-                    if (state.clip != null && state.clip != oldClip)
-                        state.OnClipAssigned();
-                    break;
-                case AnimationStateType.BlendTree1D:
-                    state.blendVariable = EditorUtilities.TextField("Blend with variable", state.blendVariable, 120f);
-                    EditorGUI.indentLevel++;
-                    foreach (var blendTreeEntry in state.blendTree)
-                        DrawBlendTreeEntry(blendTreeEntry, state.blendVariable);
-
-                    EditorGUI.indentLevel--;
-
-                    GUILayout.Space(10f);
-                    EditorGUILayout.BeginHorizontal();
-                    if (GUILayout.Button("Add blend tree entry", GUILayout.Width(150f)))
-                        state.blendTree.Add(new BlendTreeEntry());
-                    GUILayout.FlexibleSpace();
-                    EditorGUILayout.EndHorizontal();
-                    break;
-                case AnimationStateType.BlendTree2D:
-                    state.blendVariable = EditorUtilities.TextField("First blend variable", state.blendVariable, 120f);
-                    state.blendVariable2 = EditorUtilities.TextField("Second blend variable", state.blendVariable2, 120f);
-                    EditorGUI.indentLevel++;
-                    foreach (var blendTreeEntry in state.blendTree)
-                        DrawBlendTreeEntry(blendTreeEntry, state.blendVariable, state.blendVariable2);
-
-                    EditorGUI.indentLevel--;
-
-                    GUILayout.Space(10f);
-                    EditorGUILayout.BeginHorizontal();
-                    if (GUILayout.Button("Add blend tree entry", GUILayout.Width(150f)))
-                        state.blendTree.Add(new BlendTreeEntry());
-                    GUILayout.FlexibleSpace();
-                    EditorGUILayout.EndHorizontal();
-                    break;
-                default:
-                    EditorGUILayout.LabelField("Unknown animation state type: " + state.type);
-                    break;
-            }
-
-            GUILayout.Space(20f);
-
-            EditorGUILayout.BeginHorizontal();
-            GUILayout.FlexibleSpace();
-            deleteThisState = EditorUtilities.AreYouSureButton("Delete state", "are you sure", "DeleteState_" + selectedState + "_" + selectedLayer, 1f);
-            EditorGUILayout.EndHorizontal();
-        });
-
-        if (deleteThisState)
-        {
-            Undo.RecordObject(animationPlayer, "Deleting state " + layer.states[selectedState].Name);
-            layer.states.RemoveAt(selectedState);
-            layer.transitions.RemoveAll(transition => transition.fromState == selectedState || transition.toState == selectedState);
-            foreach (var transition in layer.transitions)
-            {
-                //This would be so much better if transitions were placed on the state!
-                if (transition.toState > selectedState)
-                    transition.toState--;
-                if (transition.fromState > selectedState)
-                    transition.fromState--;
-            }
-            shouldUpdateStateNames = true;
-            selectedState.SetTo(selectedState - 1);
-        }
-    }
-
-    private void DrawBlendTreeEntry(BlendTreeEntry blendTreeEntry, string blendVarName, string blendVarName2 = null)
-    {
-        blendTreeEntry.clip = EditorUtilities.ObjectField("Clip", blendTreeEntry.clip, 150f, 200f);
-        blendTreeEntry.threshold = EditorUtilities.FloatField($"When '{blendVarName}' =", blendTreeEntry.threshold, 150f, 200f);
-        if(blendVarName2 != null)
-            blendTreeEntry.threshold2 = EditorUtilities.FloatField($"When '{blendVarName2}' =", blendTreeEntry.threshold2, 150f, 200f);
     }
 
     private void DrawTransitions()
@@ -451,7 +353,7 @@ public class AnimationPlayerEditor : Editor
         });
     }
 
-    public TransitionData DrawTransitionData(TransitionData transitionData)
+    private TransitionData DrawTransitionData(TransitionData transitionData)
     {
         transitionData.type = (TransitionType) EditorGUILayout.EnumPopup("Type", transitionData.type);
         transitionData.duration = EditorGUILayout.FloatField("Duration", transitionData.duration);
@@ -460,7 +362,49 @@ public class AnimationPlayerEditor : Editor
             transitionData.curve = EditorGUILayout.CurveField(transitionData.curve);
 
         return transitionData;
+    }
 
+    private void DrawMetaData()
+    {
+        DrawClipsUsed();
+    }
+
+    private void DrawClipsUsed()
+    {
+        EnsureUsedClipsCached();
+
+        usedClipsFoldout.SetTo(EditorGUILayout.Foldout(usedClipsFoldout, "Clips used in the animation player"));
+        if (!usedClipsFoldout)
+            return;
+
+        EditorGUI.indentLevel++;
+        foreach (var clip in animationClipsUsed)
+            EditorUtilities.ObjectField(clip);
+        EditorGUI.indentLevel--;
+    }
+
+    private void EnsureUsedClipsCached()
+    {
+        if (usedClipsCached)
+            return;
+        usedClipsCached = true;
+
+        foreach (var state in animationPlayer.layers.SelectMany(layer => layer.states))
+        {
+            switch (state.type)
+            {
+                case AnimationStateType.SingleClip:
+                    if (state.clip != null && !animationClipsUsed.Contains(state.clip))
+                        animationClipsUsed.Add(state.clip);
+                    break;
+                case AnimationStateType.BlendTree1D:
+                case AnimationStateType.BlendTree2D:
+                    foreach (var clip in state.blendTree.Select(bte => bte.clip).Where(c => c != null))
+                        if (!animationClipsUsed.Contains(clip))
+                            animationClipsUsed.Add(clip);
+                    break;
+            }
+        }
     }
 
     private void DrawRuntimeDebugData()
@@ -492,14 +436,14 @@ public class AnimationPlayerEditor : Editor
         }
 
         EditorGUILayout.Space();
-        
+
         var newBlendVal = EditorGUILayout.Slider("Forward", blendVal, 0f, 1f);
         if (newBlendVal != blendVal)
         {
             blendVal = newBlendVal;
             animationPlayer.SetBlendVar("Forward", blendVal, selectedLayer);
         }
-        
+
         var newBlendVal2 = EditorGUILayout.Slider("Turn", blendVal2, -1f, 1f);
         if (newBlendVal2 != blendVal2)
         {
@@ -517,6 +461,7 @@ public class AnimationPlayerEditor : Editor
     private const string persistedState = "APE_SelectedState_";
     private const string persistedToState = "APE_SelectedToState_";
     private const string persistedEditMode = "APE_EditMode_";
+    private const string persistedFoldoutUsedClips = "APE_FO_UsedClips_";
 
     private class PersistedEditMode : PersistedVal<EditMode>
     {
@@ -561,3 +506,4 @@ public class AnimationPlayerEditor : Editor
         return wantedName + (greatestIndex + 1);
     }
 }
+

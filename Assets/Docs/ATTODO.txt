@@ -5,12 +5,12 @@ Animation states:
     - Different kinds of states:
         * blend trees
             - Nested!
-            * 2D (need to implement the good algo!)
+            * 2D (almost finished, need to implement the good algo!)
         - flows (state A into state B into state C, etc.)
             - this can be used to change into a specific idle state after standing still. Or other stuff!
         - random (bunch of states, selects a random one when you enter)
     - Check if it's possible to loop/not loop in the state, and how expensive that is compared to the native (stupid) way of doing it
-    - Some way of adding a bunch from a file at the same time!
+    - Add support for dragging animation clips over the list of states to generate a new state
     - Preview (oh my!)
     - Animation events! Of some sort!
     - Make it possible to play an animation relative to the current position. This will make Unity-created animations for eg. doors be a _LOT_ easier.
@@ -30,6 +30,7 @@ Misc
     - Metadata:
         - list all transitions (with go-to buttons)
         - list all fbx/.anim files referenced
-        - list all clips used
+        + list all clips used
         - list all blend variables
-        - etc?
+        - make sure all of these lists update when stuff is added. On changing tab is not enough, could have two inspectors open
+    - fix the parts of the window shifting around as you unfold stuff (like clips used in metadata)

@@ -296,4 +296,11 @@ public class EditorUtilities
         return currentValue;
     }
 
+    public static Rect ReserveRect(params GUILayoutOption[] options)
+    {
+        //Note: Using EditorGUILayout.LabelField makes the label extend way past it's width. Probably due to GUILayoutUtility not interacting with it very well?
+        GUILayout.Label(string.Empty, options);
+        return GUILayoutUtility.GetLastRect();
+    }
+
 }

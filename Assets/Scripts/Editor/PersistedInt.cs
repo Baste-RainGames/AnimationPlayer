@@ -35,12 +35,11 @@ public abstract class PersistedVal<T>
     {
         return p.Get();
     }
-    
+
     protected abstract int ToInt(T val);
 
     protected abstract T ToType(int i);
-    
-    
+
     public override string ToString()
     {
         return cachedVal.ToString();
@@ -49,9 +48,7 @@ public abstract class PersistedVal<T>
 
 public class PersistedInt : PersistedVal<int>
 {
-
-    public PersistedInt(string key) : base(key)
-    { }
+    public PersistedInt(string key) : base(key) { }
 
     protected override int ToInt(int val)
     {
@@ -61,5 +58,20 @@ public class PersistedInt : PersistedVal<int>
     protected override int ToType(int i)
     {
         return i;
+    }
+}
+
+public class PersistedBool : PersistedVal<bool>
+{
+    public PersistedBool(string key) : base(key) { }
+
+    protected override int ToInt(bool val)
+    {
+        return val ? 1 : 0;
+    }
+
+    protected override bool ToType(int i)
+    {
+        return i != 0;
     }
 }

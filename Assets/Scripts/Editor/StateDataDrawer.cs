@@ -104,7 +104,7 @@ public static class StateDataDrawer
             selectedState.SetTo(selectedState - 1);
         }
 
-        shouldUpdateStateNames = updateStateNames;
+        shouldUpdateStateNames |= updateStateNames;
     }
 
     private static void DrawBlendTreeEntry(BlendTreeEntry blendTreeEntry, string blendVarName, string blendVarName2 = null)

@@ -32,7 +32,7 @@ public class EditorUtilities
 
     public static void DrawVertical(Action drawAction, params GUILayoutOption[] options)
     {
-        EditorGUILayout.BeginVertical();
+        EditorGUILayout.BeginVertical(options);
         drawAction();
         EditorGUILayout.EndVertical();
     }

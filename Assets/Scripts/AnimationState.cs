@@ -38,14 +38,15 @@ public class AnimationState
         }
     }
 
-    public static AnimationState SingleClip(string name)
+    public static AnimationState SingleClip(string name, AnimationClip clip = null)
     {
         return new AnimationState
         {
             name = name,
             speed = 1d,
             type = AnimationStateType.SingleClip,
-            hasUpdatedName = !name.StartsWith(DefaultSingleClipName)
+            hasUpdatedName = !name.StartsWith(DefaultSingleClipName),
+            clip = clip
         };
     }
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Remoting.Messaging;
 using UnityEditor;
 using UnityEngine;
 
@@ -9,7 +10,7 @@ public class AnimationPlayerEditor : Editor
 {
     private AnimationPlayer animationPlayer;
 
-    private enum EditMode
+    public enum AnimationPlayerEditMode
     {
         States,
         Transitions,
@@ -19,7 +20,7 @@ public class AnimationPlayerEditor : Editor
     private PersistedInt selectedLayer;
     private PersistedInt selectedState;
     private PersistedInt selectedToState;
-    private PersistedEditMode selectedEditMode;
+    private PersistedAnimationPlayerEditMode selectedEditMode;
 
     private string[][] allStateNames;
     private bool shouldUpdateStateNames;
@@ -40,10 +41,13 @@ public class AnimationPlayerEditor : Editor
         animationPlayer.editTimeUpdateCallback -= Repaint;
         animationPlayer.editTimeUpdateCallback += Repaint;
 
+        Undo.undoRedoPerformed -= CheckSelectionBounds;
+        Undo.undoRedoPerformed += CheckSelectionBounds;
+
         var instanceId = animationPlayer.GetInstanceID();
 
         selectedLayer = new PersistedInt(persistedLayer + instanceId);
-        selectedEditMode = new PersistedEditMode(persistedEditMode + instanceId);
+        selectedEditMode = new PersistedAnimationPlayerEditMode(persistedEditMode + instanceId);
         selectedState = new PersistedInt(persistedState + instanceId);
         selectedToState = new PersistedInt(persistedToState + instanceId);
         usedClipsFoldout = new PersistedBool(persistedFoldoutUsedClips + instanceId);
@@ -80,8 +84,7 @@ public class AnimationPlayerEditor : Editor
 
         EditorUtilities.DrawHorizontal(() =>
         {
-            var stateSelectionWidth = GUILayout.Width(200f);
-            EditorUtilities.DrawVertical(() => { DrawStateSelection(stateSelectionWidth); }, stateSelectionWidth);
+            StateSelectionAndAdditionDrawer.Draw(animationPlayer, selectedLayer, selectedState, selectedEditMode, ref shouldUpdateStateNames);
 
             EditorUtilities.DrawVertical(DrawSelectedState);
         });
@@ -196,48 +199,6 @@ public class AnimationPlayerEditor : Editor
         layer.mask = EditorUtilities.ObjectField($"Layer {selectedLayer} Mask", layer.mask);
     }
 
-    private void DrawStateSelection(GUILayoutOption width)
-    {
-        if ((EditMode) selectedEditMode == EditMode.Transitions)
-            EditorGUILayout.LabelField("Edit transitions for:", width);
-        else
-            EditorGUILayout.LabelField("Edit state:", width);
-
-        GUILayout.Space(10f);
-
-        var layer = animationPlayer.layers[selectedLayer];
-
-        for (int i = 0; i < layer.states.Count; i++)
-        {
-            EditorGUI.BeginDisabledGroup(i == selectedState);
-            if (GUILayout.Button(layer.states[i].Name, width))
-                selectedState.SetTo(i);
-            EditorGUI.EndDisabledGroup();
-        }
-        
-        GUILayout.Space(30f);
-
-        if (GUILayout.Button("Add Normal State", width))
-        {
-            Undo.RecordObject(animationPlayer, "Add state to animation player");
-            layer.states.Add(AnimationState.SingleClip(GetUniqueStateName(AnimationState.DefaultSingleClipName, layer.states)));
-            selectedState.SetTo(layer.states.Count - 1);
-            shouldUpdateStateNames = true;
-        }
-
-        if (GUILayout.Button("Add 1D Blend Tree", width))
-        {
-            Undo.RecordObject(animationPlayer, "Add blend tree to animation player");
-            layer.states.Add(AnimationState.BlendTree1D(GetUniqueStateName(AnimationState.Default1DBlendTreeName, layer.states)));
-        }
-
-        if (GUILayout.Button("Add 2D Blend Tree", width))
-        {
-            Undo.RecordObject(animationPlayer, "Add 2D blend tree to animation player");
-            layer.states.Add(AnimationState.BlendTree2D(GetUniqueStateName(AnimationState.Default1DBlendTreeName, layer.states)));
-        }
-    }
-
     private void DrawSelectedState()
     {
         EditorGUILayout.BeginHorizontal(editLayerButton_Background);
@@ -268,7 +229,7 @@ public class AnimationPlayerEditor : Editor
             var isSelected = index == (int) selectedEditMode;
             var style = isSelected ? editLayerButton_Selected : editLayerButton_NotSelected;
             if (GUI.Button(rect, label, style))
-                selectedEditMode.SetTo((EditMode) index);
+                selectedEditMode.SetTo((AnimationPlayerEditMode) index);
         };
 
         Draw(editStatesRect, "Edit state", 0);
@@ -279,15 +240,15 @@ public class AnimationPlayerEditor : Editor
 
         GUILayout.Space(10f);
 
-        switch ((EditMode) selectedEditMode)
+        switch ((AnimationPlayerEditMode) selectedEditMode)
         {
-            case EditMode.States:
+            case AnimationPlayerEditMode.States:
                 StateDataDrawer.DrawStateData(animationPlayer, selectedLayer, selectedState, ref shouldUpdateStateNames);
                 break;
-            case EditMode.Transitions:
+            case AnimationPlayerEditMode.Transitions:
                 DrawTransitions();
                 break;
-            case EditMode.MetaData:
+            case AnimationPlayerEditMode.MetaData:
                 DrawMetaData();
                 break;
         }
@@ -451,6 +412,19 @@ public class AnimationPlayerEditor : Editor
             animationPlayer.SetBlendVar("Turn", blendVal2, selectedLayer);
         }
     }
+    
+    //Undo can remove layers, but the selected bounds are not undone, so do that manually
+    private void CheckSelectionBounds()
+    {
+        if (animationPlayer == null || animationPlayer.layers == null)
+            return;
+        
+        selectedLayer.SetTo(Mathf.Clamp(selectedLayer, 0, animationPlayer.layers.Length - 1));
+        if (animationPlayer.layers.Length == 0)
+            return;
+        var layer = animationPlayer.layers[selectedLayer];
+        selectedState.SetTo(Mathf.Clamp(selectedState, 0, layer.states.Count - 1));
+    }
 
     private float blendVal;
     private float blendVal2;
@@ -463,47 +437,23 @@ public class AnimationPlayerEditor : Editor
     private const string persistedEditMode = "APE_EditMode_";
     private const string persistedFoldoutUsedClips = "APE_FO_UsedClips_";
 
-    private class PersistedEditMode : PersistedVal<EditMode>
+    public class PersistedAnimationPlayerEditMode : PersistedVal<AnimationPlayerEditMode>
     {
-        public PersistedEditMode(string key) : base(key) { }
+        public PersistedAnimationPlayerEditMode(string key) : base(key) { }
 
-        protected override int ToInt(EditMode val)
+        protected override int ToInt(AnimationPlayerEditMode val)
         {
             return (int) val;
         }
 
-        protected override EditMode ToType(int i)
+        protected override AnimationPlayerEditMode ToType(int i)
         {
-            return (EditMode) i;
+            return (AnimationPlayerEditMode) i;
         }
 
-        public static implicit operator int(PersistedEditMode p)
+        public static implicit operator int(PersistedAnimationPlayerEditMode p)
         {
             return p.ToInt(p); //look at it go!
         }
     }
-
-    private static string GetUniqueStateName(string wantedName, List<AnimationState> otherStates)
-    {
-        if (!otherStates.Any(state => state.Name == wantedName))
-        {
-            return wantedName;
-        }
-
-        var allNamesSorted = otherStates.Select(layer => layer.Name).Where(name => name != wantedName && name.StartsWith(wantedName));
-
-        int greatestIndex = 0;
-        foreach (var name in allNamesSorted)
-        {
-            int numericPostFix;
-            if (int.TryParse(name.Substring(wantedName.Length + 1), out numericPostFix))
-            {
-                if (numericPostFix > greatestIndex)
-                    greatestIndex = numericPostFix;
-            }
-        }
-
-        return wantedName + (greatestIndex + 1);
-    }
 }
-

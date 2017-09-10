@@ -95,25 +95,31 @@ public class AnimationPlayer : MonoBehaviour
     }
 	
 	/// <summary>
-    /// Play a state, using the player's default transition. The state will immediately be the current played state. 
+	/// Play a state, using the defined transition between the current state and that state if it exists,
+	/// or the player's default transition if it doesn't.
+	/// The state will immediately be the current played state. 
     /// </summary>
     /// <param name="state">Name of the state to play</param>
     /// <param name="layer">Layer the state should be played on</param>
 	public void Play(string state, int layer = 0) 
 	{
-		AssertLayerInBounds(layer, state, "play a state");
-		Play(state, defaultTransition, layer);
+	    AssertLayerInBounds(layer, state, "play a state");
+	    int stateIdx = GetStateIdxFromName(state, layer);
+		Play(stateIdx, layer);
 	}
 
     /// <summary>
-    /// Play a state, using the player's default transition. The state will immediately be the current played state. 
+    /// Play a state, using the defined transition between the current state and that state if it exists,
+    /// or the player's default transition if it doesn't.
+    /// The state will immediately be the current played state.
     /// </summary>
     /// <param name="state">state index to play</param>
     /// <param name="layer">Layer the state should be played on</param>
     public void Play(int state, int layer = 0)
     {
         AssertLayerInBounds(layer, state, "play a state");
-        Play(state, defaultTransition, layer);
+        AssertStateInBounds(layer, state, "play a state");
+        layers[layer].PlayUsingInternalTransition(state, defaultTransition);
     }
     
     /// <summary>

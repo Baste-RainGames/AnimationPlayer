@@ -10,7 +10,9 @@ Animation states:
             - this can be used to change into a specific idle state after standing still. Or other stuff!
         - random (bunch of states, selects a random one when you enter)
     - Check if it's possible to loop/not loop in the state, and how expensive that is compared to the native (stupid) way of doing it
-    - Add support for dragging animation clips over the list of states to generate a new state
+    + Add support for dragging animation clips over the list of states to generate a new state
+        - Also add support for dragging in the .fbx or .blend or whatever (ModelImporter), and add all clips in it
+        - If you drag in several, create a "Do you want to add many clips or blend tree" popup
     - Preview (oh my!)
     - Animation events! Of some sort!
     - Make it possible to play an animation relative to the current position. This will make Unity-created animations for eg. doors be a _LOT_ easier.

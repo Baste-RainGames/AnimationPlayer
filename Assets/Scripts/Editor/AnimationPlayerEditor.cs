@@ -134,7 +134,7 @@ public class AnimationPlayerEditor : Editor
             animationPlayer.layers = new AnimationLayer[1];
             animationPlayer.layers[0] = AnimationLayer.CreateLayer();
 
-            if (animationPlayer.defaultTransition.duration == 0f && animationPlayer.defaultTransition.type == TransitionType.Linear)
+            if (animationPlayer.defaultTransition == default(TransitionData))
                 animationPlayer.defaultTransition = TransitionData.Linear(.1f); //default shouldn't be snap
             return;
         }

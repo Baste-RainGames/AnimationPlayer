@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Remoting.Messaging;
 using UnityEngine;
 
 /// <summary>
@@ -42,6 +43,28 @@ public struct TransitionData
             type = TransitionType.Linear,
             curve = new AnimationCurve()
         };
+    }
+
+    public static bool operator ==(TransitionData a, TransitionData b)
+    {
+        if (a.type != b.type)
+            return false;
+        if (a.duration != b.duration)
+            return false;
+        if (a.type == TransitionType.Linear)
+            return true;
+
+        if (a.curve == null)
+            return b.curve == null;
+        if (b.curve == null)
+            return false;
+
+        return a.curve.Equals(b.curve);
+    }
+    
+    public static bool operator !=(TransitionData a, TransitionData b)
+    {
+        return !(a == b);
     }
 }
 

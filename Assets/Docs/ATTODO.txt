@@ -2,6 +2,7 @@
 * means "working on RIGHT THE FUCK NOW"
 
 Animation states:
+    - Have the states get a GUID rather than an index, to support reordering and stuff better.
     - Different kinds of states:
         * blend trees
             - Nested!
@@ -14,7 +15,16 @@ Animation states:
         - Also add support for dragging in the .fbx or .blend or whatever (ModelImporter), and add all clips in it
         - If you drag in several, create a "Do you want to add many clips or blend tree" popup
     - Preview (oh my!)
-    - Animation events! Of some sort!
+    - Animation events!
+        - Make own tab for animation events
+        - Define API. 
+            - Dependency on SerializedAction? That makes it not possible to have the player as an asset.
+            - SendMessage? Not very clean in general, but it matches what an animation event is, so it's probably okay.
+            - Allow both?
+        - Make sure events are called
+        - Make settings:
+            - min blend factor - default to 0. Only call the event if the current blend factor is larger than this
+            - Play only first/repeat. If the animation loops, do we want this to happen every time, or just the first one?
     - Make it possible to play an animation relative to the current position. This will make Unity-created animations for eg. doors be a _LOT_ easier.
 
 Animation transitions:
@@ -32,6 +42,7 @@ Animation transitions:
 
 Misc
     - Make the cached values in the editor be per-layer where appropriate (selected from/to state for transitions)
+    - Make a caching system that doesn't depend on EditorPrefs? Cluttering the registry is an ugly hack.
     - Add re-order support to things? Or better view for states
     - Metadata:
         - list all transitions (with go-to buttons)

@@ -1,9 +1,11 @@
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UI;
 
 public static class StateDataDrawer
 {
-    public static void DrawStateData(AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedState, ref bool shouldUpdateStateNames)
+    public static void DrawStateData(AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedState, ref bool shouldUpdateStateNames,
+                                     AnimationPlayerEditor currentEditor)
     {
         var updateStateNames = false;
         var layer = animationPlayer.layers[selectedLayer];
@@ -37,6 +39,8 @@ public static class StateDataDrawer
         }
 
         shouldUpdateStateNames |= updateStateNames;
+
+        DrawStatePreview(currentEditor, animationPlayer, selectedLayer, selectedState);
     }
 
     private static void DrawStateData(AnimationState state, ref bool updateStateNames)
@@ -133,5 +137,69 @@ public static class StateDataDrawer
 
         if (selectedState == layer.states.Count) //was last state
             selectedState.SetTo(selectedState - 1);
+    }
+
+    private static void DrawStatePreview(AnimationPlayerEditor currentEditor, AnimationPlayer animationPlayer, PersistedInt selectedLayer,
+                                         PersistedInt selectedState)
+    {
+        var state = animationPlayer.layers[selectedLayer].states[selectedState];
+
+        if (state.type != AnimationStateType.SingleClip)
+        {
+            EditorGUILayout.LabelField("Can only preview single clips for now");
+            return;
+        }
+        
+        if (currentEditor.isShowingPreview)
+        {
+            DrawAnimationStatePreview(currentEditor, animationPlayer, state);
+        }
+        else if (GUILayout.Button("Start previewing state"))
+        {
+            currentEditor.StartPreviewing();
+        }
+    }
+
+    private static float automaticPreviewLastTime;
+    public static void DrawAnimationStatePreview(AnimationPlayerEditor editor, AnimationPlayer player, AnimationState state)
+    {
+        EditorUtilities.Splitter();
+
+        var oldPreviewMode = editor.previewMode;
+        editor.previewMode = (AnimationPlayerEditor.PreviewMode) EditorGUILayout.EnumPopup("Mode", editor.previewMode);
+
+        if (oldPreviewMode == AnimationPlayerEditor.PreviewMode.Manual && editor.previewMode == AnimationPlayerEditor.PreviewMode.Automatic)
+            automaticPreviewLastTime = Time.realtimeSinceStartup;
+
+        if (editor.previewMode == AnimationPlayerEditor.PreviewMode.Manual)
+        {
+            editor.previewTime = EditorGUILayout.Slider(editor.previewTime, 0f, state.Duration);
+        }
+        else
+        {
+            var currentTime = Time.realtimeSinceStartup;
+            var deltaTime = currentTime - automaticPreviewLastTime;
+            automaticPreviewLastTime = currentTime;
+
+            editor.previewTime += deltaTime;
+            if (editor.previewTime > state.Duration)
+                editor.previewTime -= state.Duration;
+
+            EditorGUI.BeginDisabledGroup(true);
+            EditorGUILayout.Slider(editor.previewTime, 0f, state.Duration);
+            EditorGUI.EndDisabledGroup();
+        }
+
+
+        AnimationMode.BeginSampling();
+        AnimationMode.SampleAnimationClip(player.gameObject, state.clip, editor.previewTime);
+        AnimationMode.EndSampling();
+
+        SceneView.RepaintAll();
+        
+        if (GUILayout.Button("Stop preview"))
+        {
+            editor.StopPreviewing();
+        }
     }
 }

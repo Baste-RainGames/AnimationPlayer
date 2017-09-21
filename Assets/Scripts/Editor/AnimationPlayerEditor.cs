@@ -34,6 +34,8 @@ public class AnimationPlayerEditor : Editor
     private PersistedBool usedClipsFoldout;
     private bool usedClipsCached;
     private List<AnimationClip> animationClipsUsed = new List<AnimationClip>();
+    
+    public bool isShowingPreview { get; private set; }
 
     void OnEnable()
     {
@@ -243,7 +245,7 @@ public class AnimationPlayerEditor : Editor
         switch ((AnimationPlayerEditMode) selectedEditMode)
         {
             case AnimationPlayerEditMode.States:
-                StateDataDrawer.DrawStateData(animationPlayer, selectedLayer, selectedState, ref shouldUpdateStateNames);
+                StateDataDrawer.DrawStateData(animationPlayer, selectedLayer, selectedState, ref shouldUpdateStateNames, this);
                 break;
             case AnimationPlayerEditMode.Transitions:
                 AnimationTransitionDrawer.DrawTransitions(animationPlayer, selectedLayer, selectedState, selectedToState, allStateNames);
@@ -388,4 +390,30 @@ public class AnimationPlayerEditor : Editor
             return p.ToInt(p); //look at it go!
         }
     }
+
+    public void StartPreviewing()
+    {
+        isShowingPreview = true;
+        AnimationMode.StartAnimationMode();
+    }
+
+    public void StopPreviewing()
+    {
+        isShowingPreview = false;
+        AnimationMode.StopAnimationMode();
+    }
+
+    public override bool RequiresConstantRepaint()
+    {
+        return base.RequiresConstantRepaint() || isShowingPreview;
+    }
+
+    public enum PreviewMode
+    {
+        Manual,
+        Automatic,
+    }
+
+    public PreviewMode previewMode;
+    public float previewTime;
 }

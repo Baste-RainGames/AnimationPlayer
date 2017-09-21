@@ -66,6 +66,28 @@ public struct TransitionData
     {
         return !(a == b);
     }
+    
+    public bool Equals(TransitionData other)
+    {
+        return this == other;
+    }
+
+    public override bool Equals(object obj)
+    {
+        if (ReferenceEquals(null, obj)) return false;
+        return obj is TransitionData && Equals((TransitionData) obj);
+    }
+
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            var hashCode = duration.GetHashCode();
+            hashCode = (hashCode * 397) ^ (int) type;
+            hashCode = (hashCode * 397) ^ (curve != null ? curve.GetHashCode() : 0);
+            return hashCode;
+        }
+    }
 }
 
 public enum TransitionType

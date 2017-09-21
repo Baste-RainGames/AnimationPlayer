@@ -14,7 +14,9 @@ Animation states:
     + Add support for dragging animation clips over the list of states to generate a new state
         - Also add support for dragging in the .fbx or .blend or whatever (ModelImporter), and add all clips in it
         - If you drag in several, create a "Do you want to add many clips or blend tree" popup
-    - Preview (oh my!)
+    * Preview (oh my!)
+        + preview for single-clip states
+        - preview for other kinds of states (no idea how to do this, asked in the forums)
     - Animation events!
         - Make own tab for animation events
         - Define API. 

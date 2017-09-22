@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Runtime.Remoting.Messaging;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Animation_Player
@@ -10,11 +10,42 @@ namespace Animation_Player
     [Serializable]
     public class StateTransition
     {
-        //@TODO: These should not be array indices, that makes removing a state brittle as FU.
-        //       should also not be strings/object references, as the first makes renaming hard
-        //       and the second doesn't play nice with Unity's serializer. Solution: GUID
-        public int fromState, toState;
+        [SerializeField]
+        private SerializedGUID fromStateGUID;
+        [SerializeField]
+        private SerializedGUID toStateGUID;
+        
         public TransitionData transitionData;
+
+        private AnimationState fromState, toState;
+        public AnimationState FromState
+        {
+            get { return fromState; }
+            set
+            {
+                fromState = value;
+                fromStateGUID = fromState.GUID;
+            }
+        }
+        
+        public AnimationState ToState
+        {
+            get
+            {
+                return toState;
+            }
+            set
+            {
+                toState = value;
+                toStateGUID = toState?.GUID ?? SerializedGUID.Empty;
+            }
+        }
+
+        public void FetchStates(List<AnimationState> allStates)
+        {
+            fromState = allStates.Find(state => state.GUID == fromStateGUID);
+            toState = allStates.Find(state => state.GUID == toStateGUID);
+        }
     }
 
     /// <summary>

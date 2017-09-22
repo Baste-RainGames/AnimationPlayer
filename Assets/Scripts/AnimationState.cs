@@ -23,7 +23,7 @@ namespace Animation_Player
         [SerializeField]
         private bool hasUpdatedName;
 
-        [SerializeField, HideInInspector]
+        [SerializeField]
         private SerializedGUID guid;
         public SerializedGUID GUID => guid;
         

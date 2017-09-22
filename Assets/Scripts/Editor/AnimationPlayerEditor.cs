@@ -41,8 +41,11 @@ namespace Animation_Player
 
         public AnimationStatePreviewer previewer;
 
-        private bool stateNamesNeedsUpdate;
-        private bool usedClipsNeedsUpdate;
+        private object scriptReloadChecker;
+
+        private bool stateNamesNeedsUpdate = true;
+        private bool usedClipsNeedsUpdate = true;
+        private bool transitionsNeedsUpdate = true;
 
         public void MarkDirty()
         {
@@ -53,7 +56,7 @@ namespace Animation_Player
         private void OnEnable()
         {
             animationPlayer = (AnimationPlayer) target;
-            HandleInitialization();
+            HandleInitialization(false);
 
             if (animationPlayer.EnsureVersionUpgraded())
             {
@@ -61,7 +64,7 @@ namespace Animation_Player
                 if (animationPlayer.gameObject.scene.IsValid())
                     EditorSceneManager.MarkSceneDirty(animationPlayer.gameObject.scene);
             }
-            
+
             animationPlayer.editTimeUpdateCallback -= Repaint;
             animationPlayer.editTimeUpdateCallback += Repaint;
 
@@ -78,13 +81,11 @@ namespace Animation_Player
             usedModelsFoldout = new PersistedBool(persistedFoldoutUsedModels + instanceId);
 
             stateNamesNeedsUpdate = true;
-
-            previewer = new AnimationStatePreviewer(animationPlayer);
         }
 
         public override void OnInspectorGUI()
         {
-            HandleInitialization();
+            HandleInitialization(true);
 
             if (animationPlayer.layers == null || animationPlayer.layers.Length == 0)
                 return;
@@ -128,9 +129,18 @@ namespace Animation_Player
             DrawRuntimeDebugData();
         }
 
-        private void HandleInitialization()
+        private void HandleInitialization(bool isGUICall)
         {
-            if (!stylesCreated)
+            if (scriptReloadChecker == null)
+            {
+                // Unity persists some objects through reload, and fails to persist others. This makes it hard to figure out if
+                // something needs to be re-cached. This solves that - we know that Untiy can't persist a raw object.
+                scriptReloadChecker = new object();
+                MarkDirty();
+                stylesCreated = false;
+            }
+
+            if (isGUICall && !stylesCreated)
             {
                 var backgroundTex = EditorUtilities.MakeTex(1, 1, new Color(1.0f, 1.0f, 1.0f, .1f));
                 editLayerStyle = new GUIStyle {normal = {background = backgroundTex}};
@@ -178,6 +188,21 @@ namespace Animation_Player
                         allStateNames[i][j] = states[j].Name;
                 }
             }
+
+            if (transitionsNeedsUpdate)
+            {
+                transitionsNeedsUpdate = false;
+                foreach (var layer in animationPlayer.layers)
+                {
+                    foreach (var transition in layer.transitions)
+                    {
+                        transition.FetchStates(layer.states);
+                    }
+                }
+            }
+
+            if (previewer == null)
+                previewer = new AnimationStatePreviewer(animationPlayer);
         }
 
         private void DrawLayerSelection()
@@ -320,10 +345,6 @@ namespace Animation_Player
 
         private void EnsureUsedClipsCached()
         {
-            //Unity persists the value of the bool though a script reload, but not the list. 
-            if (!usedClipsNeedsUpdate && (animationClipsUsed == null || animationClipsUsed.Count == 0))
-                usedClipsNeedsUpdate = true;
-
             if (!usedClipsNeedsUpdate)
                 return;
             usedClipsNeedsUpdate = false;

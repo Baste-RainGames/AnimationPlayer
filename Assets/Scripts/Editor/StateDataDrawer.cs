@@ -130,14 +130,8 @@ namespace Animation_Player
         {
             Undo.RecordObject(animationPlayer, "Deleting state " + layer.states[selectedState].Name);
             layer.states.RemoveAt(selectedState);
-            layer.transitions.RemoveAll(transition => transition.fromState == selectedState || transition.toState == selectedState);
-            foreach (var transition in layer.transitions)
-            {
-                if (transition.toState > selectedState)
-                    transition.toState--;
-                if (transition.fromState > selectedState)
-                    transition.fromState--;
-            }
+            layer.transitions.RemoveAll(transition => transition.FromState == layer.states[selectedState] || 
+                                                      transition.ToState == layer.states[selectedState]);
 
             if (selectedState == layer.states.Count) //was last state
                 selectedState.SetTo(selectedState - 1);

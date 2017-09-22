@@ -13,17 +13,17 @@ namespace Animation_Player
     [Serializable]
     public struct SerializedGUID : ISerializationCallbackReceiver, IFormattable, IComparable, IComparable<SerializedGUID>, IEquatable<SerializedGUID>
     {
-        public static SerializedGUID Create()
-        {
-            return new SerializedGUID {guid = Guid.NewGuid()};
-        }
-        
+
+        public static SerializedGUID Empty => new SerializedGUID {guid = Guid.Empty};
+
+        public static SerializedGUID Create() => new SerializedGUID {guid = Guid.NewGuid()};
+
         private Guid guid;
         public Guid GUID => guid;
 
         [SerializeField]
         private string guidSerialized;
-        
+
         public void OnBeforeSerialize()
         {
             if (guid == Guid.Empty)
@@ -33,7 +33,15 @@ namespace Animation_Player
 
         public void OnAfterDeserialize()
         {
-            guid = Guid.ParseExact(guidSerialized, "D");
+            try
+            {
+                guid = Guid.ParseExact(guidSerialized, "D");
+            }
+            catch (FormatException fe)
+            {
+                Debug.LogError("Because C# is really fucking lazy, here's the information you actually need: " + guidSerialized);
+                throw;
+            }
             if (guid == Guid.Empty)
                 guid = Guid.NewGuid();
         }
@@ -57,5 +65,15 @@ namespace Animation_Player
         {
             return guid.Equals(other.guid);
         }
+
+        public static bool operator ==(SerializedGUID a, SerializedGUID b)
+        {
+            return a.Equals(b);
+        }
+
+        public static bool operator !=(SerializedGUID a, SerializedGUID b)
+        {
+            return !(a == b);
+        }
     }
-} 
+}

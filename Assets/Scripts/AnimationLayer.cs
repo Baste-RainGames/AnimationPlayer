@@ -49,6 +49,11 @@ namespace Animation_Player
             this.layerIndexForDebug = layerIndexForDebug;
             if (states.Count == 0)
                 return;
+            
+            foreach (var transition in transitions)
+            {
+                transition.FetchStates(states);
+            }
 
             runtimePlayables = new Playable[states.Count];
 
@@ -78,17 +83,13 @@ namespace Animation_Player
             for (var i = 0; i < transitions.Count; i++)
             {
                 var transition = transitions[i];
-                if (transition.fromState < 0 || transition.toState < 0 || transition.fromState > states.Count - 1 || transition.toState > states.Count - 1)
-                {
-                    Debug.LogError(
-                        $"Got a transition from state number {transition.fromState} to state number {transition.toState}, but there's {states.Count} states!");
-                    continue;
-                }
+                var fromState = states.IndexOf(transition.FromState);
+                var toState = states.IndexOf(transition.ToState);
 
-                if (transitionLookup[transition.fromState, transition.toState] != -1)
-                    Debug.LogWarning("Found two transitions from " + states[transition.fromState] + " to " + states[transition.toState]);
+                if (transitionLookup[fromState, toState] != -1)
+                    Debug.LogWarning("Found two transitions from " + states[fromState] + " to " + states[toState]);
 
-                transitionLookup[transition.fromState, transition.toState] = i;
+                transitionLookup[fromState, toState] = i;
             }
         }
 

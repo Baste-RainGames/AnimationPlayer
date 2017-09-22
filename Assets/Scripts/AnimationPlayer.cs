@@ -31,7 +31,7 @@ namespace Animation_Player
         {
             EnsureVersionUpgraded();
         }
-
+        
         private void Start()
         {
             if (layers.Length == 0)

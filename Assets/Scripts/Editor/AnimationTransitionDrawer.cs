@@ -5,9 +5,8 @@ namespace Animation_Player
 {
     public static class AnimationTransitionDrawer
     {
-        public static void DrawTransitions(AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedState,
-                                           PersistedInt selectedToState,
-                                           string[][] allStateNames)
+        public static void DrawTransitions(AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedStateIdx,
+                                           PersistedInt selectedToStateIdx, string[][] allStateNames)
         {
             var layer = animationPlayer.layers[selectedLayer];
             if (layer.states.Count == 0)
@@ -16,20 +15,23 @@ namespace Animation_Player
                 return;
             }
 
-            EditorGUILayout.LabelField("Transitions from " + layer.states[selectedState].Name);
+            var selectedState = layer.states[selectedStateIdx];
+            var selectedToState = layer.states[selectedToStateIdx];
+
+            EditorGUILayout.LabelField("Transitions from " + selectedState.Name);
 
             EditorGUILayout.Space();
 
             EditorUtilities.DrawIndented(() =>
             {
-                selectedToState.SetTo(EditorGUILayout.Popup("Transtion to state", selectedToState, allStateNames[selectedLayer]));
-                selectedToState.SetTo(Mathf.Clamp(selectedToState, 0, layer.states.Count - 1));
+                selectedToStateIdx.SetTo(EditorGUILayout.Popup("Transtion to state", selectedToStateIdx, allStateNames[selectedLayer]));
+                selectedToStateIdx.SetTo(Mathf.Clamp(selectedToStateIdx, 0, layer.states.Count - 1));
 
                 EditorGUILayout.Space();
 
-                var transition = layer.transitions.Find(state => state.fromState == selectedState && state.toState == selectedToState);
-                var fromStateName = layer.states[selectedState].Name;
-                var toStateName = layer.states[selectedToState].Name;
+                var transition = layer.transitions.Find(state => state.FromState == selectedState && state.ToState == selectedToState);
+                var fromStateName = selectedState.Name;
+                var toStateName = selectedToState.Name;
 
                 if (transition == null)
                 {
@@ -39,7 +41,7 @@ namespace Animation_Player
                     {
                         Undo.RecordObject(animationPlayer, $"Add transition from {fromStateName} to {toStateName}");
                         layer.transitions.Add(
-                            new StateTransition {fromState = selectedState, toState = selectedToState, transitionData = TransitionData.Linear(1f)});
+                            new StateTransition {FromState = selectedState, ToState = selectedToState, transitionData = TransitionData.Linear(1f)});
                     }
                     GUILayout.FlexibleSpace();
                     EditorGUILayout.EndHorizontal();

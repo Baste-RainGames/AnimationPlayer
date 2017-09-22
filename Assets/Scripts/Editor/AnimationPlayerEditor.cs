@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using AnimationStateType = Animation_Player.AnimationState.AnimationStateType;
 using Object = UnityEngine.Object;
@@ -52,6 +53,15 @@ namespace Animation_Player
         private void OnEnable()
         {
             animationPlayer = (AnimationPlayer) target;
+            HandleInitialization();
+
+            if (animationPlayer.EnsureVersionUpgraded())
+            {
+                EditorUtility.SetDirty(animationPlayer);
+                if (animationPlayer.gameObject.scene.IsValid())
+                    EditorSceneManager.MarkSceneDirty(animationPlayer.gameObject.scene);
+            }
+            
             animationPlayer.editTimeUpdateCallback -= Repaint;
             animationPlayer.editTimeUpdateCallback += Repaint;
 

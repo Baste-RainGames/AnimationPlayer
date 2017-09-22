@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
@@ -21,11 +22,14 @@ namespace Animation_Player
         private string name;
         [SerializeField]
         private bool hasUpdatedName;
+
+        [SerializeField, HideInInspector]
+        private SerializedGUID guid;
+        public SerializedGUID GUID => guid;
+        
         public double speed;
         public AnimationClip clip;
-
         public AnimationStateType type;
-
         public string blendVariable;
         public string blendVariable2;
         public List<BlendTreeEntry> blendTree;
@@ -41,6 +45,18 @@ namespace Animation_Player
                 hasUpdatedName = true;
                 name = value;
             }
+        }
+
+        public AnimationState()
+        {
+            guid = SerializedGUID.Create();
+        }
+
+        public void EnsureHasGUID()
+        {
+            //Animation states used to not have guids!
+            if(guid.GUID == Guid.Empty)
+                guid = SerializedGUID.Create();
         }
 
         public static AnimationState SingleClip(string name, AnimationClip clip = null)

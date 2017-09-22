@@ -10,6 +10,10 @@ namespace Animation_Player
 {
     public class AnimationPlayer : MonoBehaviour
     {
+        private const int lastVersion = 1;
+        [SerializeField, HideInInspector]
+        private int versionNumber;
+        
         public AnimationLayer[] layers;
         public TransitionData defaultTransition;
 
@@ -22,6 +26,11 @@ namespace Animation_Player
         //Used to make the inspector continually update
         public Action editTimeUpdateCallback;
 #endif
+
+        private void Awake()
+        {
+            EnsureVersionUpgraded();
+        }
 
         private void Start()
         {
@@ -271,6 +280,26 @@ namespace Animation_Player
             Debug.Assert(state >= 0 && state < layers[layer].states.Count,
                          $"Trying to {action} on an out of bounds state! (state {state} on layer {layer}, but there are {layers[layer].states.Count} states on that layer!)",
                          gameObject);
+        }
+
+        public bool EnsureVersionUpgraded()
+        {
+            if (versionNumber == lastVersion)
+                return false;
+
+            if (versionNumber < 1 && layers != null)
+            {
+                foreach (var layer in layers)
+                {
+                    foreach (var state in layer.states)
+                    {
+                        state.EnsureHasGUID();
+                    }
+                }
+            }
+
+            versionNumber = lastVersion;
+            return true;
         }
     }
 }

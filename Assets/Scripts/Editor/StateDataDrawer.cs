@@ -8,7 +8,6 @@ namespace Animation_Player
     public static class StateDataDrawer
     {
         public static void DrawStateData(AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedState,
-                                         ref bool shouldUpdateStateNames,
                                          AnimationPlayerEditor currentEditor)
         {
             var updateStateNames = false;
@@ -42,7 +41,8 @@ namespace Animation_Player
                 updateStateNames = true;
             }
 
-            shouldUpdateStateNames |= updateStateNames;
+            if (updateStateNames)
+                currentEditor.MarkDirty();
 
             currentEditor.previewer.DrawStatePreview(selectedLayer, selectedState);
         }

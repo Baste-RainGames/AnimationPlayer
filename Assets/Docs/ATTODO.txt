@@ -16,7 +16,10 @@ Animation states:
         - If you drag in several, create a "Do you want to add many clips or blend tree" popup
     * Preview (oh my!)
         + preview for single-clip states
-        - preview for other kinds of states (no idea how to do this, asked in the forums)
+        + preview for other kinds of states
+        - allow for setting blend vars on previews
+        - previews for transitions
+        - make sure the time slider gives the actual animation time! Now it's going to desynchronize (although the relative value is good)
     - Animation events!
         - Make own tab for animation events
         - Define API. 
@@ -48,8 +51,9 @@ Misc
     - Add re-order support to things? Or better view for states
     - Metadata:
         - list all transitions (with go-to buttons)
-        - list all fbx/.anim files referenced
+        + list all fbx/.anim files referenced
         + list all clips used
         - list all blend variables
         - make sure all of these lists update when stuff is added. On changing tab is not enough, could have two inspectors open
     - fix the parts of the window shifting around as you unfold stuff (like clips used in metadata)
+        - THAT STOPPED HAPPENING?

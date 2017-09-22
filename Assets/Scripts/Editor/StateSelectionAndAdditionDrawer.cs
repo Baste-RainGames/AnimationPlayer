@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
@@ -12,19 +13,19 @@ namespace Animation_Player
         private static GUILayoutOption width;
 
         public static void Draw(AnimationPlayer animationPlayer, PersistedInt selectedLayer,
-                                PersistedInt selectedState, PersistedEditMode selectedEditMode, ref bool shouldUpdateStateNames)
+                                PersistedInt selectedState, PersistedEditMode selectedEditMode, AnimationPlayerEditor editor)
         {
             width = width ?? (width = GUILayout.Width(200f));
 
             EditorGUILayout.BeginVertical(width);
-            shouldUpdateStateNames |= DrawSelection(animationPlayer, selectedLayer, selectedState, selectedEditMode);
+            DrawSelection(animationPlayer, selectedLayer, selectedState, selectedEditMode, editor);
             EditorGUILayout.EndVertical();
         }
 
-        private static bool DrawSelection(AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedState,
-                                          PersistedEditMode selectedEditMode)
+        private static void DrawSelection(AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedState,
+                                          PersistedEditMode selectedEditMode, AnimationPlayerEditor editor)
         {
-            var shouldUpdateStateNames = false;
+            var hasAddedState = false;
             if ((EditMode) selectedEditMode == EditMode.Transitions)
                 EditorGUILayout.LabelField("Edit transitions for:", width);
             else
@@ -43,14 +44,14 @@ namespace Animation_Player
             }
 
             var dragAndDropRect = EditorUtilities.ReserveRect(GUILayout.Height(30f));
-            shouldUpdateStateNames |= DoDragAndDrop(dragAndDropRect, animationPlayer, selectedLayer, selectedState);
+            hasAddedState |= DoDragAndDrop(dragAndDropRect, animationPlayer, selectedLayer, selectedState);
 
             if (GUILayout.Button("Add Normal State", width))
             {
                 Undo.RecordObject(animationPlayer, "Add state to animation player");
                 layer.states.Add(AnimationState.SingleClip(GetUniqueStateName(AnimationState.DefaultSingleClipName, layer.states)));
                 selectedState.SetTo(layer.states.Count - 1);
-                shouldUpdateStateNames = true;
+                hasAddedState = true;
             }
 
             if (GUILayout.Button("Add 1D Blend Tree", width))
@@ -58,7 +59,7 @@ namespace Animation_Player
                 Undo.RecordObject(animationPlayer, "Add blend tree to animation player");
                 layer.states.Add(AnimationState.BlendTree1D(GetUniqueStateName(AnimationState.Default1DBlendTreeName, layer.states)));
                 selectedState.SetTo(layer.states.Count - 1);
-                shouldUpdateStateNames = true;
+                hasAddedState = true;
             }
 
             if (GUILayout.Button("Add 2D Blend Tree", width))
@@ -66,10 +67,11 @@ namespace Animation_Player
                 Undo.RecordObject(animationPlayer, "Add 2D blend tree to animation player");
                 layer.states.Add(AnimationState.BlendTree2D(GetUniqueStateName(AnimationState.Default2DBlendTreeName, layer.states)));
                 selectedState.SetTo(layer.states.Count - 1);
-                shouldUpdateStateNames = true;
+                hasAddedState = true;
             }
 
-            return shouldUpdateStateNames;
+            if (hasAddedState)
+                editor.MarkDirty();
         }
 
         private static bool DoDragAndDrop(Rect dragAndDropRect, AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedState)
@@ -109,6 +111,13 @@ namespace Animation_Player
                             selectedState.SetTo(numClipsBefore);
 
                             return true;
+                        }
+                        else
+                        {
+                            foreach (var reference in DragAndDrop.objectReferences)
+                            {
+                                Debug.Log(reference.name + "; " + reference.GetType());
+                            }
                         }
                     }
                     break;

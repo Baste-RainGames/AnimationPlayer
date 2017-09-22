@@ -10,7 +10,7 @@ namespace Animation_Player
 {
     [Serializable]
     //@TODO: This should be done with inheritance and custom serialization, because we now end up with single-clip states having a lot of garbage data around,
-    // and anso BlendTreeEntries having 2D data even when it's a 1D state
+    // and also BlendTreeEntries having 2D data even when it's a 1D state
     public class AnimationState
     {
         public const string DefaultSingleClipName = "New State";

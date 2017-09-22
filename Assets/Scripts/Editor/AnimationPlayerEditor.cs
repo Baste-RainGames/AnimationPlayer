@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Resources;
 using UnityEditor;
 using UnityEngine;
 using AnimationStateType = Animation_Player.AnimationState.AnimationStateType;
+using Object = UnityEngine.Object;
 
 namespace Animation_Player
 {
@@ -26,7 +26,6 @@ namespace Animation_Player
         private PersistedAnimationPlayerEditMode selectedEditMode;
 
         private string[][] allStateNames;
-        private bool shouldUpdateStateNames;
 
         private static bool stylesCreated = false;
         private static GUIStyle editLayerStyle;
@@ -35,12 +34,22 @@ namespace Animation_Player
         private static GUIStyle editLayerButton_Selected;
 
         private PersistedBool usedClipsFoldout;
-        private bool usedClipsCached;
-        private List<AnimationClip> animationClipsUsed = new List<AnimationClip>();
+        private PersistedBool usedModelsFoldout;
+        private List<AnimationClip> animationClipsUsed;
+        private List<Object> modelsUsed;
 
         public AnimationStatePreviewer previewer;
 
-        void OnEnable()
+        private bool stateNamesNeedsUpdate;
+        private bool usedClipsNeedsUpdate;
+
+        public void MarkDirty()
+        {
+            stateNamesNeedsUpdate = true;
+            usedClipsNeedsUpdate = true;
+        }
+
+        private void OnEnable()
         {
             animationPlayer = (AnimationPlayer) target;
             animationPlayer.editTimeUpdateCallback -= Repaint;
@@ -56,9 +65,10 @@ namespace Animation_Player
             selectedState = new PersistedInt(persistedState + instanceId);
             selectedToState = new PersistedInt(persistedToState + instanceId);
             usedClipsFoldout = new PersistedBool(persistedFoldoutUsedClips + instanceId);
+            usedModelsFoldout = new PersistedBool(persistedFoldoutUsedModels + instanceId);
 
-            shouldUpdateStateNames = true;
-            
+            stateNamesNeedsUpdate = true;
+
             previewer = new AnimationStatePreviewer(animationPlayer);
         }
 
@@ -91,7 +101,7 @@ namespace Animation_Player
 
             EditorUtilities.DrawHorizontal(() =>
             {
-                StateSelectionAndAdditionDrawer.Draw(animationPlayer, selectedLayer, selectedState, selectedEditMode, ref shouldUpdateStateNames);
+                StateSelectionAndAdditionDrawer.Draw(animationPlayer, selectedLayer, selectedState, selectedEditMode, this);
 
                 EditorUtilities.DrawVertical(DrawSelectedState);
             });
@@ -146,9 +156,9 @@ namespace Animation_Player
                 return;
             }
 
-            if (shouldUpdateStateNames)
+            if (stateNamesNeedsUpdate)
             {
-                shouldUpdateStateNames = false;
+                stateNamesNeedsUpdate = false;
                 allStateNames = new string[animationPlayer.layers.Length][];
                 for (int i = 0; i < animationPlayer.layers.Length; i++)
                 {
@@ -181,7 +191,7 @@ namespace Animation_Player
                 Undo.RecordObject(animationPlayer, "Add layer to animation player");
                 EditorUtilities.ExpandArrayByOne(ref animationPlayer.layers, AnimationLayer.CreateLayer);
                 selectedLayer.SetTo(animationPlayer.layers.Length - 1);
-                shouldUpdateStateNames = true;
+                MarkDirty();
             }
             EditorGUI.BeginDisabledGroup(numLayers < 2);
             if (EditorUtilities.AreYouSureButton("Delete layer", "Are you sure?", "DeleteLayer" + selectedLayer, 1f, GUILayout.Width(100f)))
@@ -189,7 +199,7 @@ namespace Animation_Player
                 Undo.RecordObject(animationPlayer, "Delete layer from animation player");
                 EditorUtilities.DeleteIndexFromArray(ref animationPlayer.layers, selectedLayer);
                 selectedLayer.SetTo(Mathf.Max(0, selectedLayer - 1));
-                shouldUpdateStateNames = true;
+                MarkDirty();
             }
             EditorGUI.EndDisabledGroup();
 
@@ -250,7 +260,7 @@ namespace Animation_Player
             switch ((AnimationPlayerEditMode) selectedEditMode)
             {
                 case AnimationPlayerEditMode.States:
-                    StateDataDrawer.DrawStateData(animationPlayer, selectedLayer, selectedState, ref shouldUpdateStateNames, this);
+                    StateDataDrawer.DrawStateData(animationPlayer, selectedLayer, selectedState, this);
                     break;
                 case AnimationPlayerEditMode.Transitions:
                     AnimationTransitionDrawer.DrawTransitions(animationPlayer, selectedLayer, selectedState, selectedToState, allStateNames);
@@ -266,7 +276,10 @@ namespace Animation_Player
 
         private void DrawMetaData()
         {
+            EditorGUI.indentLevel++;
             DrawClipsUsed();
+            DrawReferencedModels();
+            EditorGUI.indentLevel--;
         }
 
         private void DrawClipsUsed()
@@ -283,11 +296,37 @@ namespace Animation_Player
             EditorGUI.indentLevel--;
         }
 
+        private void DrawReferencedModels()
+        {
+            usedModelsFoldout.SetTo(EditorGUILayout.Foldout(usedModelsFoldout, "Models used in the animation player"));
+            if (!usedModelsFoldout)
+                return;
+
+            EditorGUI.indentLevel++;
+            foreach (var model in modelsUsed)
+                EditorUtilities.ObjectField(model);
+            EditorGUI.indentLevel--;
+        }
+
         private void EnsureUsedClipsCached()
         {
-            if (usedClipsCached)
+            //Unity persists the value of the bool though a script reload, but not the list. 
+            if (!usedClipsNeedsUpdate && (animationClipsUsed == null || animationClipsUsed.Count == 0))
+                usedClipsNeedsUpdate = true;
+
+            if (!usedClipsNeedsUpdate)
                 return;
-            usedClipsCached = true;
+            usedClipsNeedsUpdate = false;
+
+            if (animationClipsUsed != null)
+                animationClipsUsed.Clear();
+            else
+                animationClipsUsed = new List<AnimationClip>();
+
+            if (modelsUsed != null)
+                modelsUsed.Clear();
+            else
+                modelsUsed = new List<Object>();
 
             foreach (var state in animationPlayer.layers.SelectMany(layer => layer.states))
             {
@@ -304,6 +343,23 @@ namespace Animation_Player
                                 animationClipsUsed.Add(clip);
                         break;
                 }
+            }
+
+            List<string> usedAssetPaths = new List<string>();
+            foreach (var animationClip in animationClipsUsed)
+            {
+                if (AssetDatabase.IsMainAsset(animationClip))
+                    continue; //standalone animation clip
+
+                var modelPath = AssetDatabase.GetAssetPath(animationClip);
+                if (!usedAssetPaths.Contains(modelPath))
+                    usedAssetPaths.Add(modelPath);
+            }
+
+            foreach (var modelPath in usedAssetPaths)
+            {
+                var model = AssetDatabase.LoadMainAssetAtPath(modelPath);
+                modelsUsed.Add(model);
             }
         }
 
@@ -375,6 +431,7 @@ namespace Animation_Player
         private const string persistedToState = "APE_SelectedToState_";
         private const string persistedEditMode = "APE_EditMode_";
         private const string persistedFoldoutUsedClips = "APE_FO_UsedClips_";
+        private const string persistedFoldoutUsedModels = "APE_FO_UsedModels_";
 
         public class PersistedAnimationPlayerEditMode : PersistedVal<AnimationPlayerEditMode>
         {
@@ -401,11 +458,11 @@ namespace Animation_Player
         {
             return base.RequiresConstantRepaint() || previewer.IsShowingPreview;
         }
-        
+
         private void OnDestroy()
         {
             previewer.Cleanup();
         }
     }
-    
+
 }

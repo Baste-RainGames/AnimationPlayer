@@ -94,7 +94,7 @@ namespace Animation_Player
                     {
                         DragAndDrop.AcceptDrag();
 
-                        var animationClips = DragAndDrop.objectReferences.Select(obj => obj as AnimationClip).Where(c => c != null).ToArray();
+                        var animationClips = DragAndDrop.objectReferences.FilterByType<AnimationClip>().ToArray();
                         if (animationClips.Length > 0)
                         {
                             Undo.RecordObject(animationPlayer, "Added clip to Animation Player");

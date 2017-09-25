@@ -21,7 +21,8 @@ namespace Animation_Player
 
             if (!layer.states.IsInBounds(selectedState))
             {
-                Debug.LogError("Out of bounds: " + selectedState + " out of " + layer.states.Count);
+                Debug.LogError("Out of bounds state: " + selectedState + " out of " + layer.states.Count + " states! Resetting to 0");
+                selectedState.SetTo(0);
                 return;
             }
 
@@ -129,9 +130,9 @@ namespace Animation_Player
         private static void DeleteState(AnimationPlayer animationPlayer, AnimationLayer layer, PersistedInt selectedState)
         {
             Undo.RecordObject(animationPlayer, "Deleting state " + layer.states[selectedState].Name);
-            layer.states.RemoveAt(selectedState);
             layer.transitions.RemoveAll(transition => transition.FromState == layer.states[selectedState] || 
                                                       transition.ToState == layer.states[selectedState]);
+            layer.states.RemoveAt(selectedState);
 
             if (selectedState == layer.states.Count) //was last state
                 selectedState.SetTo(selectedState - 1);

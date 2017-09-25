@@ -112,7 +112,13 @@ namespace Animation_Player
 
             EditorUtilities.DrawHorizontal(() =>
             {
+                var numStatesBefore = animationPlayer.layers[selectedLayer].states.Count;
                 StateSelectionAndAdditionDrawer.Draw(animationPlayer, selectedLayer, selectedState, selectedEditMode, this);
+                if (numStatesBefore == 0 && animationPlayer.layers[selectedLayer].states.Count > 0)
+                {
+                    Repaint();
+                    return;
+                }
 
                 EditorUtilities.DrawVertical(DrawSelectedState);
             });

@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using Animation_Player;
 using UnityEngine;
+using Random = UnityEngine.Random;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -10,33 +9,49 @@ using UnityEditor;
 public class TestScript : MonoBehaviour
 {
 
-	[SerializeField, HideInInspector]
-	public SerializedGUID serializedGuid;
+    public List<int> ints;
 
 }
 
-
 #if UNITY_EDITOR
 [CustomEditor(typeof(TestScript))]
-public class TestScriptEditor : Editor {
+public class TestScriptEditor : Editor
+{
 
-	private TestScript script;
+    private TestScript script;
 
-	void OnEnable() {
-		script = (TestScript) target;
-	}
+    private Queue<Action> addActions = new Queue<Action>();
 
-	public override void OnInspectorGUI() {
-		base.OnInspectorGUI();
-		
-		EditorGUILayout.LabelField(script.serializedGuid.GUID.ToString());
-		
-		if (GUILayout.Button("Generate GUID"))
-		{
-			Undo.RecordObject(script, "GUID");
-			script.serializedGuid = SerializedGUID.Create();
-		}		
-	}
+    void OnEnable()
+    {
+        script = (TestScript) target;
+    }
+
+    public override void OnInspectorGUI()
+    {
+        if (Event.current.type == EventType.Layout)
+        {
+            while (addActions.Count > 0)
+            {
+                Undo.RecordObject(script, "Adding actions");
+                var action = addActions.Dequeue();
+                action();
+            }
+        }
+
+        base.OnInspectorGUI();
+
+        if (GUILayout.Button("Add some ints"))
+        {
+            for (int i = 0; i < Random.Range(1, 4); i++)
+            {
+                addActions.Enqueue(() =>
+                {
+                    script.ints.Add(Random.Range(-20, 20));
+                });
+            }
+        }
+    }
 
 }
 #endif

@@ -13,7 +13,6 @@ namespace Animation_Player
     [Serializable]
     public struct SerializedGUID : ISerializationCallbackReceiver, IFormattable, IComparable, IComparable<SerializedGUID>, IEquatable<SerializedGUID>
     {
-
         public static SerializedGUID Empty => new SerializedGUID {guid = Guid.Empty};
 
         public static SerializedGUID Create() => new SerializedGUID {guid = Guid.NewGuid()};
@@ -37,7 +36,7 @@ namespace Animation_Player
             {
                 guid = Guid.ParseExact(guidSerialized, "D");
             }
-            catch (FormatException fe)
+            catch (FormatException)
             {
                 Debug.LogError("Because C# is really fucking lazy, here's the information you actually need: " + guidSerialized);
                 throw;
@@ -74,6 +73,17 @@ namespace Animation_Player
         public static bool operator !=(SerializedGUID a, SerializedGUID b)
         {
             return !(a == b);
+        }
+        
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            return obj is SerializedGUID && Equals((SerializedGUID) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return guid.GetHashCode();
         }
     }
 }

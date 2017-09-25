@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Remoting.Messaging;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Assertions;
@@ -9,15 +7,13 @@ using UnityEngine.Playables;
 
 namespace Animation_Player
 {
-    [System.Serializable]
+    [Serializable]
     public class AnimationLayer
     {
-        [Header("Animation data")]
         public List<AnimationState> states;
         public List<StateTransition> transitions;
         //public int startState;
 
-        [Header("Layer blending data")]
         public float startWeight;
         public AvatarMask mask;
         public AnimationLayerType type = AnimationLayerType.Override;

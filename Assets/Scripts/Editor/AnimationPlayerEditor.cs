@@ -430,7 +430,7 @@ namespace Animation_Player
 
             EditorGUILayout.Space();
 
-            var newBlendVal = EditorGUILayout.Slider("Forward", blendVal, 0f, 1f);
+            var newBlendVal = EditorGUILayout.Slider("Forward", blendVal, 0f, 3f);
             if (newBlendVal != blendVal)
             {
                 blendVal = newBlendVal;

@@ -62,6 +62,7 @@ namespace Animation_Player
             }
             animOutput.SetSourcePlayable(rootPlayable);
 
+            graph.SetTimeUpdateMode(DirectorUpdateMode.GameTime);
             graph.Play();
 
             visualizerClientName = name + " AnimationPlayer";

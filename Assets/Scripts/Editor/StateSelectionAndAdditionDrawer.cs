@@ -25,7 +25,6 @@ namespace Animation_Player
         private static void DrawSelection(AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedState,
                                           PersistedEditMode selectedEditMode, AnimationPlayerEditor editor)
         {
-            var hasAddedState = false;
             if ((EditMode) selectedEditMode == EditMode.Transitions)
                 EditorGUILayout.LabelField("Edit transitions for:", width);
             else
@@ -44,14 +43,14 @@ namespace Animation_Player
             }
 
             var dragAndDropRect = EditorUtilities.ReserveRect(GUILayout.Height(30f));
-            hasAddedState |= DoDragAndDrop(dragAndDropRect, animationPlayer, selectedLayer, selectedState);
+            DoDragAndDrop(dragAndDropRect, animationPlayer, selectedLayer, selectedState, editor);
 
             if (GUILayout.Button("Add Normal State", width))
             {
                 Undo.RecordObject(animationPlayer, "Add state to animation player");
                 layer.states.Add(AnimationState.SingleClip(GetUniqueStateName(AnimationState.DefaultSingleClipName, layer.states)));
                 selectedState.SetTo(layer.states.Count - 1);
-                hasAddedState = true;
+                editor.MarkDirty();
             }
 
             if (GUILayout.Button("Add 1D Blend Tree", width))
@@ -59,7 +58,7 @@ namespace Animation_Player
                 Undo.RecordObject(animationPlayer, "Add blend tree to animation player");
                 layer.states.Add(AnimationState.BlendTree1D(GetUniqueStateName(AnimationState.Default1DBlendTreeName, layer.states)));
                 selectedState.SetTo(layer.states.Count - 1);
-                hasAddedState = true;
+                editor.MarkDirty();
             }
 
             if (GUILayout.Button("Add 2D Blend Tree", width))
@@ -67,14 +66,12 @@ namespace Animation_Player
                 Undo.RecordObject(animationPlayer, "Add 2D blend tree to animation player");
                 layer.states.Add(AnimationState.BlendTree2D(GetUniqueStateName(AnimationState.Default2DBlendTreeName, layer.states)));
                 selectedState.SetTo(layer.states.Count - 1);
-                hasAddedState = true;
-            }
-
-            if (hasAddedState)
                 editor.MarkDirty();
+            }
         }
 
-        private static bool DoDragAndDrop(Rect dragAndDropRect, AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedState)
+        private static void DoDragAndDrop(Rect dragAndDropRect, AnimationPlayer animationPlayer, PersistedInt selectedLayer,
+                                          PersistedInt selectedState, AnimationPlayerEditor editor)
         {
             Event evt = Event.current;
 
@@ -86,7 +83,7 @@ namespace Animation_Player
                 case EventType.DragUpdated:
                 case EventType.DragPerform:
                     if (!dragAndDropRect.Contains(evt.mousePosition))
-                        return false;
+                        return;
 
                     DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
 
@@ -94,8 +91,21 @@ namespace Animation_Player
                     {
                         DragAndDrop.AcceptDrag();
 
-                        var animationClips = DragAndDrop.objectReferences.FilterByType<AnimationClip>().ToArray();
-                        if (animationClips.Length > 0)
+                        var animationClips = DragAndDrop.objectReferences.FilterByType<AnimationClip>().ToList();
+                        foreach (var obj in DragAndDrop.objectReferences.FilterByType<GameObject>())
+                        {
+                            var assetPath = AssetDatabase.GetAssetPath(obj);
+                            if (!(AssetImporter.GetAtPath(assetPath) is ModelImporter))
+                                return;
+                            else
+                                Debug.Log(assetPath);
+
+                            animationClips.AddRange(AssetDatabase.LoadAllAssetsAtPath(assetPath)
+                                                                 .FilterByType<AnimationClip>()
+                                                                 .Where(clip => (clip.hideFlags & HideFlags.HideInHierarchy) == 0));
+                        }
+
+                        if (animationClips.Count > 0)
                         {
                             Undo.RecordObject(animationPlayer, "Added clip to Animation Player");
                             var layer = animationPlayer.layers[selectedLayer];
@@ -110,19 +120,11 @@ namespace Animation_Player
 
                             selectedState.SetTo(numClipsBefore);
 
-                            return true;
-                        }
-                        else
-                        {
-                            foreach (var reference in DragAndDrop.objectReferences)
-                            {
-                                Debug.Log(reference.name + "; " + reference.GetType());
-                            }
+                            editor.MarkDirty();
                         }
                     }
                     break;
             }
-            return false;
         }
 
         private static string GetUniqueStateName(string wantedName, List<AnimationState> otherStates)

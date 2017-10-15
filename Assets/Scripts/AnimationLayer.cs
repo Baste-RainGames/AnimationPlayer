@@ -82,10 +82,17 @@ namespace Animation_Player
                 var fromState = states.IndexOf(transition.FromState);
                 var toState = states.IndexOf(transition.ToState);
 
-                if (transitionLookup[fromState, toState] != -1)
-                    Debug.LogWarning("Found two transitions from " + states[fromState] + " to " + states[toState]);
+                if (fromState == -1 || toState == -1)
+                {
+                    Debug.LogError("Found transition linking to non-existent states!");
+                }
+                else
+                {
+                    if (transitionLookup[fromState, toState] != -1)
+                        Debug.LogWarning("Found two transitions from " + states[fromState] + " to " + states[toState]);
 
-                transitionLookup[fromState, toState] = i;
+                    transitionLookup[fromState, toState] = i;
+                }
             }
         }
 

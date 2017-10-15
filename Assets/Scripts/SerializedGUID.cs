@@ -45,6 +45,11 @@ namespace Animation_Player
                 guid = Guid.NewGuid();
         }
 
+        public override string ToString()
+        {
+            return ToString("D", null);
+        }
+
         public string ToString(string format, IFormatProvider formatProvider)
         {
             return guid.ToString(format, formatProvider);

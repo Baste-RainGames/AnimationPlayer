@@ -19,7 +19,7 @@ namespace Animation_Player
         public AnimationLayerType type = AnimationLayerType.Override;
 
         public AnimationMixerPlayable stateMixer { get; private set; }
-        public int currentPlayedState { get; private set; }
+        private int currentPlayedState;
 
         //blend info:
         private bool blending;
@@ -30,7 +30,6 @@ namespace Animation_Player
 
         //transitionLookup[a, b] contains the index of the transition from a to b in transitions
         private int[,] transitionLookup;
-        private int layerIndexForDebug;
         private Playable[] runtimePlayables;
 
         private readonly Dictionary<string, int> stateNameToIdx = new Dictionary<string, int>();
@@ -42,10 +41,12 @@ namespace Animation_Player
 
         public void InitializeSelf(PlayableGraph graph, int layerIndexForDebug)
         {
-            this.layerIndexForDebug = layerIndexForDebug;
             if (states.Count == 0)
+            {
+                stateMixer = AnimationMixerPlayable.Create(graph, 0, false);
                 return;
-            
+            }
+
             foreach (var transition in transitions)
             {
                 transition.FetchStates(states);
@@ -81,10 +82,9 @@ namespace Animation_Player
                 var transition = transitions[i];
                 var fromState = states.IndexOf(transition.FromState);
                 var toState = states.IndexOf(transition.ToState);
-
                 if (fromState == -1 || toState == -1)
                 {
-                    Debug.LogError("Found transition linking to non-existent states!");
+                    //TODO: fixme
                 }
                 else
                 {
@@ -104,6 +104,16 @@ namespace Animation_Player
             layerMixer.SetLayerAdditive((uint) layerIndex, type == AnimationLayerType.Additive);
             if (mask != null)
                 layerMixer.SetLayerMaskFromAvatarMask((uint) layerIndex, mask);
+        }
+
+        public bool HasState(string stateName)
+        {
+            foreach (var state in states)
+            {
+                if (state.Name == stateName)
+                    return true;
+            }
+            return false;
         }
 
         public void PlayUsingExternalTransition(int state, TransitionData transitionData)
@@ -216,9 +226,6 @@ namespace Animation_Player
 
         public void SetBlendVar(string var, float value)
         {
-            Assert.IsTrue(varTo1DBlendControllers.ContainsKey(var) || varTo2DBlendControllers.ContainsKey(var),
-                          $"Trying to set the blend var {var} on layer {layerIndexForDebug} but no blend tree exists with that blend var!");
-
             blendVars[var] = value;
 
             List<BlendTreeController1D> blendControllers1D;
@@ -230,14 +237,6 @@ namespace Animation_Player
             if (varTo2DBlendControllers.TryGetValue(var, out blendControllers2D))
                 foreach (var controller in blendControllers2D)
                     controller.SetValue(var, value);
-
-            /*var blendControllers = varTo1DBlendControllers[var];
-            foreach (var controller in blendControllers)
-                controller.SetValue(value);
-    
-            var blendControllers2D = varTo2DBlendControllers[var];
-            foreach (var controller in blendControllers2D)
-                controller.SetValue(var, value);*/
         }
 
         public float GetBlendVar(string var)
@@ -267,12 +266,14 @@ namespace Animation_Player
         {
             private AnimationMixerPlayable mixer;
             private readonly float[] thresholds;
+            private float lastValue;
 
             public BlendTreeController1D(AnimationMixerPlayable mixer, float[] thresholds)
             {
                 for (int i = 0; i < thresholds.Length - 2; i++)
                     //@TODO: should reorder these!
-                    Assert.IsTrue(thresholds[i] < thresholds[i + 1], "The thresholds should be strictly increasing!");
+                    if (thresholds[i] >= thresholds[i + 1])
+                        throw new UnityException($"The thresholds on the blend tree should be be strictly increasing!");
 
                 this.mixer = mixer;
                 this.thresholds = thresholds;
@@ -280,6 +281,10 @@ namespace Animation_Player
 
             public void SetValue(float value)
             {
+                if (value == lastValue)
+                    return;
+                lastValue = value;
+
                 int idxOfLastLowerThanVal = -1;
                 for (int i = 0; i < thresholds.Length; i++)
                 {
@@ -323,8 +328,8 @@ namespace Animation_Player
 
         public class BlendTreeController2D
         {
-            private readonly string blendVar1;
-            private readonly string blendVar2;
+            public readonly string blendVar1;
+            public readonly string blendVar2;
             private float minVal1, minVal2, maxVal1, maxVal2;
             private Vector2 currentBlendVector;
 
@@ -351,11 +356,20 @@ namespace Animation_Player
                 maxVal2 = Mathf.Max(threshold2, maxVal2);
             }
 
+            public void SetValue1(float value)
+            {
+                currentBlendVector.x = Mathf.Clamp(value, minVal1, maxVal1);
+                Recalculate();
+            }
+
+            public void SetValue2(float value)
+            {
+                currentBlendVector.y = Mathf.Clamp(value, minVal2, maxVal2);
+                Recalculate();
+            }
+
             public void SetValue(string blendVar, float value)
             {
-                Debug.Assert(blendVar == blendVar1 || blendVar == blendVar2,
-                             $"Blend tree controller got the value for {blendVar}, but it only cares about {blendVar1} and {blendVar2}");
-
                 if (blendVar == blendVar1)
                     currentBlendVector.x = Mathf.Clamp(value, minVal1, maxVal1);
                 else
@@ -365,6 +379,11 @@ namespace Animation_Player
                 //For now, using the version without polar coordinates
                 //@TODO: use the polar coordinate version, looks better
 
+                Recalculate();
+            }
+
+            private void Recalculate()
+            {
                 float influenceSum = 0f;
                 for (int i = 0; i < motions.Length; i++)
                 {
@@ -424,6 +443,24 @@ namespace Animation_Player
                     this.thresholdPoint = thresholdPoint;
                 }
             }
+        }
+
+        public void AddTreesMatchingBlendVar(BlendVarController aggregateController, string blendVar)
+        {
+            List<BlendTreeController1D> blendControllers1D;
+            if (varTo1DBlendControllers.TryGetValue(blendVar, out blendControllers1D))
+                aggregateController.AddControllers(blendControllers1D);
+
+            List<BlendTreeController2D> blendControllers2D;
+            if (varTo2DBlendControllers.TryGetValue(blendVar, out blendControllers2D))
+                aggregateController.AddControllers(blendControllers2D);
+        }
+
+        public AnimationState GetCurrentPlayingState()
+        {
+            if (states.Count == 0)
+                return null;
+            return states[currentPlayedState];
         }
     }
 

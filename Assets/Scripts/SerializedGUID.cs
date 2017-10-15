@@ -15,7 +15,11 @@ namespace Animation_Player
     {
         public static SerializedGUID Empty => new SerializedGUID {guid = Guid.Empty};
 
-        public static SerializedGUID Create() => new SerializedGUID {guid = Guid.NewGuid()};
+        public static SerializedGUID Create() {
+            var newGuid = new SerializedGUID {guid = Guid.NewGuid()};
+            newGuid.guidSerialized = newGuid.guid.ToString();
+            return newGuid;
+        }
 
         private Guid guid;
         public Guid GUID => guid;
@@ -38,16 +42,15 @@ namespace Animation_Player
             }
             catch (FormatException)
             {
-                Debug.LogError("Because C# is really fucking lazy, here's the information you actually need: " + guidSerialized);
+                if (string.IsNullOrEmpty(guidSerialized)) {
+                    throw new UnityException("SerializedGUID has an empty string for the serialized guid when deserializing!");
+                }
+
+                Debug.LogError("Got a format exception on the guid: " + guidSerialized);
                 throw;
             }
             if (guid == Guid.Empty)
                 guid = Guid.NewGuid();
-        }
-
-        public override string ToString()
-        {
-            return ToString("D", null);
         }
 
         public string ToString(string format, IFormatProvider formatProvider)

@@ -45,10 +45,6 @@ namespace Animation_Player
         {
             fromState = allStates.Find(state => state.GUID == fromStateGUID);
             toState = allStates.Find(state => state.GUID == toStateGUID);
-            
-            if(fromState == null || toState == null)
-                Debug.LogError("Could not fetch states! Checking for fromState guid " + fromStateGUID.ToString() + " and toState guid " + toStateGUID.ToString() + " in:\n" +
-                               allStates.PrettyPrint(state => state.GUID.ToString()));
         }
     }
 

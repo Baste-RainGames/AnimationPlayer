@@ -13,7 +13,7 @@ namespace Animation_Player
         private const int lastVersion = 1;
         [SerializeField, HideInInspector]
         private int versionNumber;
-        
+
         public AnimationLayer[] layers;
         public TransitionData defaultTransition;
 
@@ -30,10 +30,7 @@ namespace Animation_Player
         private void Awake()
         {
             EnsureVersionUpgraded();
-        }
-        
-        private void Start()
-        {
+
             if (layers.Length == 0)
                 return;
 
@@ -62,6 +59,7 @@ namespace Animation_Player
             }
             animOutput.SetSourcePlayable(rootPlayable);
 
+            //fun fact: default is DSPClock!
             graph.SetTimeUpdateMode(DirectorUpdateMode.GameTime);
             graph.Play();
 
@@ -162,6 +160,18 @@ namespace Animation_Player
         }
 
         /// <summary>
+        /// Checks if the animation player has a state with the specified name.
+        /// </summary>
+        /// <param name="stateName">Name to check on</param>
+        /// <param name="layer">Layer to check (default 0)</param>
+        /// <returns>true if there is a state with the name on the layer</returns>
+        public bool HasState(string stateName, int layer = 0)
+        {
+            AssertLayerInBounds(layer, "Check if state exists");
+            return layers[layer].HasState(stateName);
+        }
+
+        /// <summary>
         /// Finds the weight of a state in the layer's blend, eg. how much the state is playing.
         /// This is a number between 0 and 1, with 0 for "not playing" and 1 for "playing completely"
         /// These do not neccessarilly sum to 1.
@@ -197,8 +207,7 @@ namespace Animation_Player
         public AnimationState GetCurrentPlayingState(int layer = 0)
         {
             AssertLayerInBounds(layer, "get the current playing state");
-            var animationLayer = layers[layer];
-            return animationLayer.states[animationLayer.currentPlayedState];
+            return layers[layer].GetCurrentPlayingState();
         }
 
         /// <summary>
@@ -247,25 +256,24 @@ namespace Animation_Player
         [Conditional("UNITY_ASSERTIONS")]
         public void AssertLayerInBounds(int layer, string action)
         {
-            Debug.Assert(layer >= 0 && layer < layers.Length,
-                         $"Trying to {action} on an out of bounds layer! (layer {layer}, there are {layers.Length} layers!)",
-                         gameObject);
+            if (!(layer >= 0 && layer < layers.Length))
+                Debug.LogError($"Trying to {action} on an out of bounds layer! (layer {layer}, there are {layers.Length} layers!)", gameObject);
         }
 
         [Conditional("UNITY_ASSERTIONS")]
         public void AssertLayerInBounds(int layer, int state, string action)
         {
-            Debug.Assert(layer >= 0 && layer < layers.Length,
-                         $"Trying to {action} on an out of bounds layer! (state {state} on layer {layer}, but there are {layers.Length} layers!)",
-                         gameObject);
+            if (!(layer >= 0 && layer < layers.Length))
+                Debug.LogError($"Trying to {action} on an out of bounds layer! (state {state} on layer {layer}, but there are {layers.Length} layers!)",
+                               gameObject);
         }
 
         [Conditional("UNITY_ASSERTIONS")]
         public void AssertLayerInBounds(int layer, string state, string action)
         {
-            Debug.Assert(layer >= 0 && layer < layers.Length,
-                         $"Trying to {action} on an out of bounds layer! (state {state} on layer {layer}, but there are {layers.Length} layers!)",
-                         gameObject);
+            if (!(layer >= 0 && layer < layers.Length))
+                Debug.LogError($"Trying to {action} on an out of bounds layer! (state {state} on layer {layer}, but there are {layers.Length} layers!)",
+                               gameObject);
         }
 
         [Conditional("UNITY_ASSERTIONS")]
@@ -278,9 +286,10 @@ namespace Animation_Player
         [Conditional("UNITY_ASSERTIONS")]
         public void AssertStateInBounds(int layer, int state, string action)
         {
-            Debug.Assert(state >= 0 && state < layers[layer].states.Count,
-                         $"Trying to {action} on an out of bounds state! (state {state} on layer {layer}, but there are {layers[layer].states.Count} states on that layer!)",
-                         gameObject);
+            if (!(state >= 0 && state < layers[layer].states.Count))
+                Debug.LogError(
+                    $"Trying to {action} on an out of bounds state! (state {state} on layer {layer}, but there are {layers[layer].states.Count} states on that layer!)",
+                    gameObject);
         }
 
         public bool EnsureVersionUpgraded()
@@ -301,6 +310,78 @@ namespace Animation_Player
 
             versionNumber = lastVersion;
             return true;
+        }
+
+        /// <summary>
+        /// Gets a blend variable controller for a specific variable, allowing you to edit that variable
+        /// much faster than by SetBlendVar(name, value).
+        /// </summary>
+        /// <param name="blendVar">blendVar you want to controll</param>
+        public BlendVarController GetBlendControllerFor(string blendVar)
+        {
+            BlendVarController controller = new BlendVarController(blendVar);
+            foreach (var animationLayer in layers)
+            {
+                animationLayer.AddTreesMatchingBlendVar(controller, blendVar);
+            }
+            if (controller.InnerControllerCount == 0)
+                Debug.LogWarning(
+                    $"Warning! Creating a blend controller for {blendVar} on AnimationPlayer on {name}, but there's no blend trees that cares about that variable!",
+                    gameObject);
+            return controller;
+        }
+
+    }
+
+    /// <summary>
+    /// Instead of calling player.SetBlendVar("myVar", value), you can get a BlendVarController through player.GetBlendControllerFor("myVar"),
+    /// which can be cached. This saves some internal Dictionary lookups, which speeds up things.
+    /// </summary>
+    public class BlendVarController
+    {
+
+        private readonly List<AnimationLayer.BlendTreeController1D> inner1D = new List<AnimationLayer.BlendTreeController1D>();
+        private readonly List<AnimationLayer.BlendTreeController2D> inner2D_set1 = new List<AnimationLayer.BlendTreeController2D>();
+        private readonly List<AnimationLayer.BlendTreeController2D> inner2D_set2 = new List<AnimationLayer.BlendTreeController2D>();
+        private readonly string blendVar;
+
+        public BlendVarController(string blendVar)
+        {
+            this.blendVar = blendVar;
+        }
+
+        public int InnerControllerCount => inner1D.Count + inner2D_set1.Count + inner2D_set2.Count;
+
+        public void AddControllers(List<AnimationLayer.BlendTreeController1D> blendControllers1D)
+        {
+            inner1D.AddRange(blendControllers1D);
+        }
+
+        public void AddControllers(List<AnimationLayer.BlendTreeController2D> blendControllers2D)
+        {
+            foreach (var controller2D in blendControllers2D)
+            {
+                if (controller2D.blendVar1 == blendVar)
+                    inner2D_set1.Add(controller2D);
+                else
+                    inner2D_set2.Add(controller2D);
+            }
+        }
+
+        public void SetBlendVar(float value)
+        {
+            foreach (var controller1D in inner1D)
+            {
+                controller1D.SetValue(value);
+            }
+            foreach (var controller2D in inner2D_set1)
+            {
+                controller2D.SetValue1(value);
+            }
+            foreach (var controller2D in inner2D_set2)
+            {
+                controller2D.SetValue2(value);
+            }
         }
     }
 }

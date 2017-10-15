@@ -100,9 +100,8 @@ namespace Animation_Player
                             else
                                 Debug.Log(assetPath);
 
-                            animationClips.AddRange(AssetDatabase.LoadAllAssetsAtPath(assetPath)
-                                                                 .FilterByType<AnimationClip>()
-                                                                 .Where(clip => (clip.hideFlags & HideFlags.HideInHierarchy) == 0));
+                            animationClips.AddRange(AssetDatabase.LoadAllAssetsAtPath(assetPath).FilterByType<AnimationClip>().
+                                                                  Where(clip => (clip.hideFlags & HideFlags.HideInHierarchy) == 0));
                         }
 
                         if (animationClips.Count > 0)

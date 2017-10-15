@@ -405,6 +405,12 @@ namespace Animation_Player
             if (!Application.isPlaying)
                 return;
 
+            if (!animationPlayer.gameObject.scene.IsValid())
+            {
+                //is looking at the prefab at runtime, don't attempt to draw the graph!
+                return;
+            }
+
             for (int i = 0; i < animationPlayer.GetStateCount(selectedLayer); i++)
             {
                 EditorGUILayout.BeginHorizontal();
@@ -430,7 +436,7 @@ namespace Animation_Player
 
             EditorGUILayout.Space();
 
-            var newBlendVal = EditorGUILayout.Slider("Forward", blendVal, 0f, 3f);
+            var newBlendVal = EditorGUILayout.Slider("Forward", blendVal, 0f, 1f);
             if (newBlendVal != blendVal)
             {
                 blendVal = newBlendVal;
@@ -501,5 +507,4 @@ namespace Animation_Player
             previewer.Cleanup();
         }
     }
-
 }

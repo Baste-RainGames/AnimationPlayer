@@ -92,7 +92,7 @@ namespace Animation_Player
                 speed = 1d,
                 type = AnimationStateType.BlendTree2D,
                 blendVariable = "blend1",
-                blendVariable2 = "blend1",
+                blendVariable2 = "blend2",
                 blendTree = new List<BlendTreeEntry>(),
                 hasUpdatedName = !name.StartsWith(Default1DBlendTreeName)
             };
@@ -149,7 +149,7 @@ namespace Animation_Player
                 case AnimationStateType.BlendTree1D:
                     var treeMixer = AnimationMixerPlayable.Create(graph, blendTree.Count, true);
                     if (blendTree.Count == 0)
-                        break;
+                        return treeMixer;
 
                     float[] thresholds = new float[blendTree.Count];
 
@@ -169,7 +169,7 @@ namespace Animation_Player
                 case AnimationStateType.BlendTree2D:
                     treeMixer = AnimationMixerPlayable.Create(graph, blendTree.Count, true);
                     if (blendTree.Count == 0)
-                        break;
+                        return treeMixer;
 
                     var controller = new BlendTreeController2D(blendVariable, blendVariable2, treeMixer, blendTree.Count);
                     varTo2DBlendControllers?.GetOrAdd(blendVariable).Add(controller);

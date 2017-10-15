@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Animations;
-using UnityEngine.Assertions;
 using UnityEngine.Playables;
 
 namespace Animation_Player
@@ -12,7 +11,6 @@ namespace Animation_Player
     {
         public List<AnimationState> states;
         public List<StateTransition> transitions;
-        //public int startState;
 
         public float startWeight;
         public AvatarMask mask;
@@ -39,7 +37,7 @@ namespace Animation_Player
         private readonly Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers = new Dictionary<string, List<BlendTreeController1D>>();
         private readonly Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers = new Dictionary<string, List<BlendTreeController2D>>();
 
-        public void InitializeSelf(PlayableGraph graph, int layerIndexForDebug)
+        public void InitializeSelf(PlayableGraph graph)
         {
             if (states.Count == 0)
             {
@@ -98,7 +96,7 @@ namespace Animation_Player
 
         public void InitializeLayerBlending(PlayableGraph graph, int layerIndex, AnimationLayerMixerPlayable layerMixer)
         {
-            graph.Connect(this.stateMixer, 0, layerMixer, layerIndex);
+            graph.Connect(stateMixer, 0, layerMixer, layerIndex);
 
             layerMixer.SetInputWeight(layerIndex, startWeight);
             layerMixer.SetLayerAdditive((uint) layerIndex, type == AnimationLayerType.Additive);
@@ -130,10 +128,16 @@ namespace Animation_Player
 
         private void Play(int state, TransitionData transitionData)
         {
-            Debug.Assert(state >= 0 && state < states.Count,
-                         $"Trying to play out of bounds clip {state}! There are {states.Count} clips in the animation player");
-            Debug.Assert(transitionData.type != TransitionType.Curve || transitionData.curve != null,
-                         "Trying to play an animationCurve based transition, but the transition curve is null!");
+            if (state < 0 || state >= states.Count)
+            {
+                Debug.LogError($"Trying to play out of bounds clip {state}! There are {states.Count} clips in the animation player");
+                return;
+            }
+            if (transitionData.type == TransitionType.Curve && transitionData.curve == null)
+            {
+                Debug.LogError("Trying to play an animationCurve based transition, but the transition curve is null!");
+                return;
+            }
 
             var isCurrentlyPlaying = stateMixer.GetInputWeight(state) > 0f;
             if (!isCurrentlyPlaying)
@@ -195,8 +199,11 @@ namespace Animation_Player
 
         public float GetStateWeight(int state)
         {
-            Debug.Assert(state >= 0 && state < states.Count,
-                         $"Trying to get the state weight for {state}, which is out of bounds! There are {states.Count} states!");
+            if (state < 0 || state >= states.Count)
+            {
+                Debug.LogError($"Trying to get the state weight for {state}, which is out of bounds! There are {states.Count} states!");
+                return 0f;
+            }
             return stateMixer.GetInputWeight(state);
         }
 

@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
-using BlendTreeController1D = Animation_Player.AnimationLayer.BlendTreeController1D;
-using BlendTreeController2D = Animation_Player.AnimationLayer.BlendTreeController2D;
 
 namespace Animation_Player
 {
@@ -105,7 +102,7 @@ namespace Animation_Player
                 name = clip.name;
                 return true;
             }
-            else if (!hasUpdatedName)
+            if (!hasUpdatedName)
             {
                 name = clip.name;
                 return true;
@@ -119,15 +116,12 @@ namespace Animation_Player
             {
                 if (type == AnimationStateType.SingleClip)
                     return clip?.length ?? 0f;
-                else
+                var duration = 0f;
+                for (int i = 0; i < blendTree.Count; i++)
                 {
-                    var duration = 0f;
-                    for (int i = 0; i < blendTree.Count; i++)
-                    {
-                        duration = Mathf.Max(duration, blendTree[i].clip?.length ?? 0f);
-                    }
-                    return duration;
+                    duration = Mathf.Max(duration, blendTree[i].clip?.length ?? 0f);
                 }
+                return duration;
             }
         }
 
@@ -137,8 +131,8 @@ namespace Animation_Player
         }
 
         public Playable GeneratePlayable(PlayableGraph graph,
-                                         Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
-                                         Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers)
+                                         Dictionary<string, List<AnimationLayer.BlendTreeController1D>> varTo1DBlendControllers,
+                                         Dictionary<string, List<AnimationLayer.BlendTreeController2D>> varTo2DBlendControllers)
         {
             switch (type)
             {
@@ -163,7 +157,7 @@ namespace Animation_Player
                     }
 
                     treeMixer.SetInputWeight(0, 1f);
-                    varTo1DBlendControllers?.GetOrAdd(blendVariable).Add(new BlendTreeController1D(treeMixer, thresholds));
+                    varTo1DBlendControllers?.GetOrAdd(blendVariable).Add(new AnimationLayer.BlendTreeController1D(treeMixer, thresholds));
 
                     return treeMixer;
                 case AnimationStateType.BlendTree2D:
@@ -171,7 +165,7 @@ namespace Animation_Player
                     if (blendTree.Count == 0)
                         return treeMixer;
 
-                    var controller = new BlendTreeController2D(blendVariable, blendVariable2, treeMixer, blendTree.Count);
+                    var controller = new AnimationLayer.BlendTreeController2D(blendVariable, blendVariable2, treeMixer, blendTree.Count);
                     varTo2DBlendControllers?.GetOrAdd(blendVariable).Add(controller);
                     varTo2DBlendControllers?.GetOrAdd(blendVariable2).Add(controller);
 

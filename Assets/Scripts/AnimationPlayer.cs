@@ -42,7 +42,7 @@ namespace Animation_Player
             AnimationPlayableOutput animOutput = AnimationPlayableOutput.Create(graph, $"{name}_animation_player", gameObject.EnsureComponent<Animator>());
 
             for (var i = 0; i < layers.Length; i++)
-                layers[i].InitializeSelf(graph, i);
+                layers[i].InitializeSelf(graph);
 
             if (layers.Length <= 1)
             {
@@ -249,7 +249,11 @@ namespace Animation_Player
         public int GetStateIdxFromName(string state, int layer = 0)
         {
             int stateIdx = layers[layer].GetStateIdx(state);
-            Debug.Assert(stateIdx != -1, $"Trying to get the state \"{state}\" on layer {layer}, but that doesn't exist!");
+            if (stateIdx != -1)
+            {
+                Debug.LogError($"Trying to get the state \"{state}\" on layer {layer}, but that doesn't exist!", gameObject);
+                return -1;
+            }
             return stateIdx;
         }
 
@@ -279,17 +283,16 @@ namespace Animation_Player
         [Conditional("UNITY_ASSERTIONS")]
         public void AssertTransitionDataFine(TransitionData transitionData)
         {
-            if (transitionData.type == TransitionType.Curve)
-                Debug.Assert(transitionData.curve != null, "Trying to transition using a curve, but the curve is null!");
+            if (transitionData.type == TransitionType.Curve && transitionData.curve != null)
+                Debug.LogError("Trying to transition using a curve, but the curve is null!");
         }
 
         [Conditional("UNITY_ASSERTIONS")]
         public void AssertStateInBounds(int layer, int state, string action)
         {
             if (!(state >= 0 && state < layers[layer].states.Count))
-                Debug.LogError(
-                    $"Trying to {action} on an out of bounds state! (state {state} on layer {layer}, but there are {layers[layer].states.Count} states on that layer!)",
-                    gameObject);
+                Debug.LogError($"Trying to {action} on an out of bounds state! (state {state} on layer {layer}, but there are {layers[layer].states.Count} " +
+                               $"states on that layer!)", gameObject);
         }
 
         public bool EnsureVersionUpgraded()
@@ -325,9 +328,8 @@ namespace Animation_Player
                 animationLayer.AddTreesMatchingBlendVar(controller, blendVar);
             }
             if (controller.InnerControllerCount == 0)
-                Debug.LogWarning(
-                    $"Warning! Creating a blend controller for {blendVar} on AnimationPlayer on {name}, but there's no blend trees that cares about that variable!",
-                    gameObject);
+                Debug.LogWarning($"Warning! Creating a blend controller for {blendVar} on AnimationPlayer on {name}, " +
+                                 $"but there's no blend trees that cares about that variable!", gameObject);
             return controller;
         }
 

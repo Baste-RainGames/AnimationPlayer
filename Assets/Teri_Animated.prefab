@@ -383,11 +383,37 @@ MonoBehaviour:
           m_PreInfinity: 2
           m_PostInfinity: 2
           m_RotationOrder: 4
+    - fromStateGUID:
+        guidSerialized: 8ee78cd3-d0a9-4e01-9166-6508ceb55f48
+      toStateGUID:
+        guidSerialized: 8d305b83-4889-4052-a13d-55817cd5a2c9
+      transitionData:
+        duration: 0
+        type: 0
+        curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 0
+          m_PostInfinity: 0
+          m_RotationOrder: 0
+    - fromStateGUID:
+        guidSerialized: 4e2fbf7d-2e0f-4e3d-8d17-6ec811aaebae
+      toStateGUID:
+        guidSerialized: c22cfc93-e841-4572-b7ba-f099627537dd
+      transitionData:
+        duration: 0
+        type: 0
+        curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 0
+          m_PostInfinity: 0
+          m_RotationOrder: 0
     startWeight: 1
     mask: {fileID: 0}
     type: 0
   defaultTransition:
-    duration: 0
+    duration: 0.3
     type: 0
     curve:
       serializedVersion: 2

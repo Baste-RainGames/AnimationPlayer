@@ -4,8 +4,12 @@ using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
 
+
 namespace Animation_Player
 {
+    using BlendTreeController1D = AnimationLayer.BlendTreeController1D;
+    using BlendTreeController2D = AnimationLayer.BlendTreeController2D;
+
     [Serializable]
     //@TODO: This should be done with inheritance and custom serialization, because we now end up with single-clip states having a lot of garbage data around,
     // and also BlendTreeEntries having 2D data even when it's a 1D state
@@ -130,9 +134,8 @@ namespace Animation_Player
             return $"{name} ({type})";
         }
 
-        public Playable GeneratePlayable(PlayableGraph graph,
-                                         Dictionary<string, List<AnimationLayer.BlendTreeController1D>> varTo1DBlendControllers,
-                                         Dictionary<string, List<AnimationLayer.BlendTreeController2D>> varTo2DBlendControllers)
+        public Playable GeneratePlayable(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers, 
+                                         Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers, Dictionary<string, float> blendVars)
         {
             switch (type)
             {
@@ -157,7 +160,9 @@ namespace Animation_Player
                     }
 
                     treeMixer.SetInputWeight(0, 1f);
-                    varTo1DBlendControllers?.GetOrAdd(blendVariable).Add(new AnimationLayer.BlendTreeController1D(treeMixer, thresholds));
+                    var blendController = new BlendTreeController1D(treeMixer, thresholds, val => blendVars[blendVariable] = val);
+                    varTo1DBlendControllers.GetOrAdd(blendVariable).Add(blendController);
+                    blendVars[blendVariable] = 0;
 
                     return treeMixer;
                 case AnimationStateType.BlendTree2D:
@@ -165,9 +170,13 @@ namespace Animation_Player
                     if (blendTree.Count == 0)
                         return treeMixer;
 
-                    var controller = new AnimationLayer.BlendTreeController2D(blendVariable, blendVariable2, treeMixer, blendTree.Count);
-                    varTo2DBlendControllers?.GetOrAdd(blendVariable).Add(controller);
-                    varTo2DBlendControllers?.GetOrAdd(blendVariable2).Add(controller);
+                    Action<float> setVar1 = val => blendVars[blendVariable] = val;
+                    Action<float> setVar2 = val => blendVars[blendVariable2] = val;
+                    var controller = new BlendTreeController2D(blendVariable, blendVariable2, treeMixer, blendTree.Count, setVar1, setVar2);
+                    varTo2DBlendControllers.GetOrAdd(blendVariable).Add(controller);
+                    varTo2DBlendControllers.GetOrAdd(blendVariable2).Add(controller);
+                    blendVars[blendVariable] = 0;
+                    blendVars[blendVariable2] = 0;
 
                     for (int j = 0; j < blendTree.Count; j++)
                     {

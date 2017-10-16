@@ -109,6 +109,8 @@ NavMeshSettings:
     manualTileSize: 0
     tileSize: 256
     accuratePlacement: 0
+    debug:
+      m_Flags: 0
   m_NavMeshData: {fileID: 0}
 --- !u!1 &580631138
 GameObject:
@@ -185,7 +187,6 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
-  m_StereoMirrorMode: 0
 --- !u!4 &580631143
 Transform:
   m_ObjectHideFlags: 0
@@ -274,7 +275,17 @@ Prefab:
     - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
         type: 2}
       propertyPath: layers.Array.data[0].states.Array.size
-      value: 3
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].transitions.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[0].blendTree.Array.size
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4509588061463754, guid: d8293c4f77ab87843bd05efa1107d167, type: 2}
       propertyPath: m_LocalPosition.x
@@ -311,17 +322,57 @@ Prefab:
     - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
         type: 2}
       propertyPath: layers.Array.data[0].states.Array.data[3].name
-      value: Foo_Bar
+      value: New State
       objectReference: {fileID: 0}
     - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
         type: 2}
       propertyPath: layers.Array.data[0].states.Array.data[3].hasUpdatedName
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
         type: 2}
       propertyPath: layers.Array.data[0].states.Array.data[3].guid.guidSerialized
-      value: 6f8dc486-4417-4416-b75a-130440879bcc
+      value: 239c6fd3-68e2-4ffa-97e5-a08231b0e4e9
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[3].speed
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: defaultTransition.duration
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[0].name
+      value: idle_RFoot_teri
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[0].hasUpdatedName
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[0].guid.guidSerialized
+      value: b3bcd805-cc4f-4f2c-802f-c2da00f4b96a
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[0].clip
+      value: 
+      objectReference: {fileID: 7400000, guid: 943a08f8d8f97414198eb9521dd2492c, type: 2}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[0].type
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[0].blendVariable
+      value: 
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: d8293c4f77ab87843bd05efa1107d167, type: 2}

@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -6,7 +7,7 @@ namespace Animation_Player
     public static class AnimationTransitionDrawer
     {
         public static void DrawTransitions(AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedStateIdx,
-                                           PersistedInt selectedToStateIdx, string[][] allStateNames)
+                                           PersistedInt selectedToStateIdx, string[] stateNamesInLayer)
         {
             var layer = animationPlayer.layers[selectedLayer];
             if (layer.states.Count == 0)
@@ -17,40 +18,18 @@ namespace Animation_Player
 
             var selectedState = layer.states[selectedStateIdx];
             var selectedToState = layer.states[selectedToStateIdx];
+            var selectedTransition = layer.transitions.Find(t => t.FromState == selectedState && t.ToState == selectedToState);
+            var fromStateName = selectedState.Name;
+            var toStateName = selectedToState.Name;
 
-            EditorGUILayout.LabelField("Transitions from " + selectedState.Name);
-
-            EditorGUILayout.Space();
-
-            EditorUtilities.DrawIndented(() =>
+            if (selectedTransition != null)
             {
-                selectedToStateIdx.SetTo(EditorGUILayout.Popup("Transtion to state", selectedToStateIdx, allStateNames[selectedLayer]));
-                selectedToStateIdx.SetTo(Mathf.Clamp(selectedToStateIdx, 0, layer.states.Count - 1));
+                EditorGUILayout.LabelField($"Selected transition: From \"{fromStateName}\" to \"{toStateName}\"");
+                EditorUtilities.RecordUndo(animationPlayer, $"Edit of transition from  {fromStateName} to {toStateName}");
 
-                EditorGUILayout.Space();
-
-                var transition = layer.transitions.Find(state => state.FromState == selectedState && state.ToState == selectedToState);
-                var fromStateName = selectedState.Name;
-                var toStateName = selectedToState.Name;
-
-                if (transition == null)
+                EditorUtilities.DrawIndented(() =>
                 {
-                    EditorGUILayout.LabelField($"No ({fromStateName}->{toStateName}) transition defined!");
-                    EditorGUILayout.BeginHorizontal();
-                    if (GUILayout.Button($"Create one!"))
-                    {
-                        Undo.RecordObject(animationPlayer, $"Add transition from {fromStateName} to {toStateName}");
-                        layer.transitions.Add(
-                            new StateTransition {FromState = selectedState, ToState = selectedToState, transitionData = TransitionData.Linear(1f)});
-                    }
-                    GUILayout.FlexibleSpace();
-                    EditorGUILayout.EndHorizontal();
-                }
-                else
-                {
-                    Undo.RecordObject(animationPlayer, $"Edit of transition from  {fromStateName} to {toStateName}");
-                    transition.transitionData = DrawTransitionData(transition.transitionData);
-
+                    selectedTransition.transitionData = DrawTransitionData(selectedTransition.transitionData);
                     GUILayout.Space(20f);
                     EditorGUILayout.BeginHorizontal();
                     GUILayout.FlexibleSpace();
@@ -58,10 +37,68 @@ namespace Animation_Player
                                                          "Clear_Transition_" + fromStateName + "_" + toStateName,
                                                          1f, GUILayout.Width(150f)))
                     {
-                        Undo.RecordObject(animationPlayer, $"Clear transition from  {fromStateName} to {toStateName}");
-                        layer.transitions.Remove(transition);
+                        EditorUtilities.RecordUndo(animationPlayer, $"Clear transition from  {fromStateName} to {toStateName}");
+                        layer.transitions.Remove(selectedTransition);
                     }
                     EditorGUILayout.EndHorizontal();
+                });
+            }
+
+            EditorUtilities.Splitter();
+
+            var transitionsFromState = layer.transitions.Where(t => t.FromState == selectedState).ToList();
+            if (transitionsFromState.Count == 0)
+            {
+                EditorGUILayout.LabelField($"No defined transitions from {fromStateName}");
+            }
+            else
+            {
+                EditorGUILayout.LabelField($"Transitions from {fromStateName}:");
+
+                EditorGUILayout.Space();
+                EditorUtilities.DrawHorizontal(() =>
+                {
+                    GUILayout.FlexibleSpace();
+                    EditorUtilities.DrawVertical(() =>
+                    {
+                        EditorUtilities.DrawIndented(() =>
+                        {
+                            foreach (var transition in transitionsFromState)
+                            {
+                                EditorGUI.BeginDisabledGroup(transition == selectedTransition);
+                                if (GUILayout.Button(transition.ToState.Name, GUILayout.MinWidth(100f)))
+                                    selectedToStateIdx.SetTo(layer.states.IndexOf(transition.ToState));
+                                EditorGUI.EndDisabledGroup();
+                            }
+                        });
+                    });
+                });
+            }
+
+            EditorGUILayout.Space();
+
+            EditorUtilities.DrawHorizontal(() =>
+            {
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button("Create new transition"))
+                {
+                    GenericMenu menu = new GenericMenu();
+                    foreach (var state in stateNamesInLayer)
+                    {
+                        menu.AddItem(new GUIContent($"Transition from {fromStateName} to {state}"), false, () =>
+                        {
+                            EditorUtilities.RecordUndo(animationPlayer, $"Adding transition from {fromStateName} to {toStateName}");
+                            var newState = new StateTransition
+                            {
+                                FromState = selectedState,
+                                ToState = layer.states.Find(s => s.Name == state),
+                                transitionData = TransitionData.Linear(.2f)
+                            };
+                            layer.transitions.Add(newState);
+                            selectedToStateIdx.SetTo(layer.states.FindIndex(s => s.Name == state));
+                        });
+                    }
+                    menu.ShowAsContext();
                 }
             });
         }

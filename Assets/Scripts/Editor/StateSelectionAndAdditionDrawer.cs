@@ -47,7 +47,7 @@ namespace Animation_Player
 
             if (GUILayout.Button("Add Normal State", width))
             {
-                Undo.RecordObject(animationPlayer, "Add state to animation player");
+                EditorUtilities.RecordUndo(animationPlayer, "Add state to animation player");
                 layer.states.Add(AnimationState.SingleClip(GetUniqueStateName(AnimationState.DefaultSingleClipName, layer.states)));
                 selectedState.SetTo(layer.states.Count - 1);
                 editor.MarkDirty();
@@ -55,7 +55,7 @@ namespace Animation_Player
 
             if (GUILayout.Button("Add 1D Blend Tree", width))
             {
-                Undo.RecordObject(animationPlayer, "Add blend tree to animation player");
+                EditorUtilities.RecordUndo(animationPlayer, "Add blend tree to animation player");
                 layer.states.Add(AnimationState.BlendTree1D(GetUniqueStateName(AnimationState.Default1DBlendTreeName, layer.states)));
                 selectedState.SetTo(layer.states.Count - 1);
                 editor.MarkDirty();
@@ -63,7 +63,7 @@ namespace Animation_Player
 
             if (GUILayout.Button("Add 2D Blend Tree", width))
             {
-                Undo.RecordObject(animationPlayer, "Add 2D blend tree to animation player");
+                EditorUtilities.RecordUndo(animationPlayer, "Add 2D blend tree to animation player");
                 layer.states.Add(AnimationState.BlendTree2D(GetUniqueStateName(AnimationState.Default2DBlendTreeName, layer.states)));
                 selectedState.SetTo(layer.states.Count - 1);
                 editor.MarkDirty();
@@ -106,7 +106,7 @@ namespace Animation_Player
 
                         if (animationClips.Count > 0)
                         {
-                            Undo.RecordObject(animationPlayer, "Added clip to Animation Player");
+                            EditorUtilities.RecordUndo(animationPlayer, "Added clip to Animation Player");
                             var layer = animationPlayer.layers[selectedLayer];
                             int numClipsBefore = layer.states.Count;
 

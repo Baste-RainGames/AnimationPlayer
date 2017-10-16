@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Animations;
@@ -45,7 +46,9 @@ namespace Animation_Player
             var animator = animationPlayer.gameObject.EnsureComponent<Animator>();
             var animOutput = AnimationPlayableOutput.Create(previewGraph, "AnimationOutput", animator);
 
-            animOutput.SetSourcePlayable(state.GeneratePlayable(previewGraph, null, null));
+            animOutput.SetSourcePlayable(state.GeneratePlayable(previewGraph, new Dictionary<string, List<AnimationLayer.BlendTreeController1D>>(), 
+                                                                              new Dictionary<string, List<AnimationLayer.BlendTreeController2D>>(), 
+                                                                              new Dictionary<string, float>()));
 
             previewGraph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
             previewGraph.Play();

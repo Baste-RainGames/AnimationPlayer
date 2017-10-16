@@ -20,9 +20,9 @@ namespace Animation_Player
         private int currentPlayedState;
 
         //blend info:
-        private bool blending;
-        private TransitionData blendTransitionData;
-        private float blendStartTime;
+        private bool transitioning;
+        private TransitionData currentTransitionData;
+        private float transitionStartTime;
         private bool[] activeWhenBlendStarted;
         private float[] valueWhenBlendStarted;
 
@@ -62,7 +62,7 @@ namespace Animation_Player
                 var state = states[i];
                 stateNameToIdx[state.Name] = i;
 
-                var playable = state.GeneratePlayable(graph, varTo1DBlendControllers, varTo2DBlendControllers);
+                var playable = state.GeneratePlayable(graph, varTo1DBlendControllers, varTo2DBlendControllers, blendVars);
                 runtimePlayables[i] = playable;
                 graph.Connect(playable, 0, stateMixer, i);
             }
@@ -152,7 +152,7 @@ namespace Animation_Player
                     stateMixer.SetInputWeight(i, i == state ? 1f : 0f);
                 }
                 currentPlayedState = state;
-                blending = false;
+                transitioning = false;
             }
             else if (state != currentPlayedState)
             {
@@ -163,24 +163,24 @@ namespace Animation_Player
                     valueWhenBlendStarted[i] = currentMixVal;
                 }
 
-                blending = true;
+                transitioning = true;
                 currentPlayedState = state;
-                blendTransitionData = transitionData;
-                blendStartTime = Time.time;
+                currentTransitionData = transitionData;
+                transitionStartTime = Time.time;
             }
         }
 
         public void Update()
         {
-            if (!blending)
+            if (!transitioning)
                 return;
-
-            var lerpVal = (Time.time - blendStartTime) / blendTransitionData.duration;
-            if (blendTransitionData.type == TransitionType.Curve)
+        
+            var lerpVal = (Time.time - transitionStartTime) / currentTransitionData.duration;
+            if (currentTransitionData.type == TransitionType.Curve)
             {
-                lerpVal = blendTransitionData.curve.Evaluate(lerpVal);
+                lerpVal = currentTransitionData.curve.Evaluate(lerpVal);
             }
-
+        
             for (int i = 0; i < states.Count; i++)
             {
                 var isTargetClip = i == currentPlayedState;
@@ -190,11 +190,9 @@ namespace Animation_Player
                     stateMixer.SetInputWeight(i, Mathf.Lerp(valueWhenBlendStarted[i], target, lerpVal));
                 }
             }
-
-            if (lerpVal < 1)
-                return;
-
-            blending = false;
+        
+            if (lerpVal >= 1)
+                transitioning = false;
         }
 
         public float GetStateWeight(int state)
@@ -217,7 +215,7 @@ namespace Animation_Player
 
         public bool IsBlending()
         {
-            return blending;
+            return transitioning;
         }
 
         public static AnimationLayer CreateLayer()
@@ -269,13 +267,39 @@ namespace Animation_Player
             }
         }
 
+        public void AddTreesMatchingBlendVar(BlendVarController aggregateController, string blendVar)
+        {
+            List<BlendTreeController1D> blendControllers1D;
+            if (varTo1DBlendControllers.TryGetValue(blendVar, out blendControllers1D))
+                aggregateController.AddControllers(blendControllers1D);
+
+            List<BlendTreeController2D> blendControllers2D;
+            if (varTo2DBlendControllers.TryGetValue(blendVar, out blendControllers2D))
+                aggregateController.AddControllers(blendControllers2D);
+        }
+
+        public AnimationState GetCurrentPlayingState()
+        {
+            if (states.Count == 0)
+                return null;
+            return states[currentPlayedState];
+        }
+
+        public void AddAllBlendVarsTo(List<string> result) {
+            foreach (var key in blendVars.Keys) {
+                result.Add(key);
+            }
+        }
+
         public class BlendTreeController1D
         {
+            private readonly Action<float> UpdateValueOnMainController;
+
             private AnimationMixerPlayable mixer;
             private readonly float[] thresholds;
             private float lastValue;
 
-            public BlendTreeController1D(AnimationMixerPlayable mixer, float[] thresholds)
+            public BlendTreeController1D(AnimationMixerPlayable mixer, float[] thresholds, Action<float> UpdateValueOnMainController)
             {
                 for (int i = 0; i < thresholds.Length - 2; i++)
                     //@TODO: should reorder these!
@@ -284,12 +308,14 @@ namespace Animation_Player
 
                 this.mixer = mixer;
                 this.thresholds = thresholds;
+                this.UpdateValueOnMainController = UpdateValueOnMainController;
             }
 
             public void SetValue(float value)
             {
                 if (value == lastValue)
                     return;
+                UpdateValueOnMainController(value);
                 lastValue = value;
 
                 int idxOfLastLowerThanVal = -1;
@@ -344,13 +370,19 @@ namespace Animation_Player
             private readonly BlendTree2DMotion[] motions;
             private readonly float[] motionInfluences;
 
-            public BlendTreeController2D(string blendVar1, string blendVar2, AnimationMixerPlayable treeMixer, int numClips)
+            private Action<float> UpdateValue1OnMainController;
+            private Action<float> UpdateValue2OnMainController;
+
+            public BlendTreeController2D(string blendVar1, string blendVar2, AnimationMixerPlayable treeMixer, int numClips, 
+                                         Action<float> UpdateValue1OnMainController, Action<float> UpdateValue2OnMainController)
             {
                 this.blendVar1 = blendVar1;
                 this.blendVar2 = blendVar2;
                 this.treeMixer = treeMixer;
                 motions = new BlendTree2DMotion[numClips];
                 motionInfluences = new float[numClips];
+                this.UpdateValue1OnMainController = UpdateValue1OnMainController;
+                this.UpdateValue2OnMainController = UpdateValue2OnMainController;
             }
 
             public void Add(int clipIdx, float threshold, float threshold2)
@@ -363,38 +395,40 @@ namespace Animation_Player
                 maxVal2 = Mathf.Max(threshold2, maxVal2);
             }
 
-            public void SetValue1(float value)
-            {
+            public void SetValue1(float value) {
+                var last = currentBlendVector.x;
                 currentBlendVector.x = Mathf.Clamp(value, minVal1, maxVal1);
-                Recalculate();
+                if (last != currentBlendVector.x) {
+                    UpdateValue1OnMainController(value);
+                    Recalculate();
+                }
             }
 
-            public void SetValue2(float value)
-            {
+            public void SetValue2(float value) {
+                var last = currentBlendVector.y;
                 currentBlendVector.y = Mathf.Clamp(value, minVal2, maxVal2);
-                Recalculate();
+                if(last != currentBlendVector.y)
+                    UpdateValue2OnMainController(value);
+                    Recalculate();
             }
 
             public void SetValue(string blendVar, float value)
             {
                 if (blendVar == blendVar1)
-                    currentBlendVector.x = Mathf.Clamp(value, minVal1, maxVal1);
+                    SetValue1(value);
                 else
-                    currentBlendVector.y = Mathf.Clamp(value, minVal2, maxVal2);
-
-                //Recalculate weights, based on Rune Skovbo Johansen's thesis (Docs/rune_skovbo_johansen_thesis.pdf)
-                //For now, using the version without polar coordinates
-                //@TODO: use the polar coordinate version, looks better
-
-                Recalculate();
+                    SetValue2(value);
             }
 
             private void Recalculate()
             {
+                //Recalculate weights, based on Rune Skovbo Johansen's thesis (Docs/rune_skovbo_johansen_thesis.pdf)
+                //For now, using the version without polar coordinates
+                //@TODO: use the polar coordinate version, looks better
                 float influenceSum = 0f;
                 for (int i = 0; i < motions.Length; i++)
                 {
-                    var influence = InfluenceFunc(currentBlendVector, i);
+                    var influence = GetInfluenceForPoint(currentBlendVector, i);
                     motionInfluences[i] = influence;
                     influenceSum += influence;
                 }
@@ -406,22 +440,12 @@ namespace Animation_Player
             }
 
             //See chapter 6.3 in Docs/rune_skovbo_johansen_thesis.pdf
-            private float InfluenceFunc(Vector2 inputPoint, int referencePointIdx)
+            private float GetInfluenceForPoint(Vector2 inputPoint, int referencePointIdx)
             {
                 if (motions.Length == 1)
                     return 1f;
 
-                var referencePoint = motions[referencePointIdx].thresholdPoint;
-                Func<int, float> subFunc = idx =>
-                {
-                    var toPointAtIdx = motions[idx].thresholdPoint - referencePoint;
-
-                    var dotProd = Vector2.Dot(inputPoint - referencePoint, toPointAtIdx);
-                    var magSqr = Mathf.Pow(toPointAtIdx.magnitude, 2);
-
-                    var val = dotProd / magSqr;
-                    return 1f - val;
-                };
+                Vector2 referencePoint = motions[referencePointIdx].thresholdPoint;
 
                 var minVal = Mathf.Infinity;
                 for (int i = 0; i < motions.Length; i++)
@@ -430,7 +454,7 @@ namespace Animation_Player
                     // But having two motions at the same point should error further up, as it's kinda meaningless.
                     if (i == referencePointIdx)
                         continue;
-                    var val = subFunc(i);
+                    var val = WeightFunc(i, inputPoint, referencePoint);
                     if (val < minVal)
                         minVal = val;
 
@@ -439,6 +463,16 @@ namespace Animation_Player
                         minVal = 0f;
                 }
                 return minVal;
+            }
+
+            private float WeightFunc(int idx, Vector2 inputPoint, Vector2 referencePoint) {
+                var toPointAtIdx = motions[idx].thresholdPoint - referencePoint;
+
+                var dotProd = Vector2.Dot(inputPoint - referencePoint, toPointAtIdx);
+                var magSqr = Mathf.Pow(toPointAtIdx.magnitude, 2);
+
+                var val = dotProd / magSqr;
+                return 1f - val;
             }
 
             private class BlendTree2DMotion
@@ -452,23 +486,6 @@ namespace Animation_Player
             }
         }
 
-        public void AddTreesMatchingBlendVar(BlendVarController aggregateController, string blendVar)
-        {
-            List<BlendTreeController1D> blendControllers1D;
-            if (varTo1DBlendControllers.TryGetValue(blendVar, out blendControllers1D))
-                aggregateController.AddControllers(blendControllers1D);
-
-            List<BlendTreeController2D> blendControllers2D;
-            if (varTo2DBlendControllers.TryGetValue(blendVar, out blendControllers2D))
-                aggregateController.AddControllers(blendControllers2D);
-        }
-
-        public AnimationState GetCurrentPlayingState()
-        {
-            if (states.Count == 0)
-                return null;
-            return states[currentPlayedState];
-        }
     }
 
     public enum AnimationLayerType

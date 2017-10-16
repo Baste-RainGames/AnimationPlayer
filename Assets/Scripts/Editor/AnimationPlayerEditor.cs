@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -127,7 +126,7 @@ namespace Animation_Player
 
             EditorGUILayout.LabelField("Default transition");
 
-            Undo.RecordObject(animationPlayer, "Change default transition");
+            EditorUtilities.RecordUndo(animationPlayer, "Change default transition");
             animationPlayer.defaultTransition = AnimationTransitionDrawer.DrawTransitionData(animationPlayer.defaultTransition);
 
             EditorUtilities.Splitter();
@@ -144,6 +143,7 @@ namespace Animation_Player
                 scriptReloadChecker = new object();
                 MarkDirty();
                 stylesCreated = false;
+                transitionsNeedsUpdate = true;
             }
 
             if (isGUICall && !stylesCreated)
@@ -229,7 +229,7 @@ namespace Animation_Player
 
             if (GUILayout.Button("Add layer", GUILayout.MinWidth(100f)))
             {
-                Undo.RecordObject(animationPlayer, "Add layer to animation player");
+                EditorUtilities.RecordUndo(animationPlayer, "Add layer to animation player");
                 EditorUtilities.ExpandArrayByOne(ref animationPlayer.layers, AnimationLayer.CreateLayer);
                 selectedLayer.SetTo(animationPlayer.layers.Length - 1);
                 MarkDirty();
@@ -237,7 +237,7 @@ namespace Animation_Player
             EditorGUI.BeginDisabledGroup(numLayers < 2);
             if (EditorUtilities.AreYouSureButton("Delete layer", "Are you sure?", "DeleteLayer" + selectedLayer, 1f, GUILayout.Width(100f)))
             {
-                Undo.RecordObject(animationPlayer, "Delete layer from animation player");
+                EditorUtilities.RecordUndo(animationPlayer, "Delete layer from animation player");
                 EditorUtilities.DeleteIndexFromArray(ref animationPlayer.layers, selectedLayer);
                 selectedLayer.SetTo(Mathf.Max(0, selectedLayer - 1));
                 MarkDirty();
@@ -268,31 +268,9 @@ namespace Animation_Player
 
             EditorGUILayout.EndHorizontal();
 
-            //Hack part 2: expand the rects so they hit the next control
-            Action<Rect, string, int> Draw = (rect, label, index) =>
-            {
-                rect.yMax += 2;
-                rect.yMin -= 2;
-                if (index == 0)
-                {
-                    rect.x -= 4;
-                    rect.xMax += 4;
-                }
-                else if (index == 2)
-                {
-                    rect.x += 4;
-                    rect.xMin -= 4;
-                }
-
-                var isSelected = index == (int) selectedEditMode;
-                var style = isSelected ? editLayerButton_Selected : editLayerButton_NotSelected;
-                if (GUI.Button(rect, label, style))
-                    selectedEditMode.SetTo((AnimationPlayerEditMode) index);
-            };
-
-            Draw(editStatesRect, "Edit state", 0);
-            Draw(editTransitionsRect, "Edit Transitions", 1);
-            Draw(metaDataRect, "Metadata", 2);
+            DrawTabHeader(editStatesRect, "Edit state", 0);
+            DrawTabHeader(editTransitionsRect, "Edit Transitions", 1);
+            DrawTabHeader(metaDataRect, "Metadata", 2);
 
             EditorGUILayout.BeginVertical(editLayerStyle);
 
@@ -304,7 +282,7 @@ namespace Animation_Player
                     StateDataDrawer.DrawStateData(animationPlayer, selectedLayer, selectedState, this);
                     break;
                 case AnimationPlayerEditMode.Transitions:
-                    AnimationTransitionDrawer.DrawTransitions(animationPlayer, selectedLayer, selectedState, selectedToState, allStateNames);
+                    AnimationTransitionDrawer.DrawTransitions(animationPlayer, selectedLayer, selectedState, selectedToState, allStateNames[selectedLayer]);
                     break;
                 case AnimationPlayerEditMode.MetaData:
                     DrawMetaData();
@@ -313,6 +291,27 @@ namespace Animation_Player
 
             GUILayout.Space(20f);
             EditorGUILayout.EndVertical();
+        }
+
+        private void DrawTabHeader(Rect rect, string label, int index) {
+            //Hack: expand the rects so they hit the next control
+            rect.yMax += 2;
+            rect.yMin -= 2;
+            if (index == 0)
+            {
+                rect.x -= 4;
+                rect.xMax += 4;
+            }
+            else if (index == 2)
+            {
+                rect.x += 4;
+                rect.xMin -= 4;
+            }
+
+            var isSelected = index == (int) selectedEditMode;
+            var style = isSelected ? editLayerButton_Selected : editLayerButton_NotSelected;
+            if (GUI.Button(rect, label, style))
+                selectedEditMode.SetTo((AnimationPlayerEditMode) index);
         }
 
         private void DrawMetaData()
@@ -405,6 +404,18 @@ namespace Animation_Player
             if (!Application.isPlaying)
                 return;
 
+            EditorGUILayout.LabelField("Current blend variable values:");
+            var blendVars = animationPlayer.GetBlendVariables();
+            EditorUtilities.DrawIndented(() => {
+                foreach (var blendVar in blendVars) {
+                    EditorUtilities.DrawHorizontal(() => {
+                        EditorGUILayout.LabelField(blendVar, GUILayout.Width(100f));
+                        EditorGUILayout.LabelField(animationPlayer.GetBlendVar(blendVar).ToString());
+                    });
+                }
+            });
+            EditorUtilities.Splitter();
+
             if (!animationPlayer.gameObject.scene.IsValid())
             {
                 //is looking at the prefab at runtime, don't attempt to draw the graph!
@@ -431,23 +442,7 @@ namespace Animation_Player
             EditorGUILayout.LabelField("Playing clip " + animationPlayer.GetCurrentPlayingState(selectedLayer));
             for (int i = animationPlayer.GetStateCount(selectedLayer) - 1; i >= 0; i--)
             {
-                EditorGUILayout.LabelField("weigh for " + i + ": " + animationPlayer.GetStateWeight(i, selectedLayer));
-            }
-
-            EditorGUILayout.Space();
-
-            var newBlendVal = EditorGUILayout.Slider("Forward", blendVal, 0f, 1f);
-            if (newBlendVal != blendVal)
-            {
-                blendVal = newBlendVal;
-                animationPlayer.SetBlendVar("Forward", blendVal, selectedLayer);
-            }
-
-            var newBlendVal2 = EditorGUILayout.Slider("Turn", blendVal2, -1f, 1f);
-            if (newBlendVal2 != blendVal2)
-            {
-                blendVal2 = newBlendVal2;
-                animationPlayer.SetBlendVar("Turn", blendVal2, selectedLayer);
+                EditorGUILayout.LabelField("Current weigth for state " + i + ": " + animationPlayer.GetStateWeight(i, selectedLayer));
             }
         }
 

@@ -48,6 +48,12 @@ namespace Animation_Player
         }
     }
 
+    public enum TransitionType
+    {
+        Linear,
+        Curve
+    }
+
     /// <summary>
     /// Information about how the AnimationPlayer should transition from one state to another
     /// </summary>
@@ -121,11 +127,5 @@ namespace Animation_Player
                 return hashCode;
             }
         }
-    }
-
-    public enum TransitionType
-    {
-        Linear,
-        Curve
     }
 }

@@ -17,19 +17,26 @@ namespace Animation_Player
         public AnimationLayer[] layers;
         public TransitionData defaultTransition;
 
-        private PlayableGraph graph;
+        public bool IKAvailable { get; private set; }
 
+        private PlayableGraph graph;
         private Playable rootPlayable;
         private string visualizerClientName;
+
+        //IK
+        private Animator outputAnimator;
+        private float currentIKLookAtWeight;
 
 #if UNITY_EDITOR
         //Used to make the inspector continually update
         public Action editTimeUpdateCallback;
 #endif
 
+        private bool hasAwoken;
         private void Awake()
         {
             EnsureVersionUpgraded();
+            hasAwoken = true;
 
             if (layers.Length == 0)
                 return;
@@ -39,7 +46,11 @@ namespace Animation_Player
 
             // The AnimationPlayableOutput links the graph with an animator that plays the graph.
             // I think we can ditch the animator, but the documentation is kinda sparse!
-            AnimationPlayableOutput animOutput = AnimationPlayableOutput.Create(graph, $"{name}_animation_player", gameObject.EnsureComponent<Animator>());
+            outputAnimator = gameObject.EnsureComponent<Animator>();
+            AnimationPlayableOutput animOutput = AnimationPlayableOutput.Create(graph, $"{name}_animation_player", outputAnimator);
+
+            //@TODO: figure out how to check if the animatorcontroller has an IK pass at runtime
+            IKAvailable = outputAnimator.runtimeAnimatorController != null; 
 
             for (var i = 0; i < layers.Length; i++)
                 layers[i].InitializeSelf(graph);
@@ -241,6 +252,19 @@ namespace Animation_Player
             return layers[layer].GetBlendVar(var);
         }
 
+        public List<string> GetBlendVariables() {
+            List<string> result = new List<string>();
+            GetBlendVariables(result);
+            return result;
+        }
+
+        private void GetBlendVariables(List<string> result) {
+            result.Clear();
+            foreach (var layer in layers) {
+                layer.AddAllBlendVarsTo(result);
+            }
+        }
+
         /// <summary>
         /// Gets the index of a state from it's name.
         /// This method is used internally whenever you send in a string Play("Idle"), so it's recommended to cache the result
@@ -249,12 +273,137 @@ namespace Animation_Player
         public int GetStateIdxFromName(string state, int layer = 0)
         {
             int stateIdx = layers[layer].GetStateIdx(state);
-            if (stateIdx != -1)
+            if (stateIdx == -1)
             {
-                Debug.LogError($"Trying to get the state \"{state}\" on layer {layer}, but that doesn't exist!", gameObject);
+                Debug.LogError($"Trying to get the state \"{state}\" on layer {layer}, but that doesn't exist! States that exist are:" +
+                               $"\n{layers[layer].states.PrettyPrint(s => s.Name)}", gameObject);
                 return -1;
             }
             return stateIdx;
+        }
+
+        /// <summary>
+        /// Equivalent to Animator.SetIKHintPosition
+        /// Sets the position of an IK hint.
+        /// </summary>
+        /// <param name="hint">The AvatarIKHint that is set.</param>
+        /// <param name="hintPosition">The position in world space.</param>
+        public void SetIKHintPosition(AvatarIKHint hint, Vector3 hintPosition)
+            => outputAnimator.SetIKHintPosition(hint, hintPosition);
+
+        /// <summary>
+        /// Equivalent to Animator.SetIKHintPositionWeight
+        /// Sets the translative weight of an IK hint (0 = at the original animation before IK, 1 = at the hint).
+        /// </summary>
+        /// <param name="hint">The AvatarIKHint that is set.</param>
+        /// <param name="weight">The translative weight.</param>
+        public void SetIKHintPositionWeight(AvatarIKHint hint, float weight)
+            => outputAnimator.SetIKHintPositionWeight(hint, weight);
+
+        /// <summary>
+        /// Equivalent to Animator.SetIKPosition
+        /// Sets the position of an IK goal.
+        /// </summary>
+        /// <param name="goal">The AvatarIKGoal that is set.</param>
+        /// <param name="goalPosition">The position in world space.</param>
+        public void SetIKPosition(AvatarIKGoal goal, Vector3 goalPosition)
+            => outputAnimator.SetIKPosition(goal, goalPosition);
+
+        /// <summary>
+        /// Equivalent to Animator.SetIKPositionWeight
+        /// Sets the translative weight of an IK goal (0 = at the original animation before IK, 1 = at the goal).
+        /// </summary>
+        /// <param name="goal">The AvatarIKGoal that is set.</param>
+        /// <param name="weight">The translative weight.</param>
+        public void SetIKPositionWeight(AvatarIKGoal goal, float weight)
+            => outputAnimator.SetIKPositionWeight(goal, weight);
+
+        /// <summary>
+        /// Equivalent to Animator.SetIKRotation
+        /// Sets the rotation of an IK goal.
+        /// </summary>
+        /// <param name="goal">The AvatarIKGoal that is set.</param>
+        /// <param name="goalRotation">The rotation in world space.</param>
+        public void SetIKRotation(AvatarIKGoal goal, Quaternion goalRotation)
+            => outputAnimator.SetIKRotation(goal, goalRotation);
+
+        /// <summary>
+        /// Equivalent to Animator.SetIKRotationWeight
+        /// Sets the rotational weight of an IK goal (0 = rotation before IK, 1 = rotation at the IK goal).
+        /// </summary>
+        /// <param name="goal">The AvatarIKGoal that is set.</param>
+        /// <param name="weight">The rotational weight.</param>
+        public void SetIKRotationWeight(AvatarIKGoal goal, float weight)
+            => outputAnimator.SetIKRotationWeight(goal, weight);
+
+        /// <summary>
+        /// Equivalent to Animator.SetLookAtPosition
+        /// Sets the look at position.
+        /// </summary>
+        /// <param name="position">The position to lookAt.</param>
+        public void SetIKLookAtPosition(Vector3 position)
+            => outputAnimator.SetLookAtPosition(position);
+
+        /// <summary>
+        /// Equivalent to Animator.SetIKLookAtWeight
+        /// Set look at weights.
+        /// </summary>
+        /// <param name="weight">(0-1) the global weight of the LookAt, multiplier for other parameters.</param>
+        /// <param name="bodyWeight">(0-1) determines how much the body is involved in the LookAt.</param>
+        /// <param name="headWeight">(0-1) determines how much the head is involved in the LookAt.</param>
+        /// <param name="eyesWeight">(0-1) determines how much the eyes are involved in the LookAt.</param>
+        /// <param name="clampWeight">(0-1) 0.0 means the character is completely unrestrained in motion, 1.0 means it's completely clamped (look at becomes 
+        /// impossible), and 0.5 means it'll be able to move on half of the possible range (180 degrees).</param>
+        public void SetIKLookAtWeight(float weight, float bodyWeight = 0f, float headWeight = 1f, float eyesWeight = 0f, float clampWeight = .5f) {
+            currentIKLookAtWeight = weight; //animator has a getter for all the other IK things, but not this one!
+            outputAnimator.SetLookAtWeight(weight, bodyWeight, headWeight, eyesWeight, clampWeight);
+        }
+
+        public float GetIKLookAtWeight() => currentIKLookAtWeight; 
+
+        /// <summary>
+        /// Gets a blend variable controller for a specific variable, allowing you to edit that variable
+        /// much faster than by SetBlendVar(name, value).
+        /// </summary>
+        /// <param name="blendVar">blendVar you want to controll</param>
+        public BlendVarController GetBlendControllerFor(string blendVar)
+        {
+            BlendVarController controller = new BlendVarController(blendVar);
+            foreach (var animationLayer in layers)
+            {
+                animationLayer.AddTreesMatchingBlendVar(controller, blendVar);
+            }
+            if (controller.InnerControllerCount == 0) {
+                if (!hasAwoken) {
+                    Debug.LogError("Trying to create a blend controller in an AnimationPlayer before it has called Awake!. Please either move your calls " +
+                                   "to Start or later, or use script execution order to make sure you're called after AnimationPlayer!");
+                }
+                else {
+                    Debug.LogWarning($"Warning! Creating a blend controller for {blendVar} on AnimationPlayer on {name}, " +
+                                     $"but there's no blend trees that cares about that variable!", gameObject);
+                }
+            }
+            return controller;
+        }
+
+        public bool EnsureVersionUpgraded()
+        {
+            if (versionNumber == lastVersion)
+                return false;
+
+            if (versionNumber < 1 && layers != null)
+            {
+                foreach (var layer in layers)
+                {
+                    foreach (var state in layer.states)
+                    {
+                        state.EnsureHasGUID();
+                    }
+                }
+            }
+
+            versionNumber = lastVersion;
+            return true;
         }
 
         [Conditional("UNITY_ASSERTIONS")]
@@ -293,97 +442,6 @@ namespace Animation_Player
             if (!(state >= 0 && state < layers[layer].states.Count))
                 Debug.LogError($"Trying to {action} on an out of bounds state! (state {state} on layer {layer}, but there are {layers[layer].states.Count} " +
                                $"states on that layer!)", gameObject);
-        }
-
-        public bool EnsureVersionUpgraded()
-        {
-            if (versionNumber == lastVersion)
-                return false;
-
-            if (versionNumber < 1 && layers != null)
-            {
-                foreach (var layer in layers)
-                {
-                    foreach (var state in layer.states)
-                    {
-                        state.EnsureHasGUID();
-                    }
-                }
-            }
-
-            versionNumber = lastVersion;
-            return true;
-        }
-
-        /// <summary>
-        /// Gets a blend variable controller for a specific variable, allowing you to edit that variable
-        /// much faster than by SetBlendVar(name, value).
-        /// </summary>
-        /// <param name="blendVar">blendVar you want to controll</param>
-        public BlendVarController GetBlendControllerFor(string blendVar)
-        {
-            BlendVarController controller = new BlendVarController(blendVar);
-            foreach (var animationLayer in layers)
-            {
-                animationLayer.AddTreesMatchingBlendVar(controller, blendVar);
-            }
-            if (controller.InnerControllerCount == 0)
-                Debug.LogWarning($"Warning! Creating a blend controller for {blendVar} on AnimationPlayer on {name}, " +
-                                 $"but there's no blend trees that cares about that variable!", gameObject);
-            return controller;
-        }
-
-    }
-
-    /// <summary>
-    /// Instead of calling player.SetBlendVar("myVar", value), you can get a BlendVarController through player.GetBlendControllerFor("myVar"),
-    /// which can be cached. This saves some internal Dictionary lookups, which speeds up things.
-    /// </summary>
-    public class BlendVarController
-    {
-
-        private readonly List<AnimationLayer.BlendTreeController1D> inner1D = new List<AnimationLayer.BlendTreeController1D>();
-        private readonly List<AnimationLayer.BlendTreeController2D> inner2D_set1 = new List<AnimationLayer.BlendTreeController2D>();
-        private readonly List<AnimationLayer.BlendTreeController2D> inner2D_set2 = new List<AnimationLayer.BlendTreeController2D>();
-        private readonly string blendVar;
-
-        public BlendVarController(string blendVar)
-        {
-            this.blendVar = blendVar;
-        }
-
-        public int InnerControllerCount => inner1D.Count + inner2D_set1.Count + inner2D_set2.Count;
-
-        public void AddControllers(List<AnimationLayer.BlendTreeController1D> blendControllers1D)
-        {
-            inner1D.AddRange(blendControllers1D);
-        }
-
-        public void AddControllers(List<AnimationLayer.BlendTreeController2D> blendControllers2D)
-        {
-            foreach (var controller2D in blendControllers2D)
-            {
-                if (controller2D.blendVar1 == blendVar)
-                    inner2D_set1.Add(controller2D);
-                else
-                    inner2D_set2.Add(controller2D);
-            }
-        }
-
-        public void SetBlendVar(float value)
-        {
-            foreach (var controller1D in inner1D)
-            {
-                controller1D.SetValue(value);
-            }
-            foreach (var controller2D in inner2D_set1)
-            {
-                controller2D.SetValue1(value);
-            }
-            foreach (var controller2D in inner2D_set2)
-            {
-                controller2D.SetValue2(value);
-            }
         }
     }
 }

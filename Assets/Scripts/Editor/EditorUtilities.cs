@@ -7,7 +7,7 @@ using Object = UnityEngine.Object;
 
 namespace Animation_Player
 {
-    public class EditorUtilities
+    public static class EditorUtilities
     {
         public static void SetDirty(Component c)
         {
@@ -304,5 +304,20 @@ namespace Animation_Player
             return GUILayoutUtility.GetLastRect();
         }
 
+        /// <summary>
+        /// EditorUtilities.RecordUndo and Undo.RegisterCompleteObjectUndo both fails to properly store prefab modifications if the modification is an addition
+        /// of an element in a list. They both store the change to Array.size, but fail to store data about the array element, causing it to be a blank item.
+        /// (bug reported, accepted)
+        /// 
+        /// This means that SetDirty is neccessary to actually change the scene. But in order to ensure that Undo works, RegisterCompleteObjectUndo is 
+        /// neccessary. Using EditorUtilities.RecordUndo and then SetDirty causes Undo to undo the increase to Array.size, but not to undo the added element itself.
+        /// </summary>
+        public static void RecordUndo(Component comp, string message)
+        {
+            if (Application.isPlaying)
+                return;
+            Undo.RegisterCompleteObjectUndo(comp, message);
+            SetDirty(comp);
+        }
     }
 }

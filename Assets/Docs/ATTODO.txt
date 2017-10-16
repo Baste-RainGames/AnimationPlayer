@@ -1,4 +1,5 @@
 - means "should do"
++ means "done!"
 * means "working on RIGHT THE FUCK NOW"
 
 Animation states:
@@ -39,7 +40,7 @@ Animation transitions:
         Have to figure out if C here is a clip, another state in the state view, or another state in a special view.
     - Several ways of transitioning between two states
         probably want default transition and named transition
-    
+    - Better layout! Show list of all defined transitions
     - Move the transitions to the states?
         -I'm note sure about this. It would require less bookkeeping when deleting/reordering states (deleting a state would auto-delete
          all transitions from that state), but some bookkeeping will always be neccessary. Keeping the transitions seperate also makes
@@ -57,3 +58,4 @@ Misc
         - make sure all of these lists update when stuff is added. On changing tab is not enough, could have two inspectors open
     - fix the parts of the window shifting around as you unfold stuff (like clips used in metadata)
         - THAT STOPPED HAPPENING?
+    - AnimationPlayer should have internal BlendVarControllers, so there's not duplication between SetBlendVar and GetBlendVarController().SetValue

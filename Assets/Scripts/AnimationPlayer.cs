@@ -10,6 +10,7 @@ namespace Animation_Player
 {
     public class AnimationPlayer : MonoBehaviour
     {
+        // Serialized data:
         private const int lastVersion = 1;
         [SerializeField, HideInInspector]
         private int versionNumber;
@@ -17,8 +18,7 @@ namespace Animation_Player
         public AnimationLayer[] layers;
         public TransitionData defaultTransition;
 
-        public bool IKAvailable { get; private set; }
-
+        //Runtime fields:
         private PlayableGraph graph;
         private Playable rootPlayable;
         private string visualizerClientName;
@@ -26,6 +26,15 @@ namespace Animation_Player
         //IK
         private Animator outputAnimator;
         private float currentIKLookAtWeight;
+        //@TODO: It would be nice to figure out if IK is available at runtime, but currently that's not possible!
+        // This is because we currently do IK through having an AnimatorController with an IK layer on it on the animator, which works, 
+        // but it's not possible to check if IK is turned on on an AnimatorController at runtime:  
+        // https://forum.unity.com/threads/check-if-ik-pass-is-enabled-at-runtime.505892/#post-3299087
+        // There are two good solutions:
+        // 1: Wait until IK Playables are implemented, at some point
+        // 2: Ship AnimationPlayer with an AnimatorController that's set up correctly, and which we set as the runtime animator
+        // controller on startup
+        //        public bool IKAvailable { get; private set; }
 
 #if UNITY_EDITOR
         //Used to make the inspector continually update
@@ -48,9 +57,6 @@ namespace Animation_Player
             // I think we can ditch the animator, but the documentation is kinda sparse!
             outputAnimator = gameObject.EnsureComponent<Animator>();
             AnimationPlayableOutput animOutput = AnimationPlayableOutput.Create(graph, $"{name}_animation_player", outputAnimator);
-
-            //@TODO: figure out how to check if the animatorcontroller has an IK pass at runtime
-            IKAvailable = outputAnimator.runtimeAnimatorController != null; 
 
             for (var i = 0; i < layers.Length; i++)
                 layers[i].InitializeSelf(graph);
@@ -127,6 +133,20 @@ namespace Animation_Player
             AssertLayerInBounds(layer, state, "play a state");
             int stateIdx = GetStateIdxFromName(state, layer);
             Play(stateIdx, layer);
+        }
+
+        /// <summary>
+        /// Return to playing the default state if the named state is the current played state.
+        /// This is usefull if you want to play an animation, and then return to idle, but don't want
+        /// to intervene if something else has changed the currently played state. 
+        /// </summary>
+        /// <param name="state">State to check if is playing</param>
+        /// <param name="layer">Layer this is happening on</param>
+        public void PlayDefaultStateIfPlaying(string state, int layer = 0) 
+        {
+            AssertLayerInBounds(layer, state, "return to default state");
+            if(layers[layer].GetCurrentPlayingState().Name == state)
+                Play(0, layer);
         }
 
         /// <summary>

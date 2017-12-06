@@ -109,18 +109,22 @@ namespace Animation_Player
             GUILayout.Space(10f);
             EditorUtilities.Splitter();
 
-            EditorUtilities.DrawHorizontal(() =>
+            EditorGUILayout.BeginHorizontal();
             {
                 var numStatesBefore = animationPlayer.layers[selectedLayer].states.Count;
                 StateSelectionAndAdditionDrawer.Draw(animationPlayer, selectedLayer, selectedState, selectedEditMode, this);
-                if (numStatesBefore == 0 && animationPlayer.layers[selectedLayer].states.Count > 0)
-                {
+                if (numStatesBefore == 0 && animationPlayer.layers[selectedLayer].states.Count > 0) {
                     Repaint();
                     return;
                 }
 
-                EditorUtilities.DrawVertical(DrawSelectedState);
-            });
+                EditorGUILayout.BeginVertical();
+                {
+                    DrawSelectedState();
+                }
+                EditorGUILayout.EndVertical();
+            }
+            EditorGUILayout.EndHorizontal();
 
             EditorUtilities.Splitter();
 
@@ -217,35 +221,49 @@ namespace Animation_Player
 
             selectedLayer.SetTo(Mathf.Clamp(selectedLayer, 0, numLayers));
 
+            var twoLines = Screen.width < 420f;
+
             EditorGUILayout.BeginHorizontal();
-
-            GUILayout.FlexibleSpace();
-
-            selectedLayer.SetTo(EditorUtilities.DrawLeftButton(selectedLayer));
-            EditorGUILayout.LabelField("Selected layer: " + selectedLayer, GUILayout.Width(selectedLayerWidth));
-            selectedLayer.SetTo(EditorUtilities.DrawRightButton(selectedLayer, numLayers));
-
-            GUILayout.Space(10f);
-
-            if (GUILayout.Button("Add layer", GUILayout.MinWidth(100f)))
             {
-                EditorUtilities.RecordUndo(animationPlayer, "Add layer to animation player");
-                EditorUtilities.ExpandArrayByOne(ref animationPlayer.layers, AnimationLayer.CreateLayer);
-                selectedLayer.SetTo(animationPlayer.layers.Length - 1);
-                MarkDirty();
-            }
-            EditorGUI.BeginDisabledGroup(numLayers < 2);
-            if (EditorUtilities.AreYouSureButton("Delete layer", "Are you sure?", "DeleteLayer" + selectedLayer, 1f, GUILayout.Width(100f)))
-            {
-                EditorUtilities.RecordUndo(animationPlayer, "Delete layer from animation player");
-                EditorUtilities.DeleteIndexFromArray(ref animationPlayer.layers, selectedLayer);
-                selectedLayer.SetTo(Mathf.Max(0, selectedLayer - 1));
-                MarkDirty();
-            }
-            EditorGUI.EndDisabledGroup();
+                GUILayout.FlexibleSpace();
 
-            GUILayout.FlexibleSpace();
+                selectedLayer.SetTo(EditorUtilities.DrawLeftButton(selectedLayer));
+                EditorGUILayout.LabelField("Selected layer: " + selectedLayer, GUILayout.Width(selectedLayerWidth));
+                selectedLayer.SetTo(EditorUtilities.DrawRightButton(selectedLayer, numLayers));
 
+                if (twoLines) 
+                {
+                    GUILayout.FlexibleSpace();
+                    EditorGUILayout.EndHorizontal();
+                    EditorGUILayout.BeginHorizontal();
+                    GUILayout.FlexibleSpace();
+                }
+                else 
+                {
+                    GUILayout.Space(10f);
+                }
+
+                if (GUILayout.Button("Add layer", GUILayout.Width(100f))) 
+                {
+                    EditorUtilities.RecordUndo(animationPlayer, "Add layer to animation player");
+                    EditorUtilities.ExpandArrayByOne(ref animationPlayer.layers, AnimationLayer.CreateLayer);
+                    selectedLayer.SetTo(animationPlayer.layers.Length - 1);
+                    MarkDirty();
+                }
+
+                EditorGUI.BeginDisabledGroup(numLayers < 2);
+                {
+                    if (EditorUtilities.AreYouSureButton("Delete layer", "Are you sure?", "DeleteLayer" + selectedLayer, 1f, GUILayout.Width(100f))) {
+                        EditorUtilities.RecordUndo(animationPlayer, "Delete layer from animation player");
+                        EditorUtilities.DeleteIndexFromArray(ref animationPlayer.layers, selectedLayer);
+                        selectedLayer.SetTo(Mathf.Max(0, selectedLayer - 1));
+                        MarkDirty();
+                    }
+                }
+                EditorGUI.EndDisabledGroup();
+
+                GUILayout.FlexibleSpace();
+            }
             EditorGUILayout.EndHorizontal();
         }
 
@@ -407,11 +425,14 @@ namespace Animation_Player
             EditorGUILayout.LabelField("Current blend variable values:");
             var blendVars = animationPlayer.GetBlendVariables();
             EditorUtilities.DrawIndented(() => {
-                foreach (var blendVar in blendVars) {
-                    EditorUtilities.DrawHorizontal(() => {
+                foreach (var blendVar in blendVars) 
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    {
                         EditorGUILayout.LabelField(blendVar, GUILayout.Width(100f));
                         EditorGUILayout.LabelField(animationPlayer.GetBlendVar(blendVar).ToString());
-                    });
+                    }
+                    EditorGUILayout.EndHorizontal();
                 }
             });
             EditorUtilities.Splitter();
@@ -425,17 +446,18 @@ namespace Animation_Player
             for (int i = 0; i < animationPlayer.GetStateCount(selectedLayer); i++)
             {
                 EditorGUILayout.BeginHorizontal();
-                string stateName = animationPlayer.layers[selectedLayer].states[i].Name;
+                {
+                    string stateName = animationPlayer.layers[selectedLayer].states[i].Name;
 
-                if (GUILayout.Button($"Blend to {stateName} using default transition"))
-                    animationPlayer.Play(i, selectedLayer);
+                    if (GUILayout.Button($"Blend to {stateName} using default transition"))
+                        animationPlayer.Play(i, selectedLayer);
 
-                if (GUILayout.Button($"Blend to {stateName} over .5 secs"))
-                    animationPlayer.Play(i, TransitionData.Linear(.5f), selectedLayer);
+                    if (GUILayout.Button($"Blend to {stateName} over .5 secs"))
+                        animationPlayer.Play(i, TransitionData.Linear(.5f), selectedLayer);
 
-                if (GUILayout.Button($"Snap to {stateName}"))
-                    animationPlayer.SnapTo(i, selectedLayer);
-
+                    if (GUILayout.Button($"Snap to {stateName}"))
+                        animationPlayer.SnapTo(i, selectedLayer);
+                }
                 EditorGUILayout.EndHorizontal();
             }
 

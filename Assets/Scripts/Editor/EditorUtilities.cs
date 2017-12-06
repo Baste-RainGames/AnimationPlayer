@@ -276,12 +276,14 @@ namespace Animation_Player
             EditorGUI.LabelField(rect, label);
         }
 
+        private static GUILayoutOption _width24;
+        private static GUILayoutOption width24 => _width24 ?? (_width24 = GUILayout.Width(24));
         public static int DrawRightButton(int currentValue, int maxValue)
         {
             var disabled = maxValue == 1 || currentValue == maxValue - 1;
 
             EditorGUI.BeginDisabledGroup(disabled);
-            if (GUILayout.Button("\u2192", GUILayout.Width(24f)))
+            if (GUILayout.Button("\u2192", width24))
                 currentValue++;
             EditorGUI.EndDisabledGroup();
             return currentValue;
@@ -291,7 +293,7 @@ namespace Animation_Player
         {
             var disabled = currentValue == 0;
             EditorGUI.BeginDisabledGroup(disabled);
-            if (GUILayout.Button("\u2190", GUILayout.Width(24f)))
+            if (GUILayout.Button("\u2190", width24))
                 currentValue--;
             EditorGUI.EndDisabledGroup();
             return currentValue;

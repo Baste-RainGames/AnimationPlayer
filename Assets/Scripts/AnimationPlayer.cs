@@ -136,6 +136,16 @@ namespace Animation_Player
         }
 
         /// <summary>
+        /// Plays the default state of the state machine
+        /// </summary>
+        /// <param name="layer">Layer to play the default state on</param>
+        public void PlayDefaultState(int layer = 0) 
+        {
+            AssertLayerInBounds(layer, "play the default state");
+            Play(0, layer);
+        }
+
+        /// <summary>
         /// Return to playing the default state if the named state is the current played state.
         /// This is usefull if you want to play an animation, and then return to idle, but don't want
         /// to intervene if something else has changed the currently played state. 

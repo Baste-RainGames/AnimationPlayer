@@ -111,6 +111,7 @@ namespace Animation_Player
                 if (state.Name == stateName)
                     return true;
             }
+
             return false;
         }
 
@@ -133,6 +134,7 @@ namespace Animation_Player
                 Debug.LogError($"Trying to play out of bounds clip {state}! There are {states.Count} clips in the animation player");
                 return;
             }
+
             if (transitionData.type == TransitionType.Curve && transitionData.curve == null)
             {
                 Debug.LogError("Trying to play an animationCurve based transition, but the transition curve is null!");
@@ -151,6 +153,7 @@ namespace Animation_Player
                 {
                     stateMixer.SetInputWeight(i, i == state ? 1f : 0f);
                 }
+
                 currentPlayedState = state;
                 transitioning = false;
             }
@@ -174,13 +177,13 @@ namespace Animation_Player
         {
             if (!transitioning)
                 return;
-        
+
             var lerpVal = (Time.time - transitionStartTime) / currentTransitionData.duration;
             if (currentTransitionData.type == TransitionType.Curve)
             {
                 lerpVal = currentTransitionData.curve.Evaluate(lerpVal);
             }
-        
+
             for (int i = 0; i < states.Count; i++)
             {
                 var isTargetClip = i == currentPlayedState;
@@ -190,7 +193,7 @@ namespace Animation_Player
                     stateMixer.SetInputWeight(i, Mathf.Lerp(valueWhenBlendStarted[i], target, lerpVal));
                 }
             }
-        
+
             if (lerpVal >= 1)
                 transitioning = false;
         }
@@ -202,6 +205,7 @@ namespace Animation_Player
                 Debug.LogError($"Trying to get the state weight for {state}, which is out of bounds! There are {states.Count} states!");
                 return 0f;
             }
+
             return stateMixer.GetInputWeight(state);
         }
 
@@ -285,8 +289,10 @@ namespace Animation_Player
             return states[currentPlayedState];
         }
 
-        public void AddAllBlendVarsTo(List<string> result) {
-            foreach (var key in blendVars.Keys) {
+        public void AddAllBlendVarsTo(List<string> result)
+        {
+            foreach (var key in blendVars.Keys)
+            {
                 result.Add(key);
             }
         }
@@ -373,7 +379,7 @@ namespace Animation_Player
             private Action<float> UpdateValue1OnMainController;
             private Action<float> UpdateValue2OnMainController;
 
-            public BlendTreeController2D(string blendVar1, string blendVar2, AnimationMixerPlayable treeMixer, int numClips, 
+            public BlendTreeController2D(string blendVar1, string blendVar2, AnimationMixerPlayable treeMixer, int numClips,
                                          Action<float> UpdateValue1OnMainController, Action<float> UpdateValue2OnMainController)
             {
                 this.blendVar1 = blendVar1;
@@ -395,21 +401,24 @@ namespace Animation_Player
                 maxVal2 = Mathf.Max(threshold2, maxVal2);
             }
 
-            public void SetValue1(float value) {
+            public void SetValue1(float value)
+            {
                 var last = currentBlendVector.x;
                 currentBlendVector.x = Mathf.Clamp(value, minVal1, maxVal1);
-                if (last != currentBlendVector.x) {
+                if (last != currentBlendVector.x)
+                {
                     UpdateValue1OnMainController(value);
                     Recalculate();
                 }
             }
 
-            public void SetValue2(float value) {
+            public void SetValue2(float value)
+            {
                 var last = currentBlendVector.y;
                 currentBlendVector.y = Mathf.Clamp(value, minVal2, maxVal2);
-                if(last != currentBlendVector.y)
+                if (last != currentBlendVector.y)
                     UpdateValue2OnMainController(value);
-                    Recalculate();
+                Recalculate();
             }
 
             public void SetValue(string blendVar, float value)
@@ -462,10 +471,12 @@ namespace Animation_Player
                     if (minVal < 0f)
                         minVal = 0f;
                 }
+
                 return minVal;
             }
 
-            private float WeightFunc(int idx, Vector2 inputPoint, Vector2 referencePoint) {
+            private float WeightFunc(int idx, Vector2 inputPoint, Vector2 referencePoint)
+            {
                 var toPointAtIdx = motions[idx].thresholdPoint - referencePoint;
 
                 var dotProd = Vector2.Dot(inputPoint - referencePoint, toPointAtIdx);

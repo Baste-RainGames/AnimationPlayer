@@ -14,7 +14,7 @@ namespace Animation_Player
         private SerializedGUID fromStateGUID;
         [SerializeField]
         private SerializedGUID toStateGUID;
-        
+
         public TransitionData transitionData;
 
         private AnimationState fromState, toState;
@@ -27,13 +27,10 @@ namespace Animation_Player
                 fromStateGUID = fromState.GUID;
             }
         }
-        
+
         public AnimationState ToState
         {
-            get
-            {
-                return toState;
-            }
+            get { return toState; }
             set
             {
                 toState = value;

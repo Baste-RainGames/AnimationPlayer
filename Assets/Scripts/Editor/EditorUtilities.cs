@@ -278,6 +278,7 @@ namespace Animation_Player
 
         private static GUILayoutOption _width24;
         private static GUILayoutOption width24 => _width24 ?? (_width24 = GUILayout.Width(24));
+
         public static int DrawRightButton(int currentValue, int maxValue)
         {
             var disabled = maxValue == 1 || currentValue == maxValue - 1;

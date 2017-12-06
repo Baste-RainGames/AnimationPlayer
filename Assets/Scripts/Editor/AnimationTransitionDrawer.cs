@@ -40,6 +40,7 @@ namespace Animation_Player
                         EditorUtilities.RecordUndo(animationPlayer, $"Clear transition from  {fromStateName} to {toStateName}");
                         layer.transitions.Remove(selectedTransition);
                     }
+
                     EditorGUILayout.EndHorizontal();
                 });
             }
@@ -98,6 +99,7 @@ namespace Animation_Player
                             selectedToStateIdx.SetTo(layer.states.FindIndex(s => s.Name == state));
                         });
                     }
+
                     menu.ShowAsContext();
                 }
             });

@@ -25,6 +25,7 @@ namespace SerializableActions.Internal
                     obj = GetValue_Imp(obj, element);
                 }
             }
+
             return obj;
         }
 
@@ -46,6 +47,7 @@ namespace SerializableActions.Internal
 
                 type = type.BaseType;
             }
+
             return null;
         }
 
@@ -61,6 +63,7 @@ namespace SerializableActions.Internal
                 if (!enm.MoveNext())
                     return null;
             }
+
             return enm.Current;
         }
     }

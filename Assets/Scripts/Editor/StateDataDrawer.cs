@@ -130,7 +130,7 @@ namespace Animation_Player
         private static void DeleteState(AnimationPlayer animationPlayer, AnimationLayer layer, PersistedInt selectedState)
         {
             EditorUtilities.RecordUndo(animationPlayer, "Deleting state " + layer.states[selectedState].Name);
-            layer.transitions.RemoveAll(transition => transition.FromState == layer.states[selectedState] || 
+            layer.transitions.RemoveAll(transition => transition.FromState == layer.states[selectedState] ||
                                                       transition.ToState == layer.states[selectedState]);
             layer.states.RemoveAt(selectedState);
 

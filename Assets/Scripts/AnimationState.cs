@@ -4,7 +4,6 @@ using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
 
-
 namespace Animation_Player
 {
     using BlendTreeController1D = AnimationLayer.BlendTreeController1D;
@@ -27,7 +26,7 @@ namespace Animation_Player
         [SerializeField]
         private SerializedGUID guid;
         public SerializedGUID GUID => guid;
-        
+
         public double speed;
         public AnimationClip clip;
         public AnimationStateType type;
@@ -56,7 +55,7 @@ namespace Animation_Player
         public void EnsureHasGUID()
         {
             //Animation states used to not have guids!
-            if(guid.GUID == Guid.Empty)
+            if (guid.GUID == Guid.Empty)
                 guid = SerializedGUID.Create();
         }
 
@@ -106,11 +105,13 @@ namespace Animation_Player
                 name = clip.name;
                 return true;
             }
+
             if (!hasUpdatedName)
             {
                 name = clip.name;
                 return true;
             }
+
             return false;
         }
 
@@ -125,6 +126,7 @@ namespace Animation_Player
                 {
                     duration = Mathf.Max(duration, blendTree[i].clip?.length ?? 0f);
                 }
+
                 return duration;
             }
         }
@@ -134,7 +136,7 @@ namespace Animation_Player
             return $"{name} ({type})";
         }
 
-        public Playable GeneratePlayable(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers, 
+        public Playable GeneratePlayable(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
                                          Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers, Dictionary<string, float> blendVars)
         {
             switch (type)
@@ -191,7 +193,7 @@ namespace Animation_Player
                     treeMixer.SetInputWeight(0, 1f);
                     return treeMixer;
             }
-            
+
             throw new Exception($"Unknown playable type {type}");
         }
 

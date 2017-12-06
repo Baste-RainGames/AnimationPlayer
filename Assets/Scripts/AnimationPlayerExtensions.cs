@@ -13,11 +13,11 @@ namespace Animation_Player
             foreach (var element in collection)
             {
                 var asT = element as T;
-                if(asT != null)
+                if (asT != null)
                     yield return asT;
             }
         }
-        
+
         public static T EnsureComponent<T>(this GameObject obj) where T : Component
         {
             var t = obj.GetComponent<T>();
@@ -34,7 +34,7 @@ namespace Animation_Player
                 return false;
             return index >= 0 && index < arr.Length;
         }
-    
+
         public static bool IsInBounds<T>(this List<T> arr, int index)
         {
             if (arr == null)
@@ -49,7 +49,7 @@ namespace Animation_Player
             V value;
             if (dict.TryGetValue(key, out value))
                 return value;
-        
+
             return dict[key] = new V();
         }
     }

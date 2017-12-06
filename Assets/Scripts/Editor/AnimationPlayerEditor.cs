@@ -113,7 +113,8 @@ namespace Animation_Player
             {
                 var numStatesBefore = animationPlayer.layers[selectedLayer].states.Count;
                 StateSelectionAndAdditionDrawer.Draw(animationPlayer, selectedLayer, selectedState, selectedEditMode, this);
-                if (numStatesBefore == 0 && animationPlayer.layers[selectedLayer].states.Count > 0) {
+                if (numStatesBefore == 0 && animationPlayer.layers[selectedLayer].states.Count > 0)
+                {
                     Repaint();
                     return;
                 }
@@ -231,19 +232,19 @@ namespace Animation_Player
                 EditorGUILayout.LabelField("Selected layer: " + selectedLayer, GUILayout.Width(selectedLayerWidth));
                 selectedLayer.SetTo(EditorUtilities.DrawRightButton(selectedLayer, numLayers));
 
-                if (twoLines) 
+                if (twoLines)
                 {
                     GUILayout.FlexibleSpace();
                     EditorGUILayout.EndHorizontal();
                     EditorGUILayout.BeginHorizontal();
                     GUILayout.FlexibleSpace();
                 }
-                else 
+                else
                 {
                     GUILayout.Space(10f);
                 }
 
-                if (GUILayout.Button("Add layer", GUILayout.Width(100f))) 
+                if (GUILayout.Button("Add layer", GUILayout.Width(100f)))
                 {
                     EditorUtilities.RecordUndo(animationPlayer, "Add layer to animation player");
                     EditorUtilities.ExpandArrayByOne(ref animationPlayer.layers, AnimationLayer.CreateLayer);
@@ -253,7 +254,8 @@ namespace Animation_Player
 
                 EditorGUI.BeginDisabledGroup(numLayers < 2);
                 {
-                    if (EditorUtilities.AreYouSureButton("Delete layer", "Are you sure?", "DeleteLayer" + selectedLayer, 1f, GUILayout.Width(100f))) {
+                    if (EditorUtilities.AreYouSureButton("Delete layer", "Are you sure?", "DeleteLayer" + selectedLayer, 1f, GUILayout.Width(100f)))
+                    {
                         EditorUtilities.RecordUndo(animationPlayer, "Delete layer from animation player");
                         EditorUtilities.DeleteIndexFromArray(ref animationPlayer.layers, selectedLayer);
                         selectedLayer.SetTo(Mathf.Max(0, selectedLayer - 1));
@@ -311,7 +313,8 @@ namespace Animation_Player
             EditorGUILayout.EndVertical();
         }
 
-        private void DrawTabHeader(Rect rect, string label, int index) {
+        private void DrawTabHeader(Rect rect, string label, int index)
+        {
             //Hack: expand the rects so they hit the next control
             rect.yMax += 2;
             rect.yMin -= 2;
@@ -424,8 +427,9 @@ namespace Animation_Player
 
             EditorGUILayout.LabelField("Current blend variable values:");
             var blendVars = animationPlayer.GetBlendVariables();
-            EditorUtilities.DrawIndented(() => {
-                foreach (var blendVar in blendVars) 
+            EditorUtilities.DrawIndented(() =>
+            {
+                foreach (var blendVar in blendVars)
                 {
                     EditorGUILayout.BeginHorizontal();
                     {

@@ -122,6 +122,7 @@ namespace Animation_Player
                             editor.MarkDirty();
                         }
                     }
+
                     break;
             }
         }

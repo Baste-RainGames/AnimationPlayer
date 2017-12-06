@@ -21,11 +21,11 @@ namespace Animation_Player
         {
             animationPlayer = player;
         }
-        
+
         public void DrawStatePreview(PersistedInt selectedLayer, PersistedInt selectedState)
         {
             //@TODO: handle changing state somehow
-            
+
             if (IsShowingPreview)
             {
                 DrawAnimationStatePreview();
@@ -46,9 +46,9 @@ namespace Animation_Player
             var animator = animationPlayer.gameObject.EnsureComponent<Animator>();
             var animOutput = AnimationPlayableOutput.Create(previewGraph, "AnimationOutput", animator);
 
-            animOutput.SetSourcePlayable(state.GeneratePlayable(previewGraph, new Dictionary<string, List<AnimationLayer.BlendTreeController1D>>(), 
-                                                                              new Dictionary<string, List<AnimationLayer.BlendTreeController2D>>(), 
-                                                                              new Dictionary<string, float>()));
+            animOutput.SetSourcePlayable(state.GeneratePlayable(previewGraph, new Dictionary<string, List<AnimationLayer.BlendTreeController1D>>(),
+                                                                new Dictionary<string, List<AnimationLayer.BlendTreeController2D>>(),
+                                                                new Dictionary<string, float>()));
 
             previewGraph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
             previewGraph.Play();
@@ -57,12 +57,11 @@ namespace Animation_Player
         public void StopPreviewing()
         {
             IsShowingPreview = false;
-            
+
             previewGraph.Destroy();
-            
+
             animationPlayer.gameObject.GetComponent<Animator>().Update(0f);
         }
-
 
         private void DrawAnimationStatePreview()
         {
@@ -78,13 +77,12 @@ namespace Animation_Player
                 if (GUILayout.Button("Automatic"))
                     previewMode = PreviewMode.Automatic;
                 EditorGUI.EndDisabledGroup();
-                
+
                 EditorGUI.BeginDisabledGroup(previewMode == PreviewMode.Manual);
                 if (GUILayout.Button("Manual"))
                     previewMode = PreviewMode.Manual;
                 EditorGUI.EndDisabledGroup();
             });
-            
 
             if (oldPreviewMode == PreviewMode.Manual && previewMode == PreviewMode.Automatic)
                 automaticPreviewLastTime = Time.realtimeSinceStartup;
@@ -93,9 +91,9 @@ namespace Animation_Player
             {
                 var oldPreviewTime = previewTime;
                 previewTime = EditorGUILayout.Slider(previewTime, 0f, currentPreviewedState.Duration);
-                
+
                 previewGraph.Evaluate(previewTime - oldPreviewTime);
-                
+
             }
             else
             {
@@ -109,7 +107,7 @@ namespace Animation_Player
 
                 var oldVal = previewTime;
                 previewTime = EditorGUILayout.Slider(previewTime, 0f, currentPreviewedState.Duration);
-                if(oldVal != previewTime)
+                if (oldVal != previewTime)
                     previewMode = PreviewMode.Manual;
             }
 
@@ -120,7 +118,7 @@ namespace Animation_Player
                 StopPreviewing();
             }
         }
-        
+
         public enum PreviewMode
         {
             Automatic,
@@ -129,7 +127,7 @@ namespace Animation_Player
 
         public void Cleanup()
         {
-            if(previewGraph.IsValid())
+            if (previewGraph.IsValid())
                 previewGraph.Destroy();
         }
     }

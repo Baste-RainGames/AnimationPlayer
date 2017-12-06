@@ -42,6 +42,7 @@ namespace Animation_Player
 #endif
 
         private bool hasAwoken;
+
         private void Awake()
         {
             EnsureVersionUpgraded();
@@ -74,6 +75,7 @@ namespace Animation_Player
 
                 rootPlayable = layerMixer;
             }
+
             animOutput.SetSourcePlayable(rootPlayable);
 
             //fun fact: default is DSPClock!
@@ -139,7 +141,7 @@ namespace Animation_Player
         /// Plays the default state of the state machine
         /// </summary>
         /// <param name="layer">Layer to play the default state on</param>
-        public void PlayDefaultState(int layer = 0) 
+        public void PlayDefaultState(int layer = 0)
         {
             AssertLayerInBounds(layer, "play the default state");
             Play(0, layer);
@@ -152,10 +154,10 @@ namespace Animation_Player
         /// </summary>
         /// <param name="state">State to check if is playing</param>
         /// <param name="layer">Layer this is happening on</param>
-        public void PlayDefaultStateIfPlaying(string state, int layer = 0) 
+        public void PlayDefaultStateIfPlaying(string state, int layer = 0)
         {
             AssertLayerInBounds(layer, state, "return to default state");
-            if(layers[layer].GetCurrentPlayingState().Name == state)
+            if (layers[layer].GetCurrentPlayingState().Name == state)
                 Play(0, layer);
         }
 
@@ -282,15 +284,18 @@ namespace Animation_Player
             return layers[layer].GetBlendVar(var);
         }
 
-        public List<string> GetBlendVariables() {
+        public List<string> GetBlendVariables()
+        {
             List<string> result = new List<string>();
             GetBlendVariables(result);
             return result;
         }
 
-        private void GetBlendVariables(List<string> result) {
+        private void GetBlendVariables(List<string> result)
+        {
             result.Clear();
-            foreach (var layer in layers) {
+            foreach (var layer in layers)
+            {
                 layer.AddAllBlendVarsTo(result);
             }
         }
@@ -309,6 +314,7 @@ namespace Animation_Player
                                $"\n{layers[layer].states.PrettyPrint(s => s.Name)}", gameObject);
                 return -1;
             }
+
             return stateIdx;
         }
 
@@ -384,12 +390,13 @@ namespace Animation_Player
         /// <param name="eyesWeight">(0-1) determines how much the eyes are involved in the LookAt.</param>
         /// <param name="clampWeight">(0-1) 0.0 means the character is completely unrestrained in motion, 1.0 means it's completely clamped (look at becomes 
         /// impossible), and 0.5 means it'll be able to move on half of the possible range (180 degrees).</param>
-        public void SetIKLookAtWeight(float weight, float bodyWeight = 0f, float headWeight = 1f, float eyesWeight = 0f, float clampWeight = .5f) {
+        public void SetIKLookAtWeight(float weight, float bodyWeight = 0f, float headWeight = 1f, float eyesWeight = 0f, float clampWeight = .5f)
+        {
             currentIKLookAtWeight = weight; //animator has a getter for all the other IK things, but not this one!
             outputAnimator.SetLookAtWeight(weight, bodyWeight, headWeight, eyesWeight, clampWeight);
         }
 
-        public float GetIKLookAtWeight() => currentIKLookAtWeight; 
+        public float GetIKLookAtWeight() => currentIKLookAtWeight;
 
         /// <summary>
         /// Gets a blend variable controller for a specific variable, allowing you to edit that variable
@@ -403,16 +410,21 @@ namespace Animation_Player
             {
                 animationLayer.AddTreesMatchingBlendVar(controller, blendVar);
             }
-            if (controller.InnerControllerCount == 0) {
-                if (!hasAwoken) {
+
+            if (controller.InnerControllerCount == 0)
+            {
+                if (!hasAwoken)
+                {
                     Debug.LogError("Trying to create a blend controller in an AnimationPlayer before it has called Awake!. Please either move your calls " +
                                    "to Start or later, or use script execution order to make sure you're called after AnimationPlayer!");
                 }
-                else {
+                else
+                {
                     Debug.LogWarning($"Warning! Creating a blend controller for {blendVar} on AnimationPlayer on {name}, " +
                                      $"but there's no blend trees that cares about that variable!", gameObject);
                 }
             }
+
             return controller;
         }
 

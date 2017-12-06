@@ -275,12 +275,17 @@ Prefab:
     - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
         type: 2}
       propertyPath: layers.Array.data[0].states.Array.size
-      value: 1
+      value: 23
       objectReference: {fileID: 0}
     - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
         type: 2}
       propertyPath: layers.Array.data[0].transitions.Array.size
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].layersForEditor.Array.size
+      value: 23
       objectReference: {fileID: 0}
     - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
         type: 2}
@@ -322,7 +327,7 @@ Prefab:
     - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
         type: 2}
       propertyPath: layers.Array.data[0].states.Array.data[3].name
-      value: New State
+      value: New State1
       objectReference: {fileID: 0}
     - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
         type: 2}
@@ -332,7 +337,7 @@ Prefab:
     - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
         type: 2}
       propertyPath: layers.Array.data[0].states.Array.data[3].guid.guidSerialized
-      value: 239c6fd3-68e2-4ffa-97e5-a08231b0e4e9
+      value: e46f9279-0101-46ff-81d1-5ff1b589c1ff
       objectReference: {fileID: 0}
     - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
         type: 2}
@@ -347,7 +352,7 @@ Prefab:
     - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
         type: 2}
       propertyPath: layers.Array.data[0].states.Array.data[0].name
-      value: idle_RFoot_teri
+      value: Here is a state!
       objectReference: {fileID: 0}
     - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
         type: 2}
@@ -373,6 +378,641 @@ Prefab:
         type: 2}
       propertyPath: layers.Array.data[0].states.Array.data[0].blendVariable
       value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[1].name
+      value: Group/Name
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[1].guid.guidSerialized
+      value: b7fb4c60-e6f8-4689-97ef-1a0ebe2bb5d8
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[1].clip
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[2].name
+      value: New State1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[2].hasUpdatedName
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[2].guid.guidSerialized
+      value: 8d6d81d2-aaa2-4e46-a1de-ed5f3ee14b6d
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[2].clip
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[4].name
+      value: New State1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[4].guid.guidSerialized
+      value: 1dc8cb1c-cd58-4b4d-8d2f-1d1683c30772
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[4].speed
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[5].name
+      value: New State1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[5].guid.guidSerialized
+      value: 659b907f-7f18-4c98-ab53-ef3855143d51
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[5].speed
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[6].name
+      value: New State1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[6].guid.guidSerialized
+      value: 92165c81-7728-4cc0-ae1f-00dd49fb9c9b
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[6].speed
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[7].name
+      value: New State1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[7].guid.guidSerialized
+      value: 3e48a178-9d08-4712-a402-10612ad44db5
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[7].speed
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[8].name
+      value: New 2D Blend Tree
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[8].guid.guidSerialized
+      value: 67985dc5-517a-45b3-80ca-39d859c08abe
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[8].speed
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[8].type
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[8].blendVariable
+      value: blend1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[9].name
+      value: New Blend Tree1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[9].hasUpdatedName
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[9].guid.guidSerialized
+      value: 3a99d607-b62b-4def-bbdc-6d44d2139289
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[9].speed
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[9].type
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[9].blendVariable
+      value: blend
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[9].blendVariable2
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[10].name
+      value: New State1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[10].guid.guidSerialized
+      value: 4f69cafc-3b6b-4193-95e4-60bebadedd5e
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[10].speed
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[10].type
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[10].blendVariable
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[11].name
+      value: New 2D Blend Tree1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[11].guid.guidSerialized
+      value: ff6a783f-404a-4942-aebf-fc8cf1c8e66d
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[11].speed
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[12].name
+      value: New Blend Tree1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[12].hasUpdatedName
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[12].guid.guidSerialized
+      value: 1779eeae-6d1e-41a9-b4f4-d2a10606a91f
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[12].speed
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[12].type
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[12].blendVariable
+      value: blend
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[12].blendVariable2
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[13].name
+      value: New State1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[13].guid.guidSerialized
+      value: c1b27b67-7b0e-46bb-a9e2-7a11e821e3c8
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[13].speed
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[13].type
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[13].blendVariable
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[14].name
+      value: New State1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[14].guid.guidSerialized
+      value: 1304a152-b072-4731-984e-fa362358f9af
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[14].speed
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].layersForEditor.Array.data[0].m_Text
+      value: Here is a state!
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].layersForEditor.Array.data[1].m_Text
+      value: Group/Name
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].layersForEditor.Array.data[2].m_Text
+      value: New State1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].layersForEditor.Array.data[3].m_Text
+      value: New State1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].layersForEditor.Array.data[4].m_Text
+      value: New State1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].layersForEditor.Array.data[5].m_Text
+      value: New State1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].layersForEditor.Array.data[6].m_Text
+      value: New State1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].layersForEditor.Array.data[7].m_Text
+      value: New State1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].layersForEditor.Array.data[8].m_Text
+      value: New 2D Blend Tree
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].layersForEditor.Array.data[9].m_Text
+      value: New Blend Tree1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].layersForEditor.Array.data[10].m_Text
+      value: New State1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].layersForEditor.Array.data[11].m_Text
+      value: New 2D Blend Tree1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].layersForEditor.Array.data[12].m_Text
+      value: New Blend Tree1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].layersForEditor.Array.data[13].m_Text
+      value: New State1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].layersForEditor.Array.data[14].m_Text
+      value: New State1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[15].name
+      value: New State1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[15].guid.guidSerialized
+      value: 2016dd8e-10a0-407f-8f02-2f676c1bd431
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[15].speed
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].layersForEditor.Array.data[15].m_Text
+      value: New State1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[16].name
+      value: New State1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[16].guid.guidSerialized
+      value: 7799b46f-1ca2-4e0e-bd10-4749354df12d
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[16].speed
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].layersForEditor.Array.data[16].m_Text
+      value: New State1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[17].name
+      value: New 2D Blend Tree1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[17].guid.guidSerialized
+      value: 960ee082-f8fd-4c7a-93d4-92ec52b494ec
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[17].speed
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].layersForEditor.Array.data[17].m_Text
+      value: New 2D Blend Tree1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[18].name
+      value: Low
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[18].hasUpdatedName
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[18].guid.guidSerialized
+      value: de635140-49e1-4d0f-95e1-536b6c68b112
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[18].speed
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[18].type
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[18].blendVariable
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[18].blendVariable2
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].layersForEditor.Array.data[18].m_Text
+      value: Low
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[8].hasUpdatedName
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[8].blendVariable2
+      value: blend2
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[11].hasUpdatedName
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[11].type
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[11].blendVariable
+      value: blend1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[11].blendVariable2
+      value: blend2
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[17].hasUpdatedName
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[17].type
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[17].blendVariable
+      value: blend1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[17].blendVariable2
+      value: blend2
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[1].hasUpdatedName
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[18].clip
+      value: 
+      objectReference: {fileID: 7400000, guid: 60fcf93512bebac4f890c3ebe54ac175, type: 2}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[19].name
+      value: New 2D Blend Tree1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[19].hasUpdatedName
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[19].guid.guidSerialized
+      value: 75ef33e7-5197-421e-8159-84abc3564285
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[19].speed
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[19].type
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[19].blendVariable
+      value: blend1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[19].blendVariable2
+      value: blend2
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].layersForEditor.Array.data[19].m_Text
+      value: New 2D Blend Tree1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[20].name
+      value: New Blend Tree
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[20].guid.guidSerialized
+      value: 223ea342-2a66-44f8-a47d-815f7f3a4db2
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[20].speed
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[20].type
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[20].blendVariable
+      value: blend
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].layersForEditor.Array.data[20].m_Text
+      value: New Blend Tree
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[21].name
+      value: New State
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[21].guid.guidSerialized
+      value: 1f3b415d-2e03-4c0b-8863-f12f9c16b39a
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[21].speed
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].layersForEditor.Array.data[21].m_Text
+      value: New State
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[22].name
+      value: New 2D Blend Tree1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[22].hasUpdatedName
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[22].guid.guidSerialized
+      value: c79fbca8-0d3b-4d7e-b088-eb77cae5e30e
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[22].speed
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[22].type
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[22].blendVariable
+      value: blend1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].states.Array.data[22].blendVariable2
+      value: blend2
+      objectReference: {fileID: 0}
+    - target: {fileID: 114730750973353286, guid: d8293c4f77ab87843bd05efa1107d167,
+        type: 2}
+      propertyPath: layers.Array.data[0].layersForEditor.Array.data[22].m_Text
+      value: New 2D Blend Tree1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: d8293c4f77ab87843bd05efa1107d167, type: 2}

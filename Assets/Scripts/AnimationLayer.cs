@@ -497,6 +497,9 @@ namespace Animation_Player
             }
         }
 
+#if UNITY_EDITOR
+        public GUIContent[] layersForEditor;
+#endif
     }
 
     public enum AnimationLayerType

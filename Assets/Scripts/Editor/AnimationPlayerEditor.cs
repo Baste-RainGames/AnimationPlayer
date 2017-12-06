@@ -109,23 +109,15 @@ namespace Animation_Player
             GUILayout.Space(10f);
             EditorUtilities.Splitter();
 
-            EditorGUILayout.BeginHorizontal();
+            var numStatesBefore = animationPlayer.layers[selectedLayer].states.Count;
+            StateSelectionAndAdditionDrawer.Draw(animationPlayer, selectedLayer, selectedState, selectedEditMode, this);
+            if (numStatesBefore == 0 && animationPlayer.layers[selectedLayer].states.Count > 0)
             {
-                var numStatesBefore = animationPlayer.layers[selectedLayer].states.Count;
-                StateSelectionAndAdditionDrawer.Draw(animationPlayer, selectedLayer, selectedState, selectedEditMode, this);
-                if (numStatesBefore == 0 && animationPlayer.layers[selectedLayer].states.Count > 0)
-                {
-                    Repaint();
-                    return;
-                }
-
-                EditorGUILayout.BeginVertical();
-                {
-                    DrawSelectedState();
-                }
-                EditorGUILayout.EndVertical();
+                Repaint();
+                return;
             }
-            EditorGUILayout.EndHorizontal();
+
+            DrawSelectedState();
 
             EditorUtilities.Splitter();
 

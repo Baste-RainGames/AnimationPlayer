@@ -136,7 +136,7 @@ namespace Animation_Player
             return $"{name} ({type})";
         }
 
-        public Playable GeneratePlayable(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
+        public virtual Playable GeneratePlayable(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
                                          Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers, Dictionary<string, float> blendVars)
         {
             switch (type)
@@ -211,5 +211,23 @@ namespace Animation_Player
             BlendTree1D,
             BlendTree2D
         }
+    }
+
+    public class SingleClipState : AnimationState
+    {
+        public AnimationClip clip;
+
+        public override Playable GeneratePlayable(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers, 
+                                                  Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers, Dictionary<string, float> blendVars)
+        {
+            var clipPlayable = AnimationClipPlayable.Create(graph, clip);
+            clipPlayable.SetSpeed(speed);
+            return clipPlayable;
+        }
+    }
+
+    public class BlendTree1D : AnimationState
+    {
+        
     }
 }

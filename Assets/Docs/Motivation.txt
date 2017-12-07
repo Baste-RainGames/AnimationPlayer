@@ -1,0 +1,74 @@
+I started work on this project after finishing the main development of our game World to the West (WttW), and transitioning into a new project. A major pain point in the development of WttW had been bugs relating to how the AnimatorController works. I found it very hard to keep the character's animation state in sync with it's gameplay state. No matter which patterns I tried to use/invent, I either ended up in situations where the animated character got stuck in corner cases, or with hard-to-read code.
+
+In the end, World to the West shipped with animation bugs, and a lot of "if in a weird animation state, reset everything and hope for the best" code. 
+
+There were a lot of reasons for this. These are the largest ones:
+### Triggers:
+The largest issue I kept running into were triggers. Triggers are meant to allow you to set a trigger on the controller, and then have it transition to a state depending on what state it's currently in. For example, when creating an attack combo, you can simply set an "Attack" trigger, and have the animation transition to the next part of the combo depending on where you currently are. 
+If the current state doesn't have any transitions that cares about the trigger you set, the trigger stays set until you reach a state that does. This is _increadibly_ bug-prone. If you set a trigger that you expect to get consumed, but isn't, now there's a rouge trigger that's hanging around in your controller, and will cause a transition that you don't expect way down the line.
+These kinds of bugs are also hard to track down, because they're very time-based, and in the case of the player's avatar (which often has the most complex animations), dependent on input. 
+
+This problem is made worse due to the trigger feature not really being that usefull. I've written hundreds of transitions in WttW, and there's only been a handfull of times where being able to send a trigger, and have the controller decide what to do with that trigger was something I wanted. For the most part, what I wanted was to make the animator transition to a given animation. I couldn't use Animator.Play, because that would prevent our artists from tuning how the transition looks. 
+
+### ugly API
+I've always wanted to simply be able to write simple code that gets to directly reason about the current state of the animation, and react to that. In my ideal world, I could write code like this:
+
+if (playing "Idle")
+    Play("Attack Combo 1");
+else if(playing "Attack Combo 1")
+    Play("Attack Combo 2");
+
+This is _possible_ when using the AnimatorController/Animator setup, but the code looks awful:
+
+if (animator.GetCurrentAnimatorStateInfo(0).IsName("Idle"))
+    animator.Play("Attack Combo 1");
+else if (animator.GetCurrentAnimatorStateInfo(0).IsName("Attack Combo 1"))
+    animator.Play("Attack Combo 2");
+
+Animator.Play also means "instantly snap to", and ignores all transitions. So if I want a good-looking transition, I either have to give up letting the animator on our team edit it:
+
+animator.CrossFade("Attack Combo 1", .5f);
+
+or use triggers again:
+
+animator.SetTrigger("Attack Combo 1");
+
+And then we're back to the problem where if we hit an attack button at the same time as getting damaged, the trigger gets stuck, so our damage code has to have this big, unwieldy chunk of code:
+
+public void ReceiveDamage(...) {
+    animator.SetTrigger("Damaged");
+    animator.ResetTrigger("Attack Combo 1");
+    animator.ResetTrigger("Attack Combo 2");
+    animator.ResetTrigger("Attack Combo 3");
+    animator.ResetTrigger("Charge_Attack_Execute");
+    ... etc. for every single trigger that _could_ be active
+}
+
+Ugh!
+
+### mandatory transitions
+Another fundamental problem is simply that you have to define a transition between two states to be allowed to transition between them in a way that's previewable. The AnimatorController is probably set up like this because you want all transitions that's going to play to be defined. The problem is that we are making video games. The player's going to _hammer_ on their keyboard or controller, and we need to react as gracefully as possible to it. This means that we either have to:
+- Wait until the controller is in a state where it's ready to react to the player's input, which makes gameplay sluggish
+- Define transitions for the vast majority of pairs of states, causing the controller to look like a mess. This is also really, really work-intensive
+- Use any-state transitions everywhere, in which case the entire point of the controller dissapears. 
+
+You very often see users on the Unity forums complaining about how much easier the Animation component was to use, to the point where Unity's released an open source version of that component based on Playables. This shows that users are willing to give up every single feature of the Animator (blend trees, previewable transitions, masks, layers, etc.) in order to simply be able to play an animation with no fuzz.
+
+The Animation Player aims to combine the best of both worlds here. You define transitions when you need them, not just in order to get to play an animation.
+
+#bug discovery
+A related issue is that if there's a bug due to a missing transition, the workflow gets very, very cumbersome. What happens is this:
+- A transition that happens in the game wasn't expected when the Animator Controller was set up, so it's not defined.
+- QA, or whomever's testing, discovers that a character gets locked into a weird animation state due to the missing transition. 
+A good example of this happening from WttW was a character that was playing his "readying charge attack" animation infinitely if he was hit while readying the attack. The code moved the character out of the "readying charge attack" _gameplay_ state, but there was no transition defined from the "readying charge attack" _animation_ state to the "damaged" animation state due to an oversight.
+- The bug gets reported to the programming team, as it looks like a state bug. It will say something along the lines of "sometimes, when I do a specific action, the character's animation gets locked up". The programming team will struggle to reproduce the bug, as it's caused by how input affects the internal state of the Animator Controller. The bug is also often time-sensitive.
+- When the programmer in charge figures out the bug, they'll either have to ask the animator to implement the transition, or implement it themselves, causing programmer art quality transitions.
+
+With how the AnimationPlayer's set up, where a default transition is used if no transition is defined, the flow would be:
+- A transition that happens in the game wasn't expected when the Animation Player was set up, so it's not defined.
+In the example above, the transition from "readying charge attack" to "damaged" would probably be an akward, slow lerp.
+- QA, or whomever's testing, discovers that a transition looks ugly.
+- The bug is reported to the animation team, as "the transition between these two animations looks ugly"
+- An animator can go into the Animation Player, and define the missing transition.
+
+In short, it will be clearly visible if the bug is due to the programmers messing up (playing the wrong state), or the animators messing up (transitions look bad).

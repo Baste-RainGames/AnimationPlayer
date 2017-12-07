@@ -36,7 +36,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4509588061463754}
   - component: {fileID: 95186958964565446}
-  - component: {fileID: 114730750973353286}
+  - component: {fileID: 114925946360316648}
   m_Layer: 0
   m_Name: Teri_Animated
   m_TagString: Untagged
@@ -292,7 +292,7 @@ Animator:
   m_WarningMessage: 
   m_HasTransformHierarchy: 0
   m_AllowConstantClipSamplingOptimization: 1
---- !u!114 &114730750973353286
+--- !u!114 &114925946360316648
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
@@ -305,129 +305,88 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   versionNumber: 1
   layers:
-  - states:
-    - name: Movement
-      hasUpdatedName: 0
-      guid:
-        guidSerialized: be278736-1e9f-4f51-8f6a-5d03b5be92d6
-      speed: 1
-      clip: {fileID: 0}
-      type: 1
-      blendVariable: Forward
-      blendVariable2: 
-      blendTree:
-      - threshold: 0
-        threshold2: 0
-        clip: {fileID: 7400026, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
-      - threshold: 1
-        threshold2: 0
-        clip: {fileID: 7400088, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
-      - threshold: 2
-        threshold2: 0
-        clip: {fileID: 7400034, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
-      - threshold: 3
-        threshold2: 0
-        clip: {fileID: 7400066, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
-    - name: jog_teri
-      hasUpdatedName: 0
-      guid:
-        guidSerialized: fc124adb-7f32-4f59-afe0-49100b44737d
-      speed: 1
-      clip: {fileID: 7400034, guid: 7628641fc6526d24da790cb5197b15b2, type: 3}
-      type: 0
-      blendVariable: 
-      blendVariable2: 
-      blendTree: []
-    - name: Idle_lookAround_teri
-      hasUpdatedName: 1
-      guid:
-        guidSerialized: 8e2d32f4-f744-45a3-96e3-8cffc9d9cca8
-      speed: 1
-      clip: {fileID: 7400000, guid: 2015776c52ce4cf40adfe1eb99607dcb, type: 2}
-      type: 0
-      blendVariable: 
-      blendVariable2: 
-      blendTree: []
-    transitions:
-    - fromStateGUID:
-        guidSerialized: 031ea963-8171-4b1d-bac8-95be56584fc9
-      toStateGUID:
-        guidSerialized: fe9e3bd8-b1c3-403d-ba51-db6b9ce72c66
-      transitionData:
-        duration: 0.25
-        type: 1
-        curve:
-          serializedVersion: 2
-          m_Curve: []
-          m_PreInfinity: 0
-          m_PostInfinity: 0
-          m_RotationOrder: 0
-    - fromStateGUID:
-        guidSerialized: be278736-1e9f-4f51-8f6a-5d03b5be92d6
-      toStateGUID:
-        guidSerialized: fc124adb-7f32-4f59-afe0-49100b44737d
-      transitionData:
-        duration: 0.5
-        type: 1
-        curve:
-          serializedVersion: 2
-          m_Curve:
-          - serializedVersion: 2
-            time: 0
-            value: 0
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-          - serializedVersion: 2
-            time: 1
-            value: 1
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-          m_PreInfinity: 2
-          m_PostInfinity: 2
-          m_RotationOrder: 4
-    - fromStateGUID:
-        guidSerialized: 8ee78cd3-d0a9-4e01-9166-6508ceb55f48
-      toStateGUID:
-        guidSerialized: 8d305b83-4889-4052-a13d-55817cd5a2c9
-      transitionData:
-        duration: 0
-        type: 0
-        curve:
-          serializedVersion: 2
-          m_Curve: []
-          m_PreInfinity: 0
-          m_PostInfinity: 0
-          m_RotationOrder: 0
-    - fromStateGUID:
-        guidSerialized: 4e2fbf7d-2e0f-4e3d-8d17-6ec811aaebae
-      toStateGUID:
-        guidSerialized: c22cfc93-e841-4572-b7ba-f099627537dd
-      transitionData:
-        duration: 0
-        type: 0
-        curve:
-          serializedVersion: 2
-          m_Curve: []
-          m_PreInfinity: 0
-          m_PostInfinity: 0
-          m_RotationOrder: 0
+  - transitions: []
     startWeight: 1
     mask: {fileID: 0}
     type: 0
     layersForEditor:
-    - m_Text: Movement
+    - m_Text: New 2D Blend Tree
       m_Image: {fileID: 0}
       m_Tooltip: 
-    - m_Text: jog_teri
+    - m_Text: New Blend Tree
       m_Image: {fileID: 0}
       m_Tooltip: 
-    - m_Text: Idle_lookAround_teri
+    - m_Text: New State
       m_Image: {fileID: 0}
       m_Tooltip: 
+    - m_Text: New State1
+      m_Image: {fileID: 0}
+      m_Tooltip: 
+    - m_Text: New Blend Tree1
+      m_Image: {fileID: 0}
+      m_Tooltip: 
+    - m_Text: New 2D Blend Tree1
+      m_Image: {fileID: 0}
+      m_Tooltip: 
+    serializedSingleClipStates:
+    - name: New State
+      hasUpdatedName: 0
+      listIndex: 2
+      guid:
+        guidSerialized: 8a32a274-5ec6-452a-a3cf-9e39ccf9bc3d
+      speed: 1
+      stateType: 0
+      clip: {fileID: 0}
+    - name: New State1
+      hasUpdatedName: 0
+      listIndex: 3
+      guid:
+        guidSerialized: 9d1625bb-9c17-465f-a7be-0df592725d02
+      speed: 1
+      stateType: 0
+      clip: {fileID: 0}
+    serializedBlendTree1Ds:
+    - name: New Blend Tree
+      hasUpdatedName: 0
+      listIndex: 1
+      guid:
+        guidSerialized: 4bddc914-150c-4838-9ee8-be9d5d338cf5
+      speed: 1
+      stateType: 1
+      blendVariable: blend
+      blendTree: []
+    - name: New Blend Tree1
+      hasUpdatedName: 0
+      listIndex: 4
+      guid:
+        guidSerialized: a6b8e372-ebab-463b-867d-c57ca4a90242
+      speed: 1
+      stateType: 1
+      blendVariable: blend
+      blendTree: []
+    serializedBlendTree2Ds:
+    - name: New 2D Blend Tree
+      hasUpdatedName: 0
+      listIndex: 0
+      guid:
+        guidSerialized: ced4993f-40e7-479f-92f3-ad776a9ae897
+      speed: 1
+      stateType: 2
+      blendVariable: blend1
+      blendVariable2: blend2
+      blendTree: []
+    - name: New 2D Blend Tree1
+      hasUpdatedName: 0
+      listIndex: 5
+      guid:
+        guidSerialized: 071cbb11-8eae-47e1-aa99-f7954e582350
+      speed: 1
+      stateType: 2
+      blendVariable: blend1
+      blendVariable2: blend2
+      blendTree: []
   defaultTransition:
-    duration: 0.3
+    duration: 0.1
     type: 0
     curve:
       serializedVersion: 2

@@ -3,7 +3,6 @@ using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using AnimationStateType = Animation_Player.AnimationState.AnimationStateType;
 using Object = UnityEngine.Object;
 
 namespace Animation_Player
@@ -82,61 +81,12 @@ namespace Animation_Player
             stateNamesNeedsUpdate = true;
         }
 
-        public override void OnInspectorGUI()
-        {
-            HandleInitialization(true);
-
-            if (animationPlayer.layers == null || animationPlayer.layers.Length == 0)
-                return;
-
-            EditorUtilities.Splitter();
-
-            DrawLayerSelection();
-
-            if (animationPlayer.layers.Length == 0)
-                return; //Deleted last layer in DrawLayerSelection
-
-            if (selectedState == -1 && animationPlayer.layers[selectedLayer].states.Count > 0)
-            {
-                //Handle adding a state for the first time.
-                selectedState.SetTo(0);
-            }
-
-            GUILayout.Space(10f);
-
-            DrawSelectedLayer();
-
-            GUILayout.Space(10f);
-            EditorUtilities.Splitter();
-
-            var numStatesBefore = animationPlayer.layers[selectedLayer].states.Count;
-            StateSelectionAndAdditionDrawer.Draw(animationPlayer, selectedLayer, selectedState, selectedEditMode, this);
-            if (numStatesBefore == 0 && animationPlayer.layers[selectedLayer].states.Count > 0)
-            {
-                Repaint();
-                return;
-            }
-
-            DrawSelectedState();
-
-            EditorUtilities.Splitter();
-
-            EditorGUILayout.LabelField("Default transition");
-
-            EditorUtilities.RecordUndo(animationPlayer, "Change default transition");
-            animationPlayer.defaultTransition = AnimationTransitionDrawer.DrawTransitionData(animationPlayer.defaultTransition);
-
-            EditorUtilities.Splitter();
-
-            DrawRuntimeDebugData();
-        }
-
         private void HandleInitialization(bool isGUICall)
         {
             if (scriptReloadChecker == null)
             {
                 // Unity persists some objects through reload, and fails to persist others. This makes it hard to figure out if
-                // something needs to be re-cached. This solves that - we know that Untiy can't persist a raw object.
+                // something needs to be re-cached. This solves that - we know that Unity can't persist a raw object.
                 scriptReloadChecker = new object();
                 MarkDirty();
                 stylesCreated = false;
@@ -185,7 +135,7 @@ namespace Animation_Player
                 allStateNames = new string[animationPlayer.layers.Length][];
                 for (int i = 0; i < animationPlayer.layers.Length; i++)
                 {
-                    var states = animationPlayer.layers[i].states;
+                    var states = animationPlayer.layers[i].animationStates;
                     allStateNames[i] = new string[states.Count];
                     for (int j = 0; j < states.Count; j++)
                         allStateNames[i][j] = states[j].Name;
@@ -199,13 +149,62 @@ namespace Animation_Player
                 {
                     foreach (var transition in layer.transitions)
                     {
-                        transition.FetchStates(layer.states);
+                        transition.FetchStates(layer.animationStates);
                     }
                 }
             }
 
             if (previewer == null)
                 previewer = new AnimationStatePreviewer(animationPlayer);
+        }
+
+        public override void OnInspectorGUI()
+        {
+            HandleInitialization(true);
+
+            if (animationPlayer.layers == null || animationPlayer.layers.Length == 0)
+                return;
+
+            EditorUtilities.Splitter();
+
+            DrawLayerSelection();
+
+            if (animationPlayer.layers.Length == 0)
+                return; //Deleted last layer in DrawLayerSelection
+
+            if (selectedState == -1 && animationPlayer.layers[selectedLayer].animationStates.Count > 0)
+            {
+                //Handle adding a state for the first time.
+                selectedState.SetTo(0);
+            }
+
+            GUILayout.Space(10f);
+
+            DrawSelectedLayer();
+
+            GUILayout.Space(10f);
+            EditorUtilities.Splitter();
+
+            var numStatesBefore = animationPlayer.layers[selectedLayer].animationStates.Count;
+            StateSelectionAndAdditionDrawer.Draw(animationPlayer, selectedLayer, selectedState, selectedEditMode, this);
+            if (numStatesBefore != animationPlayer.layers[selectedLayer].animationStates.Count)
+            {
+                Repaint();
+                return;
+            }
+
+            DrawSelectedState();
+
+            EditorUtilities.Splitter();
+
+            EditorGUILayout.LabelField("Default transition");
+
+            EditorUtilities.RecordUndo(animationPlayer, "Change default transition");
+            animationPlayer.defaultTransition = AnimationTransitionDrawer.DrawTransitionData(animationPlayer.defaultTransition);
+
+            EditorUtilities.Splitter();
+
+            DrawRuntimeDebugData();
         }
 
         private void DrawLayerSelection()
@@ -377,20 +376,32 @@ namespace Animation_Player
             else
                 modelsUsed = new List<Object>();
 
-            foreach (var state in animationPlayer.layers.SelectMany(layer => layer.states))
+            foreach (var state in animationPlayer.layers.SelectMany(layer => layer.animationStates))
             {
-                switch (state.type)
+                //@TODO: Use pattern matching when C# 7
+                var type = state.GetType();
+                if (type == typeof(SingleClipState))
                 {
-                    case AnimationStateType.SingleClip:
-                        if (state.clip != null && !animationClipsUsed.Contains(state.clip))
-                            animationClipsUsed.Add(state.clip);
-                        break;
-                    case AnimationStateType.BlendTree1D:
-                    case AnimationStateType.BlendTree2D:
-                        foreach (var clip in state.blendTree.Select(bte => bte.clip).Where(c => c != null))
-                            if (!animationClipsUsed.Contains(clip))
-                                animationClipsUsed.Add(clip);
-                        break;
+                    var singleClipState = (SingleClipState) state;
+                    if (singleClipState.clip != null && !animationClipsUsed.Contains(singleClipState.clip))
+                        animationClipsUsed.Add(singleClipState.clip);
+                }
+                else if (type == typeof(BlendTree1D))
+                {
+                    foreach (var clip in ((BlendTree1D) state).blendTree.Select(bte => bte.clip).Where(c => c != null))
+                        if (!animationClipsUsed.Contains(clip))
+                            animationClipsUsed.Add(clip);
+                }
+                else if (type == typeof(BlendTree2D))
+                {
+                    foreach (var clip in ((BlendTree2D) state).blendTree.Select(bte => bte.clip).Where(c => c != null))
+                        if (!animationClipsUsed.Contains(clip))
+                            animationClipsUsed.Add(clip);
+                    break;
+                }
+                else
+                {
+                    Debug.LogError($"Unknown state type {type.Name}");
                 }
             }
 
@@ -443,7 +454,7 @@ namespace Animation_Player
             {
                 EditorGUILayout.BeginHorizontal();
                 {
-                    string stateName = animationPlayer.layers[selectedLayer].states[i].Name;
+                    string stateName = animationPlayer.layers[selectedLayer].animationStates[i].Name;
 
                     if (GUILayout.Button($"Blend to {stateName} using default transition"))
                         animationPlayer.Play(i, selectedLayer);
@@ -474,7 +485,7 @@ namespace Animation_Player
             if (animationPlayer.layers.Length == 0)
                 return;
             var layer = animationPlayer.layers[selectedLayer];
-            selectedState.SetTo(Mathf.Clamp(selectedState, 0, layer.states.Count - 1));
+            selectedState.SetTo(Mathf.Clamp(selectedState, 0, layer.animationStates.Count - 1));
         }
 
         private float blendVal;
@@ -491,8 +502,7 @@ namespace Animation_Player
 
         public class PersistedAnimationPlayerEditMode : PersistedVal<AnimationPlayerEditMode>
         {
-            public PersistedAnimationPlayerEditMode(string key) : base(key)
-            { }
+            public PersistedAnimationPlayerEditMode(string key) : base(key) { }
 
             protected override int ToInt(AnimationPlayerEditMode val)
             {

@@ -50,8 +50,7 @@ namespace Animation_Player
 
     public class PersistedInt : PersistedVal<int>
     {
-        public PersistedInt(string key) : base(key)
-        { }
+        public PersistedInt(string key) : base(key) { }
 
         protected override int ToInt(int val)
         {
@@ -66,8 +65,7 @@ namespace Animation_Player
 
     public class PersistedBool : PersistedVal<bool>
     {
-        public PersistedBool(string key) : base(key)
-        { }
+        public PersistedBool(string key) : base(key) { }
 
         protected override int ToInt(bool val)
         {

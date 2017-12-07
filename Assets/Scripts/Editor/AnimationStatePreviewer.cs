@@ -32,7 +32,7 @@ namespace Animation_Player
             }
             else if (GUILayout.Button("Start previewing state"))
             {
-                var state = animationPlayer.layers[selectedLayer].states[selectedState];
+                var state = animationPlayer.layers[selectedLayer].animationStates[selectedState];
                 StartPreviewing(state);
             }
         }
@@ -46,8 +46,8 @@ namespace Animation_Player
             var animator = animationPlayer.gameObject.EnsureComponent<Animator>();
             var animOutput = AnimationPlayableOutput.Create(previewGraph, "AnimationOutput", animator);
 
-            animOutput.SetSourcePlayable(state.GeneratePlayable(previewGraph, new Dictionary<string, List<AnimationLayer.BlendTreeController1D>>(),
-                                                                new Dictionary<string, List<AnimationLayer.BlendTreeController2D>>(),
+            animOutput.SetSourcePlayable(state.GeneratePlayable(previewGraph, new Dictionary<string, List<BlendTreeController1D>>(),
+                                                                new Dictionary<string, List<BlendTreeController2D>>(),
                                                                 new Dictionary<string, float>()));
 
             previewGraph.SetTimeUpdateMode(DirectorUpdateMode.Manual);

@@ -10,25 +10,32 @@ namespace Animation_Player
     public static class StateSelectionAndAdditionDrawer
     {
         private static GUILayoutOption buttonWidth;
-        private static GUILayoutOption popupHeight;
         private static GUIContent selectedStateLabel;
         private static GUIStyle popupStyle;
+        private static GUIStyle dragAndDropBoxStyle;
 
         public static void Draw(AnimationPlayer animationPlayer, PersistedInt selectedLayer,
                                 PersistedInt selectedState, PersistedEditMode selectedEditMode, AnimationPlayerEditor editor)
         {
-            buttonWidth = buttonWidth ?? GUILayout.Width(200f);
-            popupHeight = popupHeight ?? GUILayout.Height(40f);
-            selectedStateLabel = selectedStateLabel ?? new GUIContent("Selected state: ");
             if (popupStyle == null)
             {
-                popupStyle = new GUIStyle(EditorStyles.popup);
-                popupStyle.fontSize = GUI.skin.button.fontSize;
-                popupStyle.font = GUI.skin.button.font;
-                popupStyle.fontStyle = GUI.skin.button.fontStyle;
-                popupStyle.fixedHeight = 20f;
-                popupStyle.alignment = TextAnchor.MiddleCenter;
+                buttonWidth        = GUILayout.Width(200f);
+                selectedStateLabel = new GUIContent("Selected state: ");
 
+                popupStyle = new GUIStyle(EditorStyles.popup)
+                {
+                    fontSize = GUI.skin.button.fontSize,
+                    font = GUI.skin.button.font,
+                    fontStyle = GUI.skin.button.fontStyle,
+                    fixedHeight = 20f,
+                    alignment = TextAnchor.MiddleCenter
+                };
+                dragAndDropBoxStyle = new GUIStyle(EditorStyles.helpBox)
+                {
+                    alignment = TextAnchor.MiddleCenter,
+                    fontStyle = FontStyle.Bold,
+                    fontSize = 12,
+                };
             }
 
             var layer = animationPlayer.layers[selectedLayer];
@@ -84,11 +91,10 @@ namespace Animation_Player
 
         private static void DoDragAndDrop(AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedState, AnimationPlayerEditor editor)
         {
-            var dragAndDropRect = EditorUtilities.ReserveRect(GUILayout.Height(30f));
+            var dragAndDropRect = EditorUtilities.ReserveRect(GUILayout.Height(62f));
             Event evt = Event.current;
 
-            if (DragAndDrop.objectReferences.Length > 0)
-                GUI.Box(dragAndDropRect, "Drag clips here to\nadd them to the player!");
+            GUI.Box(dragAndDropRect, "Drag clips here to add\nthem to the player!", dragAndDropBoxStyle);
 
             switch (evt.type)
             {
@@ -109,8 +115,7 @@ namespace Animation_Player
                             var assetPath = AssetDatabase.GetAssetPath(obj);
                             if (!(AssetImporter.GetAtPath(assetPath) is ModelImporter))
                                 return;
-                            else
-                                Debug.Log(assetPath);
+                            Debug.Log(assetPath);
 
                             animationClips.AddRange(AssetDatabase.LoadAllAssetsAtPath(assetPath).FilterByType<AnimationClip>().
                                                                   Where(clip => (clip.hideFlags & HideFlags.HideInHierarchy) == 0));
@@ -120,13 +125,13 @@ namespace Animation_Player
                         {
                             EditorUtilities.RecordUndo(animationPlayer, "Added clip to Animation Player");
                             var layer = animationPlayer.layers[selectedLayer];
-                            int numClipsBefore = layer.states.Count;
+                            int numClipsBefore = layer.animationStates.Count;
 
                             foreach (var clip in animationClips)
                             {
-                                var newStateName = GetUniqueStateName(clip.name, layer.states);
-                                var newState = AnimationState.SingleClip(newStateName, clip);
-                                layer.states.Add(newState);
+                                var newStateName = GetUniqueStateName(clip.name, layer.animationStates);
+                                var newState = SingleClipState.Create(newStateName, layer.NextListIndex, clip);
+                                layer.animationStates.Add(newState);
                             }
 
                             selectedState.SetTo(numClipsBefore);
@@ -144,24 +149,24 @@ namespace Animation_Player
             if (GUILayout.Button("Single Clip State", buttonWidth))
             {
                 EditorUtilities.RecordUndo(animationPlayer, "Add state to animation player");
-                layer.states.Add(AnimationState.SingleClip(GetUniqueStateName(AnimationState.DefaultSingleClipName, layer.states)));
-                selectedState.SetTo(layer.states.Count - 1);
+                layer.animationStates.Add(SingleClipState.Create(GetUniqueStateName(SingleClipState.DefaultName, layer.animationStates), layer.NextListIndex));
+                selectedState.SetTo(layer.animationStates.Count - 1);
                 editor.MarkDirty();
             }
 
             if (GUILayout.Button("1D Blend Tree", buttonWidth))
             {
                 EditorUtilities.RecordUndo(animationPlayer, "Add blend tree to animation player");
-                layer.states.Add(AnimationState.BlendTree1D(GetUniqueStateName(AnimationState.Default1DBlendTreeName, layer.states)));
-                selectedState.SetTo(layer.states.Count - 1);
+                layer.animationStates.Add(BlendTree1D.Create(GetUniqueStateName(BlendTree1D.DefaultName, layer.animationStates), layer.NextListIndex));
+                selectedState.SetTo(layer.animationStates.Count - 1);
                 editor.MarkDirty();
             }
 
             if (GUILayout.Button("2D Blend Tree", buttonWidth))
             {
                 EditorUtilities.RecordUndo(animationPlayer, "Add 2D blend tree to animation player");
-                layer.states.Add(AnimationState.BlendTree2D(GetUniqueStateName(AnimationState.Default2DBlendTreeName, layer.states)));
-                selectedState.SetTo(layer.states.Count - 1);
+                layer.animationStates.Add(BlendTree2D.Create(GetUniqueStateName(BlendTree2D.DefaultName, layer.animationStates), layer.NextListIndex));
+                selectedState.SetTo(layer.animationStates.Count - 1);
                 editor.MarkDirty();
             }
         }
@@ -189,19 +194,19 @@ namespace Animation_Player
 
         private static void UpdateLayerDropdownNames(AnimationLayer selectedLayer)
         {
-            if (selectedLayer.layersForEditor == null || selectedLayer.layersForEditor.Length != selectedLayer.states.Count)
+            if (selectedLayer.layersForEditor == null || selectedLayer.layersForEditor.Length != selectedLayer.animationStates.Count)
             {
-                selectedLayer.layersForEditor = new GUIContent[selectedLayer.states.Count];
+                selectedLayer.layersForEditor = new GUIContent[selectedLayer.animationStates.Count];
                 for (int i = 0; i < selectedLayer.layersForEditor.Length; i++)
                 {
-                    selectedLayer.layersForEditor[i] = new GUIContent(selectedLayer.states[i].Name);
+                    selectedLayer.layersForEditor[i] = new GUIContent(selectedLayer.animationStates[i].Name);
                 }
             }
             else
             {
                 for (int i = 0; i < selectedLayer.layersForEditor.Length; i++)
                 {
-                    selectedLayer.layersForEditor[i].text = selectedLayer.states[i].Name;
+                    selectedLayer.layersForEditor[i].text = selectedLayer.animationStates[i].Name;
                 }
             }
         }

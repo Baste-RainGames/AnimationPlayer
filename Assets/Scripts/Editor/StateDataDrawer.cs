@@ -1,7 +1,6 @@
 using UnityEditor;
 using UnityEngine;
 using BlendTreeEntry = Animation_Player.AnimationState.BlendTreeEntry;
-using AnimationStateType = Animation_Player.AnimationState.AnimationStateType;
 
 namespace Animation_Player
 {
@@ -13,15 +12,15 @@ namespace Animation_Player
             var updateStateNames = false;
             var layer = animationPlayer.layers[selectedLayer];
 
-            if (layer.states.Count == 0)
+            if (layer.animationStates.Count == 0)
             {
                 EditorGUILayout.LabelField("No states");
                 return;
             }
 
-            if (!layer.states.IsInBounds(selectedState))
+            if (!layer.animationStates.IsInBounds(selectedState))
             {
-                Debug.LogError("Out of bounds state: " + selectedState + " out of " + layer.states.Count + " states! Resetting to 0");
+                Debug.LogError("Out of bounds state: " + selectedState + " out of " + layer.animationStates.Count + " states! Resetting to 0");
                 selectedState.SetTo(0);
                 return;
             }
@@ -29,7 +28,7 @@ namespace Animation_Player
             EditorGUILayout.LabelField("State");
 
             EditorGUI.indentLevel++;
-            DrawStateData(layer.states[selectedState], ref updateStateNames);
+            DrawStateData(layer.animationStates[selectedState], ref updateStateNames);
 
             GUILayout.Space(20f);
 
@@ -59,48 +58,55 @@ namespace Animation_Player
 
             state.speed = EditorUtilities.DoubleField("Speed", state.speed, labelWidth);
 
-            switch (state.type)
+            //@TODO: Use pattern matching when C# 7
+            var type = state.GetType();
+            if (type == typeof(SingleClipState))
             {
-                case AnimationStateType.SingleClip:
-                    var oldClip = state.clip;
-                    state.clip = EditorUtilities.ObjectField("Clip", state.clip, labelWidth);
-                    if (state.clip != null && state.clip != oldClip)
-                        updateStateNames |= state.OnClipAssigned(state.clip);
-                    break;
-                case AnimationStateType.BlendTree1D:
-                    state.blendVariable = EditorUtilities.TextField("Blend with variable", state.blendVariable, 120f);
-                    EditorGUI.indentLevel++;
-                    foreach (var blendTreeEntry in state.blendTree)
-                        updateStateNames |= DrawBlendTreeEntry(state, blendTreeEntry, state.blendVariable);
+                var singleClipState = (SingleClipState) state;
+                var oldClip = singleClipState.clip;
+                singleClipState.clip = EditorUtilities.ObjectField("Clip", singleClipState.clip, labelWidth);
+                if (singleClipState.clip != null && singleClipState.clip != oldClip)
+                    updateStateNames |= singleClipState.OnClipAssigned(singleClipState.clip);
+            }
+            else if (type == typeof(BlendTree1D))
+            {
+                var blendTree = (BlendTree1D) state;
+                blendTree.blendVariable = EditorUtilities.TextField("Blend with variable", blendTree.blendVariable, 120f);
+                EditorGUI.indentLevel++;
+                foreach (var blendTreeEntry in blendTree.blendTree)
+                    updateStateNames |= DrawBlendTreeEntry(state, blendTreeEntry, blendTree.blendVariable);
 
-                    EditorGUI.indentLevel--;
+                EditorGUI.indentLevel--;
 
-                    GUILayout.Space(10f);
-                    EditorGUILayout.BeginHorizontal();
-                    if (GUILayout.Button("Add blend tree entry", GUILayout.Width(150f)))
-                        state.blendTree.Add(new BlendTreeEntry());
-                    GUILayout.FlexibleSpace();
-                    EditorGUILayout.EndHorizontal();
-                    break;
-                case AnimationStateType.BlendTree2D:
-                    state.blendVariable = EditorUtilities.TextField("First blend variable", state.blendVariable, 120f);
-                    state.blendVariable2 = EditorUtilities.TextField("Second blend variable", state.blendVariable2, 120f);
-                    EditorGUI.indentLevel++;
-                    foreach (var blendTreeEntry in state.blendTree)
-                        updateStateNames |= DrawBlendTreeEntry(state, blendTreeEntry, state.blendVariable, state.blendVariable2);
+                GUILayout.Space(10f);
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Button("Add blend tree entry", GUILayout.Width(150f)))
+                    blendTree.blendTree.Add(new BlendTreeEntry());
+                GUILayout.FlexibleSpace();
+                EditorGUILayout.EndHorizontal();
+            }
 
-                    EditorGUI.indentLevel--;
+            else if (type == typeof(BlendTree2D))
+            {
+                var blendTree2D = (BlendTree2D) state;
+                blendTree2D.blendVariable = EditorUtilities.TextField("First blend variable", blendTree2D.blendVariable, 120f);
+                blendTree2D.blendVariable2 = EditorUtilities.TextField("Second blend variable", blendTree2D.blendVariable2, 120f);
+                EditorGUI.indentLevel++;
+                foreach (var blendTreeEntry in blendTree2D.blendTree)
+                    updateStateNames |= DrawBlendTreeEntry(state, blendTreeEntry, blendTree2D.blendVariable, blendTree2D.blendVariable2);
 
-                    GUILayout.Space(10f);
-                    EditorGUILayout.BeginHorizontal();
-                    if (GUILayout.Button("Add blend tree entry", GUILayout.Width(150f)))
-                        state.blendTree.Add(new BlendTreeEntry());
-                    GUILayout.FlexibleSpace();
-                    EditorGUILayout.EndHorizontal();
-                    break;
-                default:
-                    EditorGUILayout.LabelField("Unknown animation state type: " + state.type);
-                    break;
+                EditorGUI.indentLevel--;
+
+                GUILayout.Space(10f);
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Button("Add blend tree entry", GUILayout.Width(150f)))
+                    blendTree2D.blendTree.Add(new BlendTreeEntry());
+                GUILayout.FlexibleSpace();
+                EditorGUILayout.EndHorizontal();
+            }
+            else
+            {
+                EditorGUILayout.LabelField($"Unknown animation state type: {type.Name}");
             }
         }
 
@@ -129,12 +135,12 @@ namespace Animation_Player
 
         private static void DeleteState(AnimationPlayer animationPlayer, AnimationLayer layer, PersistedInt selectedState)
         {
-            EditorUtilities.RecordUndo(animationPlayer, "Deleting state " + layer.states[selectedState].Name);
-            layer.transitions.RemoveAll(transition => transition.FromState == layer.states[selectedState] ||
-                                                      transition.ToState == layer.states[selectedState]);
-            layer.states.RemoveAt(selectedState);
+            EditorUtilities.RecordUndo(animationPlayer, "Deleting state " + layer.animationStates[selectedState].Name);
+            layer.transitions.RemoveAll(transition => transition.FromState == layer.animationStates[selectedState] ||
+                                                      transition.ToState == layer.animationStates[selectedState]);
+            layer.animationStates.RemoveAt(selectedState);
 
-            if (selectedState == layer.states.Count) //was last state
+            if (selectedState == layer.animationStates.Count) //was last state
                 selectedState.SetTo(selectedState - 1);
         }
     }

@@ -10,14 +10,14 @@ namespace Animation_Player
                                            PersistedInt selectedToStateIdx, string[] stateNamesInLayer)
         {
             var layer = animationPlayer.layers[selectedLayer];
-            if (layer.states.Count == 0)
+            if (layer.animationStates.Count == 0)
             {
                 EditorGUILayout.LabelField("No states, can't define transitions");
                 return;
             }
 
-            var selectedState = layer.states[selectedStateIdx];
-            var selectedToState = layer.states[selectedToStateIdx];
+            var selectedState = layer.animationStates[selectedStateIdx];
+            var selectedToState = layer.animationStates[selectedToStateIdx];
             var selectedTransition = layer.transitions.Find(t => t.FromState == selectedState && t.ToState == selectedToState);
             var fromStateName = selectedState.Name;
             var toStateName = selectedToState.Name;
@@ -68,7 +68,7 @@ namespace Animation_Player
                             {
                                 EditorGUI.BeginDisabledGroup(transition == selectedTransition);
                                 if (GUILayout.Button(transition.ToState.Name, GUILayout.MinWidth(100f)))
-                                    selectedToStateIdx.SetTo(layer.states.IndexOf(transition.ToState));
+                                    selectedToStateIdx.SetTo(layer.animationStates.IndexOf(transition.ToState));
                                 EditorGUI.EndDisabledGroup();
                             }
                         });
@@ -92,11 +92,11 @@ namespace Animation_Player
                             var newState = new StateTransition
                             {
                                 FromState = selectedState,
-                                ToState = layer.states.Find(s => s.Name == state),
+                                ToState = layer.animationStates.Find(s => s.Name == state),
                                 transitionData = TransitionData.Linear(.2f)
                             };
                             layer.transitions.Add(newState);
-                            selectedToStateIdx.SetTo(layer.states.FindIndex(s => s.Name == state));
+                            selectedToStateIdx.SetTo(layer.animationStates.FindIndex(s => s.Name == state));
                         });
                     }
 

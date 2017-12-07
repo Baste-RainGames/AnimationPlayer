@@ -9,9 +9,9 @@ namespace Animation_Player
     public class BlendVarController
     {
 
-        private readonly List<AnimationLayer.BlendTreeController1D> inner1D = new List<AnimationLayer.BlendTreeController1D>();
-        private readonly List<AnimationLayer.BlendTreeController2D> inner2D_set1 = new List<AnimationLayer.BlendTreeController2D>();
-        private readonly List<AnimationLayer.BlendTreeController2D> inner2D_set2 = new List<AnimationLayer.BlendTreeController2D>();
+        private readonly List<BlendTreeController1D> inner1D = new List<BlendTreeController1D>();
+        private readonly List<BlendTreeController2D> inner2D_set1 = new List<BlendTreeController2D>();
+        private readonly List<BlendTreeController2D> inner2D_set2 = new List<BlendTreeController2D>();
         private readonly string blendVar;
 
         public BlendVarController(string blendVar)
@@ -21,12 +21,12 @@ namespace Animation_Player
 
         public int InnerControllerCount => inner1D.Count + inner2D_set1.Count + inner2D_set2.Count;
 
-        public void AddControllers(List<AnimationLayer.BlendTreeController1D> blendControllers1D)
+        public void AddControllers(List<BlendTreeController1D> blendControllers1D)
         {
             inner1D.AddRange(blendControllers1D);
         }
 
-        public void AddControllers(List<AnimationLayer.BlendTreeController2D> blendControllers2D)
+        public void AddControllers(List<BlendTreeController2D> blendControllers2D)
         {
             foreach (var controller2D in blendControllers2D)
             {

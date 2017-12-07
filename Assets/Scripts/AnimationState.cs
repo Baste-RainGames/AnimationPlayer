@@ -12,11 +12,6 @@ namespace Animation_Player
         [SerializeField]
         protected bool hasUpdatedName;
 
-        //Index in the layer's state list. Since the AnimationStates are re-packed for serialization, this has to be stored seperately.
-        [SerializeField]
-        private int listIndex;
-        public int ListIndex => listIndex;
-
         [SerializeField]
         protected SerializedGUID guid;
         public SerializedGUID GUID => guid;
@@ -24,10 +19,9 @@ namespace Animation_Player
         public double speed;
 
         //pseudo-constructor
-        protected void Initialize(string name, string defaultName, int listIndex)
+        protected void Initialize(string name, string defaultName)
         {
             this.name = name;
-            this.listIndex = listIndex;
             speed = 1d;
             hasUpdatedName = !name.StartsWith(defaultName);
             guid = SerializedGUID.Create();

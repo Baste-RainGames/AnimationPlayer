@@ -11,7 +11,7 @@ namespace Animation_Player
     public class AnimationLayer : ISerializationCallbackReceiver
     {
         //Serialized through ISerializationCallbackReceiver
-        public List<AnimationState> animationStates;
+        public List<AnimationState> states;
         public List<StateTransition> transitions;
 
         public float startWeight;
@@ -19,7 +19,6 @@ namespace Animation_Player
         public AnimationLayerType type = AnimationLayerType.Override;
 
         public AnimationMixerPlayable stateMixer { get; private set; }
-        public int NextListIndex => animationStates.Count == 0 ? 0 : animationStates[animationStates.Count - 1].ListIndex + 1;
         private int currentPlayedState;
 
         //blend info:
@@ -42,7 +41,7 @@ namespace Animation_Player
 
         public void InitializeSelf(PlayableGraph graph)
         {
-            if (animationStates.Count == 0)
+            if (states.Count == 0)
             {
                 stateMixer = AnimationMixerPlayable.Create(graph, 0, false);
                 return;
@@ -50,19 +49,19 @@ namespace Animation_Player
 
             foreach (var transition in transitions)
             {
-                transition.FetchStates(animationStates);
+                transition.FetchStates(states);
             }
 
-            runtimePlayables = new Playable[animationStates.Count];
+            runtimePlayables = new Playable[states.Count];
 
-            stateMixer = AnimationMixerPlayable.Create(graph, animationStates.Count, false);
+            stateMixer = AnimationMixerPlayable.Create(graph, states.Count, false);
             stateMixer.SetInputWeight(0, 1f);
             currentPlayedState = 0;
 
             // Add the statess to the graph
-            for (int i = 0; i < animationStates.Count; i++)
+            for (int i = 0; i < states.Count; i++)
             {
-                var state = animationStates[i];
+                var state = states[i];
                 stateNameToIdx[state.Name] = i;
 
                 var playable = state.GeneratePlayable(graph, varTo1DBlendControllers, varTo2DBlendControllers, blendVars);
@@ -70,19 +69,19 @@ namespace Animation_Player
                 graph.Connect(playable, 0, stateMixer, i);
             }
 
-            activeWhenBlendStarted = new bool[animationStates.Count];
-            valueWhenBlendStarted = new float[animationStates.Count];
+            activeWhenBlendStarted = new bool[states.Count];
+            valueWhenBlendStarted = new float[states.Count];
 
-            transitionLookup = new int[animationStates.Count, animationStates.Count];
-            for (int i = 0; i < animationStates.Count; i++)
-            for (int j = 0; j < animationStates.Count; j++)
+            transitionLookup = new int[states.Count, states.Count];
+            for (int i = 0; i < states.Count; i++)
+            for (int j = 0; j < states.Count; j++)
                 transitionLookup[i, j] = -1;
 
             for (var i = 0; i < transitions.Count; i++)
             {
                 var transition = transitions[i];
-                var fromState = animationStates.IndexOf(transition.FromState);
-                var toState = animationStates.IndexOf(transition.ToState);
+                var fromState = states.IndexOf(transition.FromState);
+                var toState = states.IndexOf(transition.ToState);
                 if (fromState == -1 || toState == -1)
                 {
                     //TODO: fixme
@@ -90,7 +89,7 @@ namespace Animation_Player
                 else
                 {
                     if (transitionLookup[fromState, toState] != -1)
-                        Debug.LogWarning("Found two transitions from " + animationStates[fromState] + " to " + animationStates[toState]);
+                        Debug.LogWarning("Found two transitions from " + states[fromState] + " to " + states[toState]);
 
                     transitionLookup[fromState, toState] = i;
                 }
@@ -109,7 +108,7 @@ namespace Animation_Player
 
         public bool HasState(string stateName)
         {
-            foreach (var state in animationStates)
+            foreach (var state in states)
             {
                 if (state.Name == stateName)
                     return true;
@@ -132,9 +131,9 @@ namespace Animation_Player
 
         private void Play(int state, TransitionData transitionData)
         {
-            if (state < 0 || state >= animationStates.Count)
+            if (state < 0 || state >= states.Count)
             {
-                Debug.LogError($"Trying to play out of bounds clip {state}! There are {animationStates.Count} clips in the animation player");
+                Debug.LogError($"Trying to play out of bounds clip {state}! There are {states.Count} clips in the animation player");
                 return;
             }
 
@@ -152,7 +151,7 @@ namespace Animation_Player
 
             if (transitionData.duration <= 0f)
             {
-                for (int i = 0; i < animationStates.Count; i++)
+                for (int i = 0; i < states.Count; i++)
                 {
                     stateMixer.SetInputWeight(i, i == state ? 1f : 0f);
                 }
@@ -162,7 +161,7 @@ namespace Animation_Player
             }
             else if (state != currentPlayedState)
             {
-                for (int i = 0; i < animationStates.Count; i++)
+                for (int i = 0; i < states.Count; i++)
                 {
                     var currentMixVal = stateMixer.GetInputWeight(i);
                     activeWhenBlendStarted[i] = currentMixVal > 0f;
@@ -187,7 +186,7 @@ namespace Animation_Player
                 lerpVal = currentTransitionData.curve.Evaluate(lerpVal);
             }
 
-            for (int i = 0; i < animationStates.Count; i++)
+            for (int i = 0; i < states.Count; i++)
             {
                 var isTargetClip = i == currentPlayedState;
                 if (isTargetClip || activeWhenBlendStarted[i])
@@ -203,9 +202,9 @@ namespace Animation_Player
 
         public float GetStateWeight(int state)
         {
-            if (state < 0 || state >= animationStates.Count)
+            if (state < 0 || state >= states.Count)
             {
-                Debug.LogError($"Trying to get the state weight for {state}, which is out of bounds! There are {animationStates.Count} states!");
+                Debug.LogError($"Trying to get the state weight for {state}, which is out of bounds! There are {states.Count} states!");
                 return 0f;
             }
 
@@ -229,7 +228,7 @@ namespace Animation_Player
         {
             var layer = new AnimationLayer
             {
-                animationStates = new List<AnimationState>(),
+                states = new List<AnimationState>(),
                 transitions = new List<StateTransition>(),
                 startWeight = 1f
             };
@@ -260,13 +259,13 @@ namespace Animation_Player
 
         public void AddAllPlayingStatesTo(List<AnimationState> results)
         {
-            results.Add(animationStates[currentPlayedState]);
+            results.Add(states[currentPlayedState]);
 
-            for (var i = 0; i < animationStates.Count; i++)
+            for (var i = 0; i < states.Count; i++)
             {
                 if (i == currentPlayedState)
                     return;
-                var state = animationStates[i];
+                var state = states[i];
                 if (stateMixer.GetInputWeight(i) > 0f)
                 {
                     results.Add(state);
@@ -287,9 +286,9 @@ namespace Animation_Player
 
         public AnimationState GetCurrentPlayingState()
         {
-            if (animationStates.Count == 0)
+            if (states.Count == 0)
                 return null;
-            return animationStates[currentPlayedState];
+            return states[currentPlayedState];
         }
 
         public void AddAllBlendVarsTo(List<string> result)
@@ -310,6 +309,8 @@ namespace Animation_Player
         private List<BlendTree1D> serializedBlendTree1Ds = new List<BlendTree1D>();
         [SerializeField]
         private List<BlendTree2D> serializedBlendTree2Ds = new List<BlendTree2D>();
+        [SerializeField]
+        private SerializedGUID[] serializedStateOrder;
 
         public void OnBeforeSerialize()
         {
@@ -329,7 +330,7 @@ namespace Animation_Player
                 serializedBlendTree2Ds.Clear();
 
             //@TODO: Once Unity hits C# 7.0, this can be done through pattern matching. And oh how glorious it will be! 
-            foreach (var state in animationStates)
+            foreach (var state in states)
             {
                 var asSingleClip = state as SingleClipState;
                 if (asSingleClip != null)
@@ -356,34 +357,44 @@ namespace Animation_Player
                     Debug.LogError($"Found state in AnimationLayer's states that's of an unknown type, " +
                                    $"({state.GetType().Name})! Did you forget to implement the serialization?");
             }
+
+            serializedStateOrder = new SerializedGUID[states.Count];
+            for (int i = 0; i < states.Count; i++)
+            {
+                serializedStateOrder[i] = states[i].GUID;
+            }
         }
 
         public void OnAfterDeserialize()
         {
-            if (animationStates == null)
-                animationStates = new List<AnimationState>();
+            if (states == null)
+                states = new List<AnimationState>();
             else
-                animationStates.Clear();
+                states.Clear();
 
             foreach (var state in serializedSingleClipStates)
-                animationStates.Add(state);
+                states.Add(state);
 
             foreach (var state in serializedBlendTree1Ds)
-                animationStates.Add(state);
+                states.Add(state);
 
             foreach (var state in serializedBlendTree2Ds)
-                animationStates.Add(state);
+                states.Add(state);
 
             serializedSingleClipStates.Clear();
             serializedBlendTree1Ds.Clear();
             serializedBlendTree2Ds.Clear();
 
-            animationStates.Sort(CompareListIndices);
+            states.Sort(CompareListIndices);
         }
 
         private int CompareListIndices(AnimationState x, AnimationState y)
         {
-            return x.ListIndex.CompareTo(y.ListIndex);
+            var xIndex = Array.IndexOf(serializedStateOrder, x.GUID);
+            var yIndex = Array.IndexOf(serializedStateOrder, y.GUID);
+            if (xIndex < yIndex)
+                return -1;
+            return xIndex > yIndex ? 1 : 0;
         }
     }
 

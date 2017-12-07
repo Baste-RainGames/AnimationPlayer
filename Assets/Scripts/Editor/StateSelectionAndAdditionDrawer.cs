@@ -125,13 +125,13 @@ namespace Animation_Player
                         {
                             EditorUtilities.RecordUndo(animationPlayer, "Added clip to Animation Player");
                             var layer = animationPlayer.layers[selectedLayer];
-                            int numClipsBefore = layer.animationStates.Count;
+                            int numClipsBefore = layer.states.Count;
 
                             foreach (var clip in animationClips)
                             {
-                                var newStateName = GetUniqueStateName(clip.name, layer.animationStates);
-                                var newState = SingleClipState.Create(newStateName, layer.NextListIndex, clip);
-                                layer.animationStates.Add(newState);
+                                var newStateName = GetUniqueStateName(clip.name, layer.states);
+                                var newState = SingleClipState.Create(newStateName, clip);
+                                layer.states.Add(newState);
                             }
 
                             selectedState.SetTo(numClipsBefore);
@@ -149,24 +149,24 @@ namespace Animation_Player
             if (GUILayout.Button("Single Clip State", buttonWidth))
             {
                 EditorUtilities.RecordUndo(animationPlayer, "Add state to animation player");
-                layer.animationStates.Add(SingleClipState.Create(GetUniqueStateName(SingleClipState.DefaultName, layer.animationStates), layer.NextListIndex));
-                selectedState.SetTo(layer.animationStates.Count - 1);
+                layer.states.Add(SingleClipState.Create(GetUniqueStateName(SingleClipState.DefaultName, layer.states)));
+                selectedState.SetTo(layer.states.Count - 1);
                 editor.MarkDirty();
             }
 
             if (GUILayout.Button("1D Blend Tree", buttonWidth))
             {
                 EditorUtilities.RecordUndo(animationPlayer, "Add blend tree to animation player");
-                layer.animationStates.Add(BlendTree1D.Create(GetUniqueStateName(BlendTree1D.DefaultName, layer.animationStates), layer.NextListIndex));
-                selectedState.SetTo(layer.animationStates.Count - 1);
+                layer.states.Add(BlendTree1D.Create(GetUniqueStateName(BlendTree1D.DefaultName, layer.states)));
+                selectedState.SetTo(layer.states.Count - 1);
                 editor.MarkDirty();
             }
 
             if (GUILayout.Button("2D Blend Tree", buttonWidth))
             {
                 EditorUtilities.RecordUndo(animationPlayer, "Add 2D blend tree to animation player");
-                layer.animationStates.Add(BlendTree2D.Create(GetUniqueStateName(BlendTree2D.DefaultName, layer.animationStates), layer.NextListIndex));
-                selectedState.SetTo(layer.animationStates.Count - 1);
+                layer.states.Add(BlendTree2D.Create(GetUniqueStateName(BlendTree2D.DefaultName, layer.states)));
+                selectedState.SetTo(layer.states.Count - 1);
                 editor.MarkDirty();
             }
         }
@@ -194,19 +194,19 @@ namespace Animation_Player
 
         private static void UpdateLayerDropdownNames(AnimationLayer selectedLayer)
         {
-            if (selectedLayer.layersForEditor == null || selectedLayer.layersForEditor.Length != selectedLayer.animationStates.Count)
+            if (selectedLayer.layersForEditor == null || selectedLayer.layersForEditor.Length != selectedLayer.states.Count)
             {
-                selectedLayer.layersForEditor = new GUIContent[selectedLayer.animationStates.Count];
+                selectedLayer.layersForEditor = new GUIContent[selectedLayer.states.Count];
                 for (int i = 0; i < selectedLayer.layersForEditor.Length; i++)
                 {
-                    selectedLayer.layersForEditor[i] = new GUIContent(selectedLayer.animationStates[i].Name);
+                    selectedLayer.layersForEditor[i] = new GUIContent(selectedLayer.states[i].Name);
                 }
             }
             else
             {
                 for (int i = 0; i < selectedLayer.layersForEditor.Length; i++)
                 {
-                    selectedLayer.layersForEditor[i].text = selectedLayer.animationStates[i].Name;
+                    selectedLayer.layersForEditor[i].text = selectedLayer.states[i].Name;
                 }
             }
         }

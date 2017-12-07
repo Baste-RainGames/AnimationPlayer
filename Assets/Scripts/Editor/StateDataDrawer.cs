@@ -12,15 +12,15 @@ namespace Animation_Player
             var updateStateNames = false;
             var layer = animationPlayer.layers[selectedLayer];
 
-            if (layer.animationStates.Count == 0)
+            if (layer.states.Count == 0)
             {
                 EditorGUILayout.LabelField("No states");
                 return;
             }
 
-            if (!layer.animationStates.IsInBounds(selectedState))
+            if (!layer.states.IsInBounds(selectedState))
             {
-                Debug.LogError("Out of bounds state: " + selectedState + " out of " + layer.animationStates.Count + " states! Resetting to 0");
+                Debug.LogError("Out of bounds state: " + selectedState + " out of " + layer.states.Count + " states! Resetting to 0");
                 selectedState.SetTo(0);
                 return;
             }
@@ -28,7 +28,7 @@ namespace Animation_Player
             EditorGUILayout.LabelField("State");
 
             EditorGUI.indentLevel++;
-            DrawStateData(layer.animationStates[selectedState], ref updateStateNames);
+            DrawStateData(layer.states[selectedState], ref updateStateNames);
 
             GUILayout.Space(20f);
 
@@ -135,12 +135,12 @@ namespace Animation_Player
 
         private static void DeleteState(AnimationPlayer animationPlayer, AnimationLayer layer, PersistedInt selectedState)
         {
-            EditorUtilities.RecordUndo(animationPlayer, "Deleting state " + layer.animationStates[selectedState].Name);
-            layer.transitions.RemoveAll(transition => transition.FromState == layer.animationStates[selectedState] ||
-                                                      transition.ToState == layer.animationStates[selectedState]);
-            layer.animationStates.RemoveAt(selectedState);
+            EditorUtilities.RecordUndo(animationPlayer, "Deleting state " + layer.states[selectedState].Name);
+            layer.transitions.RemoveAll(transition => transition.FromState == layer.states[selectedState] ||
+                                                      transition.ToState == layer.states[selectedState]);
+            layer.states.RemoveAt(selectedState);
 
-            if (selectedState == layer.animationStates.Count) //was last state
+            if (selectedState == layer.states.Count) //was last state
                 selectedState.SetTo(selectedState - 1);
         }
     }

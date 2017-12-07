@@ -15,10 +15,10 @@ namespace Animation_Player
 
         private BlendTree1D() { }
 
-        public static BlendTree1D Create(string name, int listIndex)
+        public static BlendTree1D Create(string name)
         {
             var blendTree = new BlendTree1D();
-            blendTree.Initialize(name, DefaultName, listIndex);
+            blendTree.Initialize(name, DefaultName);
             blendTree.blendVariable = "blend";
             blendTree.blendTree = new List<BlendTreeEntry>();
 

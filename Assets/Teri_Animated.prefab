@@ -36,7 +36,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4509588061463754}
   - component: {fileID: 95186958964565446}
-  - component: {fileID: 114925946360316648}
+  - component: {fileID: 114784461275576598}
   m_Layer: 0
   m_Name: Teri_Animated
   m_TagString: Untagged
@@ -292,7 +292,7 @@ Animator:
   m_WarningMessage: 
   m_HasTransformHierarchy: 0
   m_AllowConstantClipSamplingOptimization: 1
---- !u!114 &114925946360316648
+--- !u!114 &114784461275576598
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
@@ -310,81 +310,76 @@ MonoBehaviour:
     mask: {fileID: 0}
     type: 0
     layersForEditor:
-    - m_Text: New 2D Blend Tree
+    - m_Text: New State
       m_Image: {fileID: 0}
       m_Tooltip: 
     - m_Text: New Blend Tree
       m_Image: {fileID: 0}
       m_Tooltip: 
-    - m_Text: New State
-      m_Image: {fileID: 0}
-      m_Tooltip: 
-    - m_Text: New State1
-      m_Image: {fileID: 0}
-      m_Tooltip: 
-    - m_Text: New Blend Tree1
+    - m_Text: New 2D Blend Tree
       m_Image: {fileID: 0}
       m_Tooltip: 
     - m_Text: New 2D Blend Tree1
       m_Image: {fileID: 0}
       m_Tooltip: 
+    - m_Text: New Blend Tree1
+      m_Image: {fileID: 0}
+      m_Tooltip: 
+    - m_Text: New State1
+      m_Image: {fileID: 0}
+      m_Tooltip: 
     serializedSingleClipStates:
     - name: New State
       hasUpdatedName: 0
-      listIndex: 2
       guid:
-        guidSerialized: 8a32a274-5ec6-452a-a3cf-9e39ccf9bc3d
+        guidSerialized: 20e5f5cf-9e69-4715-9c6f-e4a5383fdef7
       speed: 1
-      stateType: 0
       clip: {fileID: 0}
     - name: New State1
       hasUpdatedName: 0
-      listIndex: 3
       guid:
-        guidSerialized: 9d1625bb-9c17-465f-a7be-0df592725d02
+        guidSerialized: 6682b0b6-a218-4701-b04c-e884736f93a8
       speed: 1
-      stateType: 0
       clip: {fileID: 0}
     serializedBlendTree1Ds:
     - name: New Blend Tree
       hasUpdatedName: 0
-      listIndex: 1
       guid:
-        guidSerialized: 4bddc914-150c-4838-9ee8-be9d5d338cf5
+        guidSerialized: 049aec87-0c2c-4fba-91cf-fcc4b6bdc788
       speed: 1
-      stateType: 1
       blendVariable: blend
       blendTree: []
     - name: New Blend Tree1
       hasUpdatedName: 0
-      listIndex: 4
       guid:
-        guidSerialized: a6b8e372-ebab-463b-867d-c57ca4a90242
+        guidSerialized: ae740b80-537e-427f-81d4-b8b914a8922f
       speed: 1
-      stateType: 1
       blendVariable: blend
       blendTree: []
     serializedBlendTree2Ds:
     - name: New 2D Blend Tree
       hasUpdatedName: 0
-      listIndex: 0
       guid:
-        guidSerialized: ced4993f-40e7-479f-92f3-ad776a9ae897
+        guidSerialized: ffcb14ce-4858-4578-bd29-2c32daa071ec
       speed: 1
-      stateType: 2
       blendVariable: blend1
       blendVariable2: blend2
       blendTree: []
     - name: New 2D Blend Tree1
       hasUpdatedName: 0
-      listIndex: 5
       guid:
-        guidSerialized: 071cbb11-8eae-47e1-aa99-f7954e582350
+        guidSerialized: f8413e14-1718-4656-b8ca-6e43702905c3
       speed: 1
-      stateType: 2
       blendVariable: blend1
       blendVariable2: blend2
       blendTree: []
+    serializedStateOrder:
+    - guidSerialized: 20e5f5cf-9e69-4715-9c6f-e4a5383fdef7
+    - guidSerialized: 049aec87-0c2c-4fba-91cf-fcc4b6bdc788
+    - guidSerialized: ffcb14ce-4858-4578-bd29-2c32daa071ec
+    - guidSerialized: f8413e14-1718-4656-b8ca-6e43702905c3
+    - guidSerialized: ae740b80-537e-427f-81d4-b8b914a8922f
+    - guidSerialized: 6682b0b6-a218-4701-b04c-e884736f93a8
   defaultTransition:
     duration: 0.1
     type: 0

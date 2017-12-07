@@ -269,7 +269,7 @@ namespace Animation_Player
         public int GetStateCount(int layer = 0)
         {
             AssertLayerInBounds(layer, "get the state count");
-            return layers[layer].animationStates.Count;
+            return layers[layer].states.Count;
         }
 
         public void SetBlendVar(string var, float value, int layer = 0)
@@ -311,7 +311,7 @@ namespace Animation_Player
             if (stateIdx == -1)
             {
                 Debug.LogError($"Trying to get the state \"{state}\" on layer {layer}, but that doesn't exist! States that exist are:" +
-                               $"\n{layers[layer].animationStates.PrettyPrint(s => s.Name)}", gameObject);
+                               $"\n{layers[layer].states.PrettyPrint(s => s.Name)}", gameObject);
                 return -1;
             }
 
@@ -437,7 +437,7 @@ namespace Animation_Player
             {
                 foreach (var layer in layers)
                 {
-                    foreach (var state in layer.animationStates)
+                    foreach (var state in layer.states)
                     {
                         state.EnsureHasGUID();
                     }
@@ -481,9 +481,9 @@ namespace Animation_Player
         [Conditional("UNITY_ASSERTIONS")]
         public void AssertStateInBounds(int layer, int state, string action)
         {
-            if (!(state >= 0 && state < layers[layer].animationStates.Count))
+            if (!(state >= 0 && state < layers[layer].states.Count))
                 Debug.LogError(
-                    $"Trying to {action} on an out of bounds state! (state {state} on layer {layer}, but there are {layers[layer].animationStates.Count} " +
+                    $"Trying to {action} on an out of bounds state! (state {state} on layer {layer}, but there are {layers[layer].states.Count} " +
                     $"states on that layer!)", gameObject);
         }
     }

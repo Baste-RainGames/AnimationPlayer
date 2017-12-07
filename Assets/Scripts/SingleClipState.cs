@@ -14,10 +14,10 @@ namespace Animation_Player
 
         private SingleClipState() { }
 
-        public static SingleClipState Create(string name, int listIndex, AnimationClip clip = null)
+        public static SingleClipState Create(string name, AnimationClip clip = null)
         {
             var state = new SingleClipState();
-            state.Initialize(name, DefaultName, listIndex);
+            state.Initialize(name, DefaultName);
             state.clip = clip;
             return state;
         }

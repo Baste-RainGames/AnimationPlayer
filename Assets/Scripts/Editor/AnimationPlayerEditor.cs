@@ -135,7 +135,7 @@ namespace Animation_Player
                 allStateNames = new string[animationPlayer.layers.Length][];
                 for (int i = 0; i < animationPlayer.layers.Length; i++)
                 {
-                    var states = animationPlayer.layers[i].animationStates;
+                    var states = animationPlayer.layers[i].states;
                     allStateNames[i] = new string[states.Count];
                     for (int j = 0; j < states.Count; j++)
                         allStateNames[i][j] = states[j].Name;
@@ -149,7 +149,7 @@ namespace Animation_Player
                 {
                     foreach (var transition in layer.transitions)
                     {
-                        transition.FetchStates(layer.animationStates);
+                        transition.FetchStates(layer.states);
                     }
                 }
             }
@@ -172,7 +172,7 @@ namespace Animation_Player
             if (animationPlayer.layers.Length == 0)
                 return; //Deleted last layer in DrawLayerSelection
 
-            if (selectedState == -1 && animationPlayer.layers[selectedLayer].animationStates.Count > 0)
+            if (selectedState == -1 && animationPlayer.layers[selectedLayer].states.Count > 0)
             {
                 //Handle adding a state for the first time.
                 selectedState.SetTo(0);
@@ -185,9 +185,9 @@ namespace Animation_Player
             GUILayout.Space(10f);
             EditorUtilities.Splitter();
 
-            var numStatesBefore = animationPlayer.layers[selectedLayer].animationStates.Count;
+            var numStatesBefore = animationPlayer.layers[selectedLayer].states.Count;
             StateSelectionAndAdditionDrawer.Draw(animationPlayer, selectedLayer, selectedState, selectedEditMode, this);
-            if (numStatesBefore != animationPlayer.layers[selectedLayer].animationStates.Count)
+            if (numStatesBefore != animationPlayer.layers[selectedLayer].states.Count)
             {
                 Repaint();
                 return;
@@ -376,7 +376,7 @@ namespace Animation_Player
             else
                 modelsUsed = new List<Object>();
 
-            foreach (var state in animationPlayer.layers.SelectMany(layer => layer.animationStates))
+            foreach (var state in animationPlayer.layers.SelectMany(layer => layer.states))
             {
                 //@TODO: Use pattern matching when C# 7
                 var type = state.GetType();
@@ -454,7 +454,7 @@ namespace Animation_Player
             {
                 EditorGUILayout.BeginHorizontal();
                 {
-                    string stateName = animationPlayer.layers[selectedLayer].animationStates[i].Name;
+                    string stateName = animationPlayer.layers[selectedLayer].states[i].Name;
 
                     if (GUILayout.Button($"Blend to {stateName} using default transition"))
                         animationPlayer.Play(i, selectedLayer);
@@ -485,7 +485,7 @@ namespace Animation_Player
             if (animationPlayer.layers.Length == 0)
                 return;
             var layer = animationPlayer.layers[selectedLayer];
-            selectedState.SetTo(Mathf.Clamp(selectedState, 0, layer.animationStates.Count - 1));
+            selectedState.SetTo(Mathf.Clamp(selectedState, 0, layer.states.Count - 1));
         }
 
         private float blendVal;

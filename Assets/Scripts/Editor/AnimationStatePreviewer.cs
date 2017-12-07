@@ -32,7 +32,7 @@ namespace Animation_Player
             }
             else if (GUILayout.Button("Start previewing state"))
             {
-                var state = animationPlayer.layers[selectedLayer].animationStates[selectedState];
+                var state = animationPlayer.layers[selectedLayer].states[selectedState];
                 StartPreviewing(state);
             }
         }

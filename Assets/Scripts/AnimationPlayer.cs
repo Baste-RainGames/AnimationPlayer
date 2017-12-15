@@ -437,6 +437,14 @@ namespace Animation_Player
 
         public float GetIKLookAtWeight() => currentIKLookAtWeight;
 
+        public bool HasBlendVarInAnyLayer(string blendVar) {
+            foreach (var layer in layers) {
+                if (layer.HasBlendTreeUsingBlendVar(blendVar))
+                    return true;
+            }
+            return false;
+        }
+
         /// <summary>
         /// Gets a blend variable controller for a specific variable, allowing you to edit that variable
         /// much faster than by SetBlendVar(name, value).

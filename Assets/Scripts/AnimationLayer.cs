@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Animations;
@@ -365,6 +366,10 @@ namespace Animation_Player
             {
                 result.Add(key);
             }
+        }
+
+        public bool HasBlendTreeUsingBlendVar(string blendVar) {
+            return blendVars.Keys.Contains(blendVar);
         }
 
 #if UNITY_EDITOR

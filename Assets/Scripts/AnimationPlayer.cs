@@ -244,6 +244,33 @@ namespace Animation_Player
         }
 
         /// <summary>
+        /// Get a state by name.
+        /// </summary>
+        /// <param name="state">State to get</param>
+        /// <param name="layer">Layer to Look in</param>
+        /// <returns></returns>
+        public AnimationState GetState(string state, int layer = 0) 
+        {
+            AssertLayerInBounds(layer, "getting a state");
+            int stateIdx = GetStateIdxFromName(state, layer);
+            AssertStateInBounds(layer, stateIdx, "getting a state");
+            return layers[layer].states[stateIdx];
+        }
+
+        /// <summary>
+        /// Get a state by index.
+        /// </summary>
+        /// <param name="state">Index of the state</param>
+        /// <param name="layer">Layer to look in.</param>
+        /// <returns></returns>
+        public AnimationState GetState(int state, int layer = 0)
+        {
+            AssertLayerInBounds(layer, "getting a state");
+            AssertStateInBounds(layer, state, "getting a state");
+            return layers[layer].states[state];
+        }
+
+        /// <summary>
         /// Gets the currently playing state. This is the last state you called Play on, and might not even have started blending in yet.
         /// </summary>
         /// <param name="layer">Layer to check in</param>
@@ -251,6 +278,18 @@ namespace Animation_Player
         {
             AssertLayerInBounds(layer, "get the current playing state");
             return layers[layer].GetCurrentPlayingState();
+        }
+
+        /// <summary>
+        /// Checks if the AnimationPlayer is playing a named state.
+        /// </summary>
+        /// <param name="state">State to check if is being player</param>
+        /// <param name="layer">Layer to check on</param>
+        /// <returns></returns>
+        public bool IsPlaying(string state, int layer = 0) 
+        {
+            AssertLayerInBounds(layer, "Checking if state is playing");
+            return GetCurrentPlayingState(layer).Name == state;
         }
 
         /// <summary>

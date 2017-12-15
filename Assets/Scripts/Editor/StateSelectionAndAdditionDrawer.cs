@@ -19,7 +19,7 @@ namespace Animation_Player
         {
             if (popupStyle == null)
             {
-                buttonWidth        = GUILayout.Width(200f);
+                buttonWidth = GUILayout.Width(200f);
                 selectedStateLabel = new GUIContent("Selected state: ");
 
                 popupStyle = new GUIStyle(EditorStyles.popup)
@@ -115,7 +115,6 @@ namespace Animation_Player
                             var assetPath = AssetDatabase.GetAssetPath(obj);
                             if (!(AssetImporter.GetAtPath(assetPath) is ModelImporter))
                                 return;
-                            Debug.Log(assetPath);
 
                             animationClips.AddRange(AssetDatabase.LoadAllAssetsAtPath(assetPath).FilterByType<AnimationClip>().
                                                                   Where(clip => (clip.hideFlags & HideFlags.HideInHierarchy) == 0));

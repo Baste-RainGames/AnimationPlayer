@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
 
@@ -12,7 +13,7 @@ namespace Animation_Player
 
         public string blendVariable;
         public string blendVariable2;
-        public List<BlendTreeEntry> blendTree;
+        public List<BlendTreeEntry2D> blendTree;
 
         private BlendTree2D() { }
 
@@ -22,7 +23,7 @@ namespace Animation_Player
             blendTree.Initialize(name, DefaultName);
             blendTree.blendVariable = "blend1";
             blendTree.blendVariable2 = "blend2";
-            blendTree.blendTree = new List<BlendTreeEntry>();
+            blendTree.blendTree = new List<BlendTreeEntry2D>();
             return blendTree;
         }
 
@@ -48,7 +49,7 @@ namespace Animation_Player
                 clipPlayable.SetSpeed(speed);
                 graph.Connect(clipPlayable, 0, treeMixer, j);
 
-                controller.Add(j, blendTreeEntry.threshold, blendTreeEntry.threshold2);
+                controller.Add(j, blendTreeEntry.threshold1, blendTreeEntry.threshold2);
             }
 
             treeMixer.SetInputWeight(0, 1f);
@@ -62,12 +63,24 @@ namespace Animation_Player
                 var longest = 0f;
                 foreach (var blendTreeEntry in blendTree)
                 {
-                    var clipLength = blendTreeEntry.clip == null ? 0f : blendTreeEntry.clip.length;
+                    var clipLength = blendTreeEntry.clip?.length ?? 0f;
                     if (clipLength > longest)
                         longest = clipLength;
                 }
-
                 return longest;
+            }
+        }
+
+        public override bool Loops
+        {
+            get
+            {
+                foreach (var entry in blendTree)
+                {
+                    if (entry.clip?.isLooping ?? false)
+                        return true;
+                }
+                return false;
             }
         }
     }

@@ -13,7 +13,7 @@ Animation states:
         - random (bunch of states, selects a random one when you enter)
     - Check if it's possible to loop/not loop in the state, and how expensive that is compared to the native (stupid) way of doing it
     + Add support for dragging animation clips over the list of states to generate a new state
-        - Also add support for dragging in the .fbx or .blend or whatever (ModelImporter), and add all clips in it
+        + Also add support for dragging in the .fbx or .blend or whatever (ModelImporter), and add all clips in it
         - If you drag in several, create a "Do you want to add many clips or blend tree" popup
     * Preview (oh my!)
         + preview for single-clip states
@@ -21,6 +21,7 @@ Animation states:
         - allow for setting blend vars on previews
         - previews for transitions
         - make sure the time slider gives the actual animation time! Now it's going to desynchronize (although the relative value is good)
+        - reset to bind pose after the preview is done
     - Animation events!
         - Make own tab for animation events
         - Define API. 
@@ -31,7 +32,7 @@ Animation states:
         - Make settings:
             - min blend factor - default to 0. Only call the event if the current blend factor is larger than this
             - Play only first/repeat. If the animation loops, do we want this to happen every time, or just the first one?
-    - Make it possible to play an animation relative to the current position. This will make Unity-created animations for eg. doors be a _LOT_ easier.
+    - Make it possible to play an animation relative to the current position. This will make Unity-created animations for eg. doors be a _LOT_ easier, and faster to boot.
 
 Animation transitions:
     - Transition-by-clip:
@@ -40,15 +41,14 @@ Animation transitions:
         Have to figure out if C here is a clip, another state in the state view, or another state in a special view.
     - Several ways of transitioning between two states
         probably want default transition and named transition
-    - Better layout! Show list of all defined transitions
-    - Move the transitions to the states?
-        -I'm note sure about this. It would require less bookkeeping when deleting/reordering states (deleting a state would auto-delete
-         all transitions from that state), but some bookkeeping will always be neccessary. Keeping the transitions seperate also makes
-         them easier to iterate, which is nice.
+    * Better layout! Show list of all defined transitions
+        + There's a list of all transitions defined from the current state
+        - Should have a list of ALL transitions?
 
 Misc
     - Make the cached values in the editor be per-layer where appropriate (selected from/to state for transitions)
     - Make a caching system that doesn't depend on EditorPrefs? Cluttering the registry is an ugly hack.
+        - But then where?
     - Add re-order support to things? Or better view for states
     - Metadata:
         - list all transitions (with go-to buttons)
@@ -59,3 +59,8 @@ Misc
     - fix the parts of the window shifting around as you unfold stuff (like clips used in metadata)
         - THAT STOPPED HAPPENING?
     - AnimationPlayer should have internal BlendVarControllers, so there's not duplication between SetBlendVar and GetBlendVarController().SetValue
+
+Issues:
+    - Calling Play("MyState") every frame will cause MyState to never play, if wherever you're calling from executes Update before the AnimationPlayer.
+      This is because the timer for when the transition was started gets reset to this frame every time you call it. I don't have any good solutions for
+      this, but then again, calling Play("Attack") in Update is a bit insane.  

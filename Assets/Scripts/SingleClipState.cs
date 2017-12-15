@@ -9,7 +9,7 @@ namespace Animation_Player
     [Serializable]
     public class SingleClipState : AnimationState
     {
-        public const string DefaultName  = "New State";
+        public const string DefaultName = "New State";
         public AnimationClip clip;
 
         private SingleClipState() { }
@@ -31,5 +31,6 @@ namespace Animation_Player
         }
 
         public override float Duration => clip?.length ?? 0f;
+        public override bool Loops => clip?.isLooping ?? false;
     }
 }

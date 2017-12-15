@@ -11,7 +11,7 @@ namespace Animation_Player
         public const string DefaultName = "New Blend Tree";
 
         public string blendVariable;
-        public List<BlendTreeEntry> blendTree;
+        public List<BlendTreeEntry1D> blendTree;
 
         private BlendTree1D() { }
 
@@ -20,7 +20,7 @@ namespace Animation_Player
             var blendTree = new BlendTree1D();
             blendTree.Initialize(name, DefaultName);
             blendTree.blendVariable = "blend";
-            blendTree.blendTree = new List<BlendTreeEntry>();
+            blendTree.blendTree = new List<BlendTreeEntry1D>();
 
             return blendTree;
         }
@@ -64,6 +64,19 @@ namespace Animation_Player
                 }
 
                 return longest;
+            }
+        }
+
+        public override bool Loops
+        {
+            get
+            {
+                foreach (var entry in blendTree)
+                {
+                    if (entry?.clip?.isLooping ?? false)
+                        return true;
+                }
+                return false;
             }
         }
     }

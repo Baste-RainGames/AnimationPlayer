@@ -66,6 +66,8 @@ namespace Animation_Player
 
         public abstract float Duration { get; }
 
+        public abstract bool Loops { get; }
+
         public override string ToString()
         {
             return $"{name} ({GetType().Name})";
@@ -73,13 +75,5 @@ namespace Animation_Player
 
         public abstract Playable GeneratePlayable(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
                                                   Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers, Dictionary<string, float> blendVars);
-
-        [Serializable]
-        public class BlendTreeEntry
-        {
-            public float threshold;
-            public float threshold2;
-            public AnimationClip clip;
-        }
     }
 }

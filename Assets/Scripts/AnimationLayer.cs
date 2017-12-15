@@ -18,6 +18,7 @@ namespace Animation_Player
         public AvatarMask mask;
         public AnimationLayerType type = AnimationLayerType.Override;
 
+        private PlayableGraph containingGraph;
         public AnimationMixerPlayable stateMixer { get; private set; }
         private int currentPlayedState;
 
@@ -25,8 +26,8 @@ namespace Animation_Player
         private bool transitioning;
         private TransitionData currentTransitionData;
         private float transitionStartTime;
-        private bool[] activeWhenBlendStarted;
-        private float[] valueWhenBlendStarted;
+        private List<bool> activeWhenBlendStarted;
+        private List<float> valueWhenBlendStarted;
 
         //transitionLookup[a, b] contains the index of the transition from a to b in transitions
         private int[,] transitionLookup;
@@ -41,6 +42,7 @@ namespace Animation_Player
 
         public void InitializeSelf(PlayableGraph graph)
         {
+            containingGraph = graph;
             if (states.Count == 0)
             {
                 stateMixer = AnimationMixerPlayable.Create(graph, 0, false);
@@ -69,8 +71,13 @@ namespace Animation_Player
                 graph.Connect(playable, 0, stateMixer, i);
             }
 
-            activeWhenBlendStarted = new bool[states.Count];
-            valueWhenBlendStarted = new float[states.Count];
+            activeWhenBlendStarted = new List<bool>();
+            valueWhenBlendStarted = new List<float>();
+            for (int i = 0; i < states.Count; i++)
+            {
+                activeWhenBlendStarted.Add(false);
+                valueWhenBlendStarted.Add(0f);
+            }
 
             transitionLookup = new int[states.Count, states.Count];
             for (int i = 0; i < states.Count; i++)
@@ -143,15 +150,43 @@ namespace Animation_Player
                 return;
             }
 
-            var isCurrentlyPlaying = stateMixer.GetInputWeight(state) > 0f;
-            if (!isCurrentlyPlaying)
+            var currentWeightOfState = stateMixer.GetInputWeight(state);
+            var isCurrentlyPlaying = currentWeightOfState > 0f;
+            if (isCurrentlyPlaying)
+            {
+                if (!states[state].Loops)
+                {
+                    // We need to blend to a state currently playing, but want to blend to it at time 0, as it's not looping.
+                    // So we do this:
+                    // Move the old version of the state to a new spot in the mixer, copy over the time and weight
+                    // Create a new version of the state at the old spot
+                    // Blend to the new state
+
+                    var original = runtimePlayables[state];
+                    var copy = states[state].GeneratePlayable(containingGraph, varTo1DBlendControllers, varTo2DBlendControllers, blendVars);
+                    var copyIndex = stateMixer.GetInputCount();
+                    stateMixer.SetInputCount(copyIndex + 1);
+
+                    containingGraph.Connect(copy, 0, stateMixer, copyIndex);
+
+                    activeWhenBlendStarted.Add(true);
+                    valueWhenBlendStarted.Add(currentWeightOfState);
+
+                    copy.SetTime(original.GetTime());
+                    original.SetTime(0);
+
+                    stateMixer.SetInputWeight(copyIndex, currentWeightOfState);
+                    stateMixer.SetInputWeight(state, 0);
+                }
+            }
+            else
             {
                 runtimePlayables[state].SetTime(0f);
             }
 
             if (transitionData.duration <= 0f)
             {
-                for (int i = 0; i < states.Count; i++)
+                for (int i = 0; i < stateMixer.GetInputCount(); i++)
                 {
                     stateMixer.SetInputWeight(i, i == state ? 1f : 0f);
                 }
@@ -159,9 +194,9 @@ namespace Animation_Player
                 currentPlayedState = state;
                 transitioning = false;
             }
-            else if (state != currentPlayedState)
+            else
             {
-                for (int i = 0; i < states.Count; i++)
+                for (int i = 0; i < stateMixer.GetInputCount(); i++)
                 {
                     var currentMixVal = stateMixer.GetInputWeight(i);
                     activeWhenBlendStarted[i] = currentMixVal > 0f;
@@ -186,7 +221,7 @@ namespace Animation_Player
                 lerpVal = currentTransitionData.curve.Evaluate(lerpVal);
             }
 
-            for (int i = 0; i < states.Count; i++)
+            for (int i = 0; i < stateMixer.GetInputCount(); i++)
             {
                 var isTargetClip = i == currentPlayedState;
                 if (isTargetClip || activeWhenBlendStarted[i])
@@ -196,8 +231,41 @@ namespace Animation_Player
                 }
             }
 
+            var currentInputCount = stateMixer.GetInputCount();
+            if (currentInputCount > states.Count)
+            {
+                //Have added additional copies of states to handle transitions. Clean these up if they have too low weight, to avoid excessive playable counts.
+                for (int i = currentInputCount - 1; i >= states.Count; i--)
+                {
+                    if (stateMixer.GetInputWeight(i) < 0.01f)
+                    {
+                        activeWhenBlendStarted.RemoveAt(i);
+                        valueWhenBlendStarted.RemoveAt(i);
+
+                        var removedPlayable = stateMixer.GetInput(i);
+                        removedPlayable.Destroy();
+    
+                        //Shift all excess playables one index down.
+                        for (int j = i + 1; j < stateMixer.GetInputCount(); j++)
+                        {
+                            var playable = stateMixer.GetInput(j);
+                            var weight = stateMixer.GetInputWeight(j);
+                            containingGraph.Disconnect(stateMixer, j);
+                            containingGraph.Connect(playable, 0, stateMixer, j - 1);
+                            stateMixer.SetInputWeight(j - 1, weight);
+                        }
+
+                        stateMixer.SetInputCount(stateMixer.GetInputCount() - 1);
+                    }
+                }
+            }
+
             if (lerpVal >= 1)
+            {
                 transitioning = false;
+                if(states.Count != stateMixer.GetInputCount())
+                    throw new Exception($"{states.Count} != {stateMixer.GetInputCount()}");
+            }
         }
 
         public float GetStateWeight(int state)

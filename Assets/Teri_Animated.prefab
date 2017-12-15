@@ -116,8 +116,8 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1181668373902286}
-  m_LocalRotation: {x: 0.11875514, y: 0.1621641, z: -0.6975928, w: 0.68772405}
-  m_LocalPosition: {x: -0.0025234274, y: 1.651793, z: 0.0012530899}
+  m_LocalRotation: {x: 0.10945031, y: 0.05081191, z: -0.69935334, w: 0.7045167}
+  m_LocalPosition: {x: -0.007829125, y: 1.6409957, z: 0.002967033}
   m_LocalScale: {x: 1.0000014, y: 1.000001, z: 1.0000007}
   m_Children: []
   m_Father: {fileID: 4509588061463754}
@@ -129,8 +129,8 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1144031287819826}
-  m_LocalRotation: {x: 0.11875514, y: 0.1621641, z: -0.6975928, w: 0.68772405}
-  m_LocalPosition: {x: -0.0025234274, y: 1.651793, z: 0.0012530899}
+  m_LocalRotation: {x: 0.10945031, y: 0.05081191, z: -0.69935334, w: 0.7045167}
+  m_LocalPosition: {x: -0.007829125, y: 1.6409957, z: 0.002967033}
   m_LocalScale: {x: 1.0000014, y: 1.000001, z: 1.0000007}
   m_Children: []
   m_Father: {fileID: 4509588061463754}
@@ -186,8 +186,8 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1025141103884610}
-  m_LocalRotation: {x: 0.11875514, y: 0.1621641, z: -0.6975928, w: 0.68772405}
-  m_LocalPosition: {x: -0.0025234274, y: 1.651793, z: 0.0012530899}
+  m_LocalRotation: {x: 0.10945031, y: 0.05081191, z: -0.69935334, w: 0.7045167}
+  m_LocalPosition: {x: -0.007829125, y: 1.6409957, z: 0.002967033}
   m_LocalScale: {x: 1.0000014, y: 1.000001, z: 1.0000007}
   m_Children: []
   m_Father: {fileID: 4509588061463754}
@@ -305,83 +305,76 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   versionNumber: 1
   layers:
-  - transitions: []
+  - transitions:
+    - fromStateGUID:
+        guidSerialized: 9eb36602-4989-4b86-a8cf-2d0284deb887
+      toStateGUID:
+        guidSerialized: 8df436b0-5294-488b-832f-288c36467ab8
+      transitionData:
+        duration: 0.1
+        type: 0
+        curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+    - fromStateGUID:
+        guidSerialized: 8df436b0-5294-488b-832f-288c36467ab8
+      toStateGUID:
+        guidSerialized: 9eb36602-4989-4b86-a8cf-2d0284deb887
+      transitionData:
+        duration: 0.25
+        type: 0
+        curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+    - fromStateGUID:
+        guidSerialized: 8df436b0-5294-488b-832f-288c36467ab8
+      toStateGUID:
+        guidSerialized: 8df436b0-5294-488b-832f-288c36467ab8
+      transitionData:
+        duration: 0.1
+        type: 0
+        curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
     startWeight: 1
     mask: {fileID: 0}
     type: 0
     layersForEditor:
-    - m_Text: New State
+    - m_Text: Movement
       m_Image: {fileID: 0}
       m_Tooltip: 
-    - m_Text: New Blend Tree
-      m_Image: {fileID: 0}
-      m_Tooltip: 
-    - m_Text: New 2D Blend Tree
-      m_Image: {fileID: 0}
-      m_Tooltip: 
-    - m_Text: New 2D Blend Tree1
-      m_Image: {fileID: 0}
-      m_Tooltip: 
-    - m_Text: New Blend Tree1
-      m_Image: {fileID: 0}
-      m_Tooltip: 
-    - m_Text: New State1
+    - m_Text: Attack
       m_Image: {fileID: 0}
       m_Tooltip: 
     serializedSingleClipStates:
-    - name: New State
-      hasUpdatedName: 0
+    - name: Movement
+      hasUpdatedName: 1
       guid:
-        guidSerialized: 20e5f5cf-9e69-4715-9c6f-e4a5383fdef7
+        guidSerialized: 9eb36602-4989-4b86-a8cf-2d0284deb887
       speed: 1
-      clip: {fileID: 0}
-    - name: New State1
-      hasUpdatedName: 0
+      clip: {fileID: 7400066, guid: 7628641fc6526d24da790cb5197b15b2, type: 3}
+    - name: Attack
+      hasUpdatedName: 1
       guid:
-        guidSerialized: 6682b0b6-a218-4701-b04c-e884736f93a8
+        guidSerialized: 8df436b0-5294-488b-832f-288c36467ab8
       speed: 1
-      clip: {fileID: 0}
-    serializedBlendTree1Ds:
-    - name: New Blend Tree
-      hasUpdatedName: 0
-      guid:
-        guidSerialized: 049aec87-0c2c-4fba-91cf-fcc4b6bdc788
-      speed: 1
-      blendVariable: blend
-      blendTree: []
-    - name: New Blend Tree1
-      hasUpdatedName: 0
-      guid:
-        guidSerialized: ae740b80-537e-427f-81d4-b8b914a8922f
-      speed: 1
-      blendVariable: blend
-      blendTree: []
-    serializedBlendTree2Ds:
-    - name: New 2D Blend Tree
-      hasUpdatedName: 0
-      guid:
-        guidSerialized: ffcb14ce-4858-4578-bd29-2c32daa071ec
-      speed: 1
-      blendVariable: blend1
-      blendVariable2: blend2
-      blendTree: []
-    - name: New 2D Blend Tree1
-      hasUpdatedName: 0
-      guid:
-        guidSerialized: f8413e14-1718-4656-b8ca-6e43702905c3
-      speed: 1
-      blendVariable: blend1
-      blendVariable2: blend2
-      blendTree: []
+      clip: {fileID: 7400002, guid: 7628641fc6526d24da790cb5197b15b2, type: 3}
+    serializedBlendTree1Ds: []
+    serializedBlendTree2Ds: []
     serializedStateOrder:
-    - guidSerialized: 20e5f5cf-9e69-4715-9c6f-e4a5383fdef7
-    - guidSerialized: 049aec87-0c2c-4fba-91cf-fcc4b6bdc788
-    - guidSerialized: ffcb14ce-4858-4578-bd29-2c32daa071ec
-    - guidSerialized: f8413e14-1718-4656-b8ca-6e43702905c3
-    - guidSerialized: ae740b80-537e-427f-81d4-b8b914a8922f
-    - guidSerialized: 6682b0b6-a218-4701-b04c-e884736f93a8
+    - guidSerialized: 9eb36602-4989-4b86-a8cf-2d0284deb887
+    - guidSerialized: 8df436b0-5294-488b-832f-288c36467ab8
   defaultTransition:
-    duration: 0.1
+    duration: 0.5
     type: 0
     curve:
       serializedVersion: 2

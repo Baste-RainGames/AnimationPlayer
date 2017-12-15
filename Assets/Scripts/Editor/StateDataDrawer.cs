@@ -1,6 +1,5 @@
 using UnityEditor;
 using UnityEngine;
-using BlendTreeEntry = Animation_Player.AnimationState.BlendTreeEntry;
 
 namespace Animation_Player
 {
@@ -81,7 +80,7 @@ namespace Animation_Player
                 GUILayout.Space(10f);
                 EditorGUILayout.BeginHorizontal();
                 if (GUILayout.Button("Add blend tree entry", GUILayout.Width(150f)))
-                    blendTree.blendTree.Add(new BlendTreeEntry());
+                    blendTree.blendTree.Add(new BlendTreeEntry1D());
                 GUILayout.FlexibleSpace();
                 EditorGUILayout.EndHorizontal();
             }
@@ -100,7 +99,7 @@ namespace Animation_Player
                 GUILayout.Space(10f);
                 EditorGUILayout.BeginHorizontal();
                 if (GUILayout.Button("Add blend tree entry", GUILayout.Width(150f)))
-                    blendTree2D.blendTree.Add(new BlendTreeEntry());
+                    blendTree2D.blendTree.Add(new BlendTreeEntry2D());
                 GUILayout.FlexibleSpace();
                 EditorGUILayout.EndHorizontal();
             }
@@ -118,10 +117,25 @@ namespace Animation_Player
             if (blendTreeEntry.clip != oldClip && blendTreeEntry.clip != null)
                 changedName = state.OnClipAssigned(blendTreeEntry.clip);
 
-            blendTreeEntry.threshold = EditorUtilities.FloatField($"When '{blendVarName}' =", blendTreeEntry.threshold, 150f, 200f);
-            if (blendVarName2 != null)
-                blendTreeEntry.threshold2 = EditorUtilities.FloatField($"When '{blendVarName2}' =", blendTreeEntry.threshold2, 150f, 200f);
+            var as1D = blendTreeEntry as BlendTreeEntry1D;
+            var as2D = blendTreeEntry as BlendTreeEntry2D;
+
+            if (as1D != null)
+                DrawThresholdFor1DBlendTree(blendVarName, as1D);
+            else if (as2D != null)
+                DrawThresholdsFor2DBlendTree(blendVarName, blendVarName2, as2D);
             return changedName;
+        }
+
+        private static void DrawThresholdFor1DBlendTree(string blendVarName, BlendTreeEntry1D entry)
+        {
+            entry.threshold = EditorUtilities.FloatField($"When '{blendVarName}' =", entry.threshold, 150f, 200f);
+        }
+
+        private static void DrawThresholdsFor2DBlendTree(string blendVarName1, string blendVarName2, BlendTreeEntry2D as2D)
+        {
+            as2D.threshold1 = EditorUtilities.FloatField($"When '{blendVarName1}' =", as2D.threshold1, 150f, 200f);
+            as2D.threshold2 = EditorUtilities.FloatField($"When '{blendVarName2}' =", as2D.threshold2, 150f, 200f);
         }
 
         private static bool DrawDeleteStateButton(PersistedInt selectedLayer, PersistedInt selectedState)

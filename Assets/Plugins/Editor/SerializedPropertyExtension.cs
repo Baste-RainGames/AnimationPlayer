@@ -16,7 +16,6 @@ public static class SerializedPropertyExtension
         var targetObject = property.serializedObject.targetObject;
         EditorUtility.SetDirty(targetObject);
         var asComp = targetObject as Component;
-        Debug.Log(targetObject + "/" + asComp);
         if (asComp != null)
         {
             EditorSceneManager.MarkSceneDirty(asComp.gameObject.scene);

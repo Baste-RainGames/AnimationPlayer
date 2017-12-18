@@ -57,9 +57,6 @@ namespace Animation_Player
                     EditorSceneManager.MarkSceneDirty(animationPlayer.gameObject.scene);
             }
 
-            animationPlayer.editTimeUpdateCallback -= Repaint;
-            animationPlayer.editTimeUpdateCallback += Repaint;
-
             Undo.undoRedoPerformed -= CheckSelectionBounds;
             Undo.undoRedoPerformed += CheckSelectionBounds;
 
@@ -167,10 +164,7 @@ namespace Animation_Player
                 return; //Deleted last layer in DrawLayerSelection
 
             if (selectedState == -1 && animationPlayer.layers[selectedLayer].states.Count > 0)
-            {
-                //Handle adding a state for the first time.
-                selectedState.SetTo(0);
-            }
+                selectedState.SetTo(0); //Handle adding a state for the first time.
 
             GUILayout.Space(10f);
 
@@ -193,8 +187,10 @@ namespace Animation_Player
 
             EditorGUILayout.LabelField("Default transition");
 
-            EditorUtilities.RecordUndo(animationPlayer, "Change default transition");
-            animationPlayer.defaultTransition = AnimationTransitionDrawer.DrawTransitionData(animationPlayer.defaultTransition);
+            EditorUtilities.RecordUndo(animationPlayer, "Change default transition", () =>
+            {
+                animationPlayer.defaultTransition = AnimationTransitionDrawer.DrawTransitionData(animationPlayer.defaultTransition);
+            });
 
             EditorUtilities.Splitter();
 
@@ -329,7 +325,60 @@ namespace Animation_Player
 
         private void DrawEvents()
         {
-            EditorGUILayout.LabelField("events lol");
+            var state = animationPlayer.GetState(selectedState, selectedLayer);
+            int indexToDelete = -1;
+            EditorGUILayout.LabelField($"Animation events for {state.Name}");
+            EditorUtilities.Splitter();
+            EditorUtilities.DrawIndented(() =>
+            {
+                for (var i = 0; i < state.animationEvents.Count; i++)
+                {
+                    if (DrawEvent(state.animationEvents[i], state))
+                        indexToDelete = i;
+                    if (i != state.animationEvents.Count - 1)
+                        GUILayout.Space(5);
+                }
+            });
+            if (indexToDelete != -1)
+                state.animationEvents.RemoveAt(indexToDelete);
+
+            EditorUtilities.Splitter();
+            EditorUtilities.DrawHorizontal(() =>
+            {
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button("Create new event"))
+                {
+                    EditorUtilities.RecordUndo(animationPlayer, $"Added animation event to {state.Name}");
+                    state.animationEvents.Add(new AnimationEvent {name = "New Event"});
+                    MarkDirty();
+                }
+            });
+        }
+
+        private bool DrawEvent(AnimationEvent animationEvent, AnimationState containingState)
+        {
+            bool shouldDelete = false;
+            EditorGUI.BeginChangeCheck();
+            EditorUtilities.DrawHorizontal(() =>
+            {
+                EditorGUILayout.LabelField("name", GUILayout.Width(50f));
+                animationEvent.name = EditorGUILayout.TextField(animationEvent.name);
+            });
+            EditorUtilities.DrawHorizontal(() =>
+            {
+                EditorGUILayout.LabelField("time", GUILayout.Width(50f));
+                animationEvent.time = EditorGUILayout.Slider((float) animationEvent.time, 0f, containingState.Duration);
+            });
+            EditorUtilities.DrawHorizontal(() =>
+            {
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button($"Delete '{animationEvent.name}'"))
+                    shouldDelete = true;
+            });
+            if (EditorGUI.EndChangeCheck())
+                EditorUtilities.SetDirty(animationPlayer);
+
+            return shouldDelete;
         }
 
         private void DrawRuntimeDebugData()
@@ -407,7 +456,6 @@ namespace Animation_Player
         private const string persistedToState = "APE_SelectedToState_";
         private const string persistedEditMode = "APE_EditMode_";
 
-
         public class PersistedAnimationPlayerEditMode : PersistedVal<AnimationPlayerEditMode>
         {
             public PersistedAnimationPlayerEditMode(string key) : base(key) { }
@@ -430,7 +478,7 @@ namespace Animation_Player
 
         public override bool RequiresConstantRepaint()
         {
-            return base.RequiresConstantRepaint() || previewer.IsShowingPreview;
+            return Application.isPlaying || previewer.IsShowingPreview;
         }
 
         private void OnDestroy()

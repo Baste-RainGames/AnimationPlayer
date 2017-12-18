@@ -360,12 +360,16 @@ MonoBehaviour:
       hasUpdatedName: 1
       guid:
         guidSerialized: 9eb36602-4989-4b86-a8cf-2d0284deb887
+      animationEvents:
+      - name: Foo
+        time: 0.28600001335144043
       speed: 1
       clip: {fileID: 7400066, guid: 7628641fc6526d24da790cb5197b15b2, type: 3}
     - name: Attack
       hasUpdatedName: 1
       guid:
         guidSerialized: 8df436b0-5294-488b-832f-288c36467ab8
+      animationEvents: []
       speed: 1
       clip: {fileID: 7400002, guid: 7628641fc6526d24da790cb5197b15b2, type: 3}
     serializedBlendTree1Ds: []
@@ -374,7 +378,7 @@ MonoBehaviour:
     - guidSerialized: 9eb36602-4989-4b86-a8cf-2d0284deb887
     - guidSerialized: 8df436b0-5294-488b-832f-288c36467ab8
   defaultTransition:
-    duration: 0.5
+    duration: 0.3
     type: 0
     curve:
       serializedVersion: 2

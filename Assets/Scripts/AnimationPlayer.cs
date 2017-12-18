@@ -36,11 +36,6 @@ namespace Animation_Player
         // controller on startup
         //        public bool IKAvailable { get; private set; }
 
-#if UNITY_EDITOR
-        //Used to make the inspector continually update
-        public Action editTimeUpdateCallback;
-#endif
-
         private bool hasAwoken;
 
         private void Awake()
@@ -88,9 +83,6 @@ namespace Animation_Player
 
         private void Update()
         {
-#if UNITY_EDITOR
-            editTimeUpdateCallback?.Invoke();
-#endif
             foreach (var layer in layers)
                 layer.Update();
         }
@@ -358,6 +350,20 @@ namespace Animation_Player
         }
 
         /// <summary>
+        /// Register a listener for an animation event
+        /// </summary>
+        /// <param name="targetEvent">Event to listen to</param>
+        /// <param name="listener">Action to be called when targetEvent happens</param>
+        public void RegisterAnimationEventListener(string targetEvent, Action listener)
+        {
+            foreach (var layer in layers)
+                foreach (var state in layer.states)
+                    foreach (var animationEvent in state.animationEvents)
+                        if(animationEvent.name == targetEvent)
+                            animationEvent.RegisterListener(listener);
+        }
+
+        /// <summary>
         /// Equivalent to Animator.SetIKHintPosition
         /// Sets the position of an IK hint.
         /// </summary>
@@ -435,8 +441,14 @@ namespace Animation_Player
             outputAnimator.SetLookAtWeight(weight, bodyWeight, headWeight, eyesWeight, clampWeight);
         }
 
+        /// <returns>The current IK Look at weight (0 - 1)</returns>
         public float GetIKLookAtWeight() => currentIKLookAtWeight;
 
+        /// <summary>
+        /// Checks all layers for a blend tree that uses the named blendVar.
+        /// </summary>
+        /// <param name="blendVar">blendVar to check for.</param>
+        /// <returns>true if the blendvar is used in any blend tree in any layer.</returns>
         public bool HasBlendVarInAnyLayer(string blendVar) {
             foreach (var layer in layers) {
                 if (layer.HasBlendTreeUsingBlendVar(blendVar))
@@ -496,14 +508,14 @@ namespace Animation_Player
         }
 
         [Conditional("UNITY_ASSERTIONS")]
-        public void AssertLayerInBounds(int layer, string action)
+        private void AssertLayerInBounds(int layer, string action)
         {
             if (!(layer >= 0 && layer < layers.Length))
                 Debug.LogError($"Trying to {action} on an out of bounds layer! (layer {layer}, there are {layers.Length} layers!)", gameObject);
         }
 
         [Conditional("UNITY_ASSERTIONS")]
-        public void AssertLayerInBounds(int layer, int state, string action)
+        private void AssertLayerInBounds(int layer, int state, string action)
         {
             if (!(layer >= 0 && layer < layers.Length))
                 Debug.LogError($"Trying to {action} on an out of bounds layer! (state {state} on layer {layer}, but there are {layers.Length} layers!)",
@@ -511,7 +523,7 @@ namespace Animation_Player
         }
 
         [Conditional("UNITY_ASSERTIONS")]
-        public void AssertLayerInBounds(int layer, string state, string action)
+        private void AssertLayerInBounds(int layer, string state, string action)
         {
             if (!(layer >= 0 && layer < layers.Length))
                 Debug.LogError($"Trying to {action} on an out of bounds layer! (state {state} on layer {layer}, but there are {layers.Length} layers!)",
@@ -519,14 +531,14 @@ namespace Animation_Player
         }
 
         [Conditional("UNITY_ASSERTIONS")]
-        public void AssertTransitionDataFine(TransitionData transitionData)
+        private void AssertTransitionDataFine(TransitionData transitionData)
         {
             if (transitionData.type == TransitionType.Curve && transitionData.curve != null)
                 Debug.LogError("Trying to transition using a curve, but the curve is null!");
         }
 
         [Conditional("UNITY_ASSERTIONS")]
-        public void AssertStateInBounds(int layer, int state, string action)
+        private void AssertStateInBounds(int layer, int state, string action)
         {
             if (!(state >= 0 && state < layers[layer].states.Count))
                 Debug.LogError(

@@ -22,6 +22,8 @@ namespace Animation_Player
         private PlayableGraph containingGraph;
         public AnimationMixerPlayable stateMixer { get; private set; }
         private int currentPlayedState;
+        private double timeOfPlayedStateLastFrame;
+        private bool firstFrame = true;
 
         //blend info:
         private bool transitioning;
@@ -184,6 +186,7 @@ namespace Animation_Player
             {
                 runtimePlayables[state].SetTime(0f);
             }
+            timeOfPlayedStateLastFrame = runtimePlayables[state].GetTime(); 
 
             if (transitionData.duration <= 0f)
             {
@@ -212,6 +215,20 @@ namespace Animation_Player
         }
 
         public void Update()
+        {
+            HandleAnimationEvents();
+            HandleTransitions();
+            firstFrame = false;
+        }
+
+        private void HandleAnimationEvents()
+        {
+            var currentTime = stateMixer.GetInput(currentPlayedState).GetTime();
+            states[currentPlayedState].HandleAnimationEvents(timeOfPlayedStateLastFrame, currentTime, firstFrame);
+            timeOfPlayedStateLastFrame = currentTime;
+        }
+
+        private void HandleTransitions()
         {
             if (!transitioning)
                 return;
@@ -245,7 +262,7 @@ namespace Animation_Player
 
                         var removedPlayable = stateMixer.GetInput(i);
                         removedPlayable.Destroy();
-    
+
                         //Shift all excess playables one index down.
                         for (int j = i + 1; j < stateMixer.GetInputCount(); j++)
                         {
@@ -264,7 +281,7 @@ namespace Animation_Player
             if (lerpVal >= 1)
             {
                 transitioning = false;
-                if(states.Count != stateMixer.GetInputCount())
+                if (states.Count != stateMixer.GetInputCount())
                     throw new Exception($"{states.Count} != {stateMixer.GetInputCount()}");
             }
         }

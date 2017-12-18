@@ -16,6 +16,7 @@ namespace Animation_Player
         protected SerializedGUID guid;
         public SerializedGUID GUID => guid;
 
+        public List<AnimationEvent> animationEvents;
         public double speed;
 
         //pseudo-constructor
@@ -62,6 +63,33 @@ namespace Animation_Player
             }
 
             return false;
+        }
+
+        public void HandleAnimationEvents(double timeLastFrame, double timeCurrentFrame, bool firstFrame)
+        {
+            if (Loops)
+            {
+                timeLastFrame %= Duration;
+                timeCurrentFrame %= Duration;
+            }
+            foreach (var animationEvent in animationEvents)
+            {
+                bool shouldExecute = false;
+                if ((timeLastFrame < animationEvent.time || firstFrame) && timeCurrentFrame >= animationEvent.time)
+                {
+                    shouldExecute = true;
+                }
+                else if (timeCurrentFrame < timeLastFrame) // Looped around!
+                {
+                    //handle events close to start and end of animation
+                    if(animationEvent.time < timeCurrentFrame)
+                        shouldExecute = true;
+                    else if(animationEvent.time > timeLastFrame)
+                        shouldExecute = true;
+                }
+                if (shouldExecute)
+                    animationEvent.InvokeRegisteredListeners();
+            }
         }
 
         public abstract float Duration { get; }

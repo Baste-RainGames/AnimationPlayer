@@ -23,12 +23,9 @@ Animation states:
         - make sure the time slider gives the actual animation time! Now it's going to desynchronize (although the relative value is good)
         - reset to bind pose after the preview is done
     * Animation events!
-        - Make own tab for animation events
-        - Define API. 
-            - Dependency on SerializedAction? That makes it not possible to have the player as an asset.
-            - SendMessage? Not very clean in general, but it matches what an animation event is, so it's probably okay.
-            - Allow both?
-        - Make sure events are called
+        + Make own tab for animation events
+        + Define API. 
+        + Make sure events are called
         - Make settings:
             - min blend factor - default to 0. Only call the event if the current blend factor is larger than this
             - Play only first/repeat. If the animation loops, do we want this to happen every time, or just the first one?
@@ -46,6 +43,7 @@ Animation transitions:
         - Should have a list of ALL transitions?
 
 Misc
+    - Ensure that all public methods in AnimationPlayer have int overload, so it's not neccessary to pay the cost of sending in strings
     - Make the cached values in the editor be per-layer where appropriate (selected from/to state for transitions)
     - Make a caching system that doesn't depend on EditorPrefs? Cluttering the registry is an ugly hack.
         - But then where?

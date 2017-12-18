@@ -272,11 +272,6 @@ Prefab:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 114784461275576598, guid: d8293c4f77ab87843bd05efa1107d167,
-        type: 2}
-      propertyPath: layers.Array.data[0].transitions.Array.size
-      value: 3
-      objectReference: {fileID: 0}
     - target: {fileID: 4509588061463754, guid: d8293c4f77ab87843bd05efa1107d167, type: 2}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -308,41 +303,6 @@ Prefab:
     - target: {fileID: 4509588061463754, guid: d8293c4f77ab87843bd05efa1107d167, type: 2}
       propertyPath: m_RootOrder
       value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 114784461275576598, guid: d8293c4f77ab87843bd05efa1107d167,
-        type: 2}
-      propertyPath: layers.Array.data[0].transitions.Array.data[1].transitionData.duration
-      value: 0.25
-      objectReference: {fileID: 0}
-    - target: {fileID: 114784461275576598, guid: d8293c4f77ab87843bd05efa1107d167,
-        type: 2}
-      propertyPath: layers.Array.data[0].transitions.Array.data[2].fromStateGUID.guidSerialized
-      value: 8df436b0-5294-488b-832f-288c36467ab8
-      objectReference: {fileID: 0}
-    - target: {fileID: 114784461275576598, guid: d8293c4f77ab87843bd05efa1107d167,
-        type: 2}
-      propertyPath: layers.Array.data[0].transitions.Array.data[2].toStateGUID.guidSerialized
-      value: 8df436b0-5294-488b-832f-288c36467ab8
-      objectReference: {fileID: 0}
-    - target: {fileID: 114784461275576598, guid: d8293c4f77ab87843bd05efa1107d167,
-        type: 2}
-      propertyPath: layers.Array.data[0].transitions.Array.data[2].transitionData.duration
-      value: 0.1
-      objectReference: {fileID: 0}
-    - target: {fileID: 114784461275576598, guid: d8293c4f77ab87843bd05efa1107d167,
-        type: 2}
-      propertyPath: layers.Array.data[0].transitions.Array.data[2].transitionData.curve.m_PreInfinity
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 114784461275576598, guid: d8293c4f77ab87843bd05efa1107d167,
-        type: 2}
-      propertyPath: layers.Array.data[0].transitions.Array.data[2].transitionData.curve.m_PostInfinity
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 114784461275576598, guid: d8293c4f77ab87843bd05efa1107d167,
-        type: 2}
-      propertyPath: layers.Array.data[0].transitions.Array.data[2].transitionData.curve.m_RotationOrder
-      value: 4
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: d8293c4f77ab87843bd05efa1107d167, type: 2}

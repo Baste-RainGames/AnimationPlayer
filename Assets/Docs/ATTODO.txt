@@ -22,7 +22,7 @@ Animation states:
         - previews for transitions
         - make sure the time slider gives the actual animation time! Now it's going to desynchronize (although the relative value is good)
         - reset to bind pose after the preview is done
-    - Animation events!
+    * Animation events!
         - Make own tab for animation events
         - Define API. 
             - Dependency on SerializedAction? That makes it not possible to have the player as an asset.

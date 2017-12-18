@@ -1,9 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace Animation_Player
 {
@@ -16,6 +13,7 @@ namespace Animation_Player
         {
             States,
             Transitions,
+            Events,
             MetaData
         }
 
@@ -32,23 +30,19 @@ namespace Animation_Player
         private static GUIStyle editLayerButton_NotSelected;
         private static GUIStyle editLayerButton_Selected;
 
-        private PersistedBool usedClipsFoldout;
-        private PersistedBool usedModelsFoldout;
-        private List<AnimationClip> animationClipsUsed;
-        private List<Object> modelsUsed;
+        private MetaDataDrawer metaDataDrawer;
 
         public AnimationStatePreviewer previewer;
 
         private object scriptReloadChecker;
 
         private bool stateNamesNeedsUpdate = true;
-        private bool usedClipsNeedsUpdate = true;
         private bool transitionsNeedsUpdate = true;
 
         public void MarkDirty()
         {
             stateNamesNeedsUpdate = true;
-            usedClipsNeedsUpdate = true;
+            metaDataDrawer.usedClipsNeedsUpdate = true;
         }
 
         private void OnEnable()
@@ -75,8 +69,6 @@ namespace Animation_Player
             selectedEditMode = new PersistedAnimationPlayerEditMode(persistedEditMode + instanceId);
             selectedState = new PersistedInt(persistedState + instanceId);
             selectedToState = new PersistedInt(persistedToState + instanceId);
-            usedClipsFoldout = new PersistedBool(persistedFoldoutUsedClips + instanceId);
-            usedModelsFoldout = new PersistedBool(persistedFoldoutUsedModels + instanceId);
 
             stateNamesNeedsUpdate = true;
         }
@@ -86,11 +78,13 @@ namespace Animation_Player
             if (scriptReloadChecker == null)
             {
                 // Unity persists some objects through reload, and fails to persist others. This makes it hard to figure out if
-                // something needs to be re-cached. This solves that - we know that Unity can't persist a raw object.
+                // something needs to be re-cached. This solves that - we know that Unity can't persist a raw object, so if it's null, a reload is neccessary.
                 scriptReloadChecker = new object();
-                MarkDirty();
+
+                metaDataDrawer = new MetaDataDrawer(animationPlayer);
                 stylesCreated = false;
                 transitionsNeedsUpdate = true;
+                MarkDirty();
             }
 
             if (isGUICall && !stylesCreated)
@@ -275,13 +269,15 @@ namespace Animation_Player
             //Making tabbed views are hard!
             var editStatesRect = EditorUtilities.ReserveRect();
             var editTransitionsRect = EditorUtilities.ReserveRect();
+            var eventsRect = EditorUtilities.ReserveRect();
             var metaDataRect = EditorUtilities.ReserveRect();
 
             EditorGUILayout.EndHorizontal();
 
-            DrawTabHeader(editStatesRect, "Edit state", 0);
-            DrawTabHeader(editTransitionsRect, "Edit Transitions", 1);
-            DrawTabHeader(metaDataRect, "Metadata", 2);
+            DrawTabHeader(editStatesRect, "Clips", 0);
+            DrawTabHeader(editTransitionsRect, "Transitions", 1);
+            DrawTabHeader(eventsRect, "Events", 2);
+            DrawTabHeader(metaDataRect, "Metadata", 3);
 
             EditorGUILayout.BeginVertical(editLayerStyle);
 
@@ -295,8 +291,11 @@ namespace Animation_Player
                 case AnimationPlayerEditMode.Transitions:
                     AnimationTransitionDrawer.DrawTransitions(animationPlayer, selectedLayer, selectedState, selectedToState, allStateNames[selectedLayer]);
                     break;
+                case AnimationPlayerEditMode.Events:
+                    DrawEvents();
+                    break;
                 case AnimationPlayerEditMode.MetaData:
-                    DrawMetaData();
+                    metaDataDrawer.DrawMetaData();
                     break;
             }
 
@@ -309,12 +308,14 @@ namespace Animation_Player
             //Hack: expand the rects so they hit the next control
             rect.yMax += 2;
             rect.yMin -= 2;
+
+            //Expand the first and last rects so they are aligned with the box below
             if (index == 0)
             {
                 rect.x -= 4;
                 rect.xMax += 4;
             }
-            else if (index == 2)
+            else if (index == 3)
             {
                 rect.x += 4;
                 rect.xMin -= 4;
@@ -326,101 +327,9 @@ namespace Animation_Player
                 selectedEditMode.SetTo((AnimationPlayerEditMode) index);
         }
 
-        private void DrawMetaData()
+        private void DrawEvents()
         {
-            EditorGUI.indentLevel++;
-            DrawClipsUsed();
-            DrawReferencedModels();
-            EditorGUI.indentLevel--;
-        }
-
-        private void DrawClipsUsed()
-        {
-            EnsureUsedClipsCached();
-
-            usedClipsFoldout.SetTo(EditorGUILayout.Foldout(usedClipsFoldout, "Clips used in the animation player"));
-            if (!usedClipsFoldout)
-                return;
-
-            EditorGUI.indentLevel++;
-            foreach (var clip in animationClipsUsed)
-                EditorUtilities.ObjectField(clip);
-            EditorGUI.indentLevel--;
-        }
-
-        private void DrawReferencedModels()
-        {
-            usedModelsFoldout.SetTo(EditorGUILayout.Foldout(usedModelsFoldout, "Models used in the animation player"));
-            if (!usedModelsFoldout)
-                return;
-
-            EditorGUI.indentLevel++;
-            foreach (var model in modelsUsed)
-                EditorUtilities.ObjectField(model);
-            EditorGUI.indentLevel--;
-        }
-
-        private void EnsureUsedClipsCached()
-        {
-            if (!usedClipsNeedsUpdate)
-                return;
-            usedClipsNeedsUpdate = false;
-
-            if (animationClipsUsed != null)
-                animationClipsUsed.Clear();
-            else
-                animationClipsUsed = new List<AnimationClip>();
-
-            if (modelsUsed != null)
-                modelsUsed.Clear();
-            else
-                modelsUsed = new List<Object>();
-
-            foreach (var state in animationPlayer.layers.SelectMany(layer => layer.states))
-            {
-                //@TODO: Use pattern matching when C# 7
-                var type = state.GetType();
-                if (type == typeof(SingleClipState))
-                {
-                    var singleClipState = (SingleClipState) state;
-                    if (singleClipState.clip != null && !animationClipsUsed.Contains(singleClipState.clip))
-                        animationClipsUsed.Add(singleClipState.clip);
-                }
-                else if (type == typeof(BlendTree1D))
-                {
-                    foreach (var clip in ((BlendTree1D) state).blendTree.Select(bte => bte.clip).Where(c => c != null))
-                        if (!animationClipsUsed.Contains(clip))
-                            animationClipsUsed.Add(clip);
-                }
-                else if (type == typeof(BlendTree2D))
-                {
-                    foreach (var clip in ((BlendTree2D) state).blendTree.Select(bte => bte.clip).Where(c => c != null))
-                        if (!animationClipsUsed.Contains(clip))
-                            animationClipsUsed.Add(clip);
-                    break;
-                }
-                else
-                {
-                    Debug.LogError($"Unknown state type {type.Name}");
-                }
-            }
-
-            List<string> usedAssetPaths = new List<string>();
-            foreach (var animationClip in animationClipsUsed)
-            {
-                if (AssetDatabase.IsMainAsset(animationClip))
-                    continue; //standalone animation clip
-
-                var modelPath = AssetDatabase.GetAssetPath(animationClip);
-                if (!usedAssetPaths.Contains(modelPath))
-                    usedAssetPaths.Add(modelPath);
-            }
-
-            foreach (var modelPath in usedAssetPaths)
-            {
-                var model = AssetDatabase.LoadMainAssetAtPath(modelPath);
-                modelsUsed.Add(model);
-            }
+            EditorGUILayout.LabelField("events lol");
         }
 
         private void DrawRuntimeDebugData()
@@ -497,8 +406,7 @@ namespace Animation_Player
         private const string persistedState = "APE_SelectedState_";
         private const string persistedToState = "APE_SelectedToState_";
         private const string persistedEditMode = "APE_EditMode_";
-        private const string persistedFoldoutUsedClips = "APE_FO_UsedClips_";
-        private const string persistedFoldoutUsedModels = "APE_FO_UsedModels_";
+
 
         public class PersistedAnimationPlayerEditMode : PersistedVal<AnimationPlayerEditMode>
         {

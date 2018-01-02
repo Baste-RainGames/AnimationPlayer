@@ -1,0 +1,10 @@
+{
+    "name": "GraphVisualizerEditor",
+    "references": [
+        "GraphVisualizer"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": []
+}

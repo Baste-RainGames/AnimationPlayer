@@ -139,11 +139,11 @@ namespace Animation_Player
             Play(state, transition);
         }
 
-        private void Play(int state, TransitionData transitionData)
+        private void Play(int newState, TransitionData transitionData)
         {
-            if (state < 0 || state >= states.Count)
+            if (newState < 0 || newState >= states.Count)
             {
-                Debug.LogError($"Trying to play out of bounds clip {state}! There are {states.Count} clips in the animation player");
+                Debug.LogError($"Trying to play out of bounds clip {newState}! There are {states.Count} clips in the animation player");
                 return;
             }
 
@@ -153,11 +153,11 @@ namespace Animation_Player
                 return;
             }
 
-            var currentWeightOfState = stateMixer.GetInputWeight(state);
+            var currentWeightOfState = stateMixer.GetInputWeight(newState);
             var isCurrentlyPlaying = currentWeightOfState > 0f;
             if (isCurrentlyPlaying)
             {
-                if (!states[state].Loops)
+                if (!states[newState].Loops)
                 {
                     // We need to blend to a state currently playing, but want to blend to it at time 0, as it's not looping.
                     // So we do this:
@@ -165,8 +165,8 @@ namespace Animation_Player
                     // Create a new version of the state at the old spot
                     // Blend to the new state
 
-                    var original = runtimePlayables[state];
-                    var copy = states[state].GeneratePlayable(containingGraph, varTo1DBlendControllers, varTo2DBlendControllers, blendVars);
+                    var original = runtimePlayables[newState];
+                    var copy = states[newState].GeneratePlayable(containingGraph, varTo1DBlendControllers, varTo2DBlendControllers, blendVars);
                     var copyIndex = stateMixer.GetInputCount();
                     stateMixer.SetInputCount(copyIndex + 1);
 
@@ -179,23 +179,23 @@ namespace Animation_Player
                     original.SetTime(0);
 
                     stateMixer.SetInputWeight(copyIndex, currentWeightOfState);
-                    stateMixer.SetInputWeight(state, 0);
+                    stateMixer.SetInputWeight(newState, 0);
                 }
             }
             else
             {
-                runtimePlayables[state].SetTime(0f);
+                runtimePlayables[newState].SetTime(0f);
             }
-            timeOfPlayedStateLastFrame = runtimePlayables[state].GetTime(); 
+            timeOfPlayedStateLastFrame = runtimePlayables[newState].GetTime(); 
 
             if (transitionData.duration <= 0f)
             {
                 for (int i = 0; i < stateMixer.GetInputCount(); i++)
                 {
-                    stateMixer.SetInputWeight(i, i == state ? 1f : 0f);
+                    stateMixer.SetInputWeight(i, i == newState ? 1f : 0f);
                 }
 
-                currentPlayedState = state;
+                currentPlayedState = newState;
                 transitioning = false;
             }
             else
@@ -208,7 +208,7 @@ namespace Animation_Player
                 }
 
                 transitioning = true;
-                currentPlayedState = state;
+                currentPlayedState = newState;
                 currentTransitionData = transitionData;
                 transitionStartTime = Time.time;
             }

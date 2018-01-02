@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.44657844, g: 0.49641222, b: 0.57481694, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657874, g: 0.49641258, b: 0.5748172, a: 1}
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
@@ -77,15 +77,18 @@ LightmapSettings:
     m_PVRDirectSampleCount: 32
     m_PVRSampleCount: 500
     m_PVRBounces: 2
-    m_PVRFiltering: 0
+    m_PVRFilterTypeDirect: 0
+    m_PVRFilterTypeIndirect: 0
+    m_PVRFilterTypeAO: 0
     m_PVRFilteringMode: 1
     m_PVRCulling: 1
     m_PVRFilteringGaussRadiusDirect: 1
     m_PVRFilteringGaussRadiusIndirect: 5
     m_PVRFilteringGaussRadiusAO: 2
-    m_PVRFilteringAtrousColorSigma: 1
-    m_PVRFilteringAtrousNormalSigma: 1
-    m_PVRFilteringAtrousPositionSigma: 1
+    m_PVRFilteringAtrousPositionSigmaDirect: 0.5
+    m_PVRFilteringAtrousPositionSigmaIndirect: 2
+    m_PVRFilteringAtrousPositionSigmaAO: 1
+    m_ShowResolutionOverlay: 1
   m_LightingDataAsset: {fileID: 0}
   m_UseShadowmask: 1
 --- !u!196 &4
@@ -107,6 +110,8 @@ NavMeshSettings:
     manualTileSize: 0
     tileSize: 256
     accuratePlacement: 0
+    debug:
+      m_Flags: 0
   m_NavMeshData: {fileID: 0}
 --- !u!1 &42939181
 GameObject:
@@ -394,11 +399,11 @@ Camera:
   m_TargetEye: 3
   m_HDR: 1
   m_AllowMSAA: 1
+  m_AllowDynamicResolution: 0
   m_ForceIntoRT: 0
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
-  m_StereoMirrorMode: 0
 --- !u!4 &212225625
 Transform:
   m_ObjectHideFlags: 0
@@ -1153,65 +1158,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 191094f4537c4be1a92ab451fc346126, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  versionNumber: 0
   layers:
-  - states:
-    - name: Movement
-      hasUpdatedName: 1
-      speed: 1
-      clip: {fileID: 0}
-      type: 2
-      blendVariable: Turn
-      blendVariable2: Forward
-      blendTree:
-      - threshold: 0
-        threshold2: 0
-        clip: {fileID: 7400000, guid: dffa50cfe77e0434bbfa71245b3dd529, type: 3}
-      - threshold: 0.5
-        threshold2: 0
-        clip: {fileID: 7400000, guid: 6fb3851da6a6f5948ab6892bee8ba920, type: 3}
-      - threshold: 1
-        threshold2: 0
-        clip: {fileID: 7400006, guid: 6fb3851da6a6f5948ab6892bee8ba920, type: 3}
-      - threshold: -0.5
-        threshold2: 0
-        clip: {fileID: 7400010, guid: 6fb3851da6a6f5948ab6892bee8ba920, type: 3}
-      - threshold: -1
-        threshold2: 0
-        clip: {fileID: 7400014, guid: 6fb3851da6a6f5948ab6892bee8ba920, type: 3}
-      - threshold: 0
-        threshold2: 0.5
-        clip: {fileID: 7400000, guid: b1a5e04ae51004842aba06704a6c2903, type: 3}
-      - threshold: 1
-        threshold2: 0.5
-        clip: {fileID: 7400002, guid: bb141fc9a700c9c4ca7e6dadb8acf24b, type: 3}
-      - threshold: 0.5
-        threshold2: 0.5
-        clip: {fileID: 7400000, guid: 1c52c953c83c2254a9fa72d50250f028, type: 3}
-      - threshold: -1
-        threshold2: 0.5
-        clip: {fileID: 7400000, guid: bb141fc9a700c9c4ca7e6dadb8acf24b, type: 3}
-      - threshold: -0.5
-        threshold2: 0.5
-        clip: {fileID: 7400002, guid: 1c52c953c83c2254a9fa72d50250f028, type: 3}
-      - threshold: 0
-        threshold2: 1
-        clip: {fileID: 7400000, guid: 1cb8ed3cbba15f0479fbae54e0a963df, type: 3}
-      - threshold: 1
-        threshold2: 1
-        clip: {fileID: 7400000, guid: f2bed5dc5afacff44a00de8daae9703b, type: 3}
-      - threshold: -1
-        threshold2: 1
-        clip: {fileID: 7400002, guid: f2bed5dc5afacff44a00de8daae9703b, type: 3}
-      - threshold: 0.5
-        threshold2: 1
-        clip: {fileID: 7400000, guid: 1062212255550964e974f3ffb3cbaae3, type: 3}
-      - threshold: -0.5
-        threshold2: 1
-        clip: {fileID: 7400002, guid: 1062212255550964e974f3ffb3cbaae3, type: 3}
-    transitions: []
+  - transitions: []
     startWeight: 1
     mask: {fileID: 0}
     type: 0
+    layersForEditor: []
+    serializedSingleClipStates: []
+    serializedBlendTree1Ds: []
+    serializedBlendTree2Ds: []
+    serializedStateOrder: []
   defaultTransition:
     duration: 0.1
     type: 0
@@ -1430,6 +1387,7 @@ SkinnedMeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -1445,6 +1403,7 @@ SkinnedMeshRenderer:
   m_PreserveUVs: 0
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -1901,7 +1860,7 @@ Transform:
     type: 2}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1268630134}
-  m_LocalRotation: {x: 0.5326752, y: 0.070340455, z: 0.83613276, w: -0.110415146}
+  m_LocalRotation: {x: 0.53267515, y: 0.07034045, z: 0.83613265, w: -0.11041513}
   m_LocalPosition: {x: 0.000022271464, y: -0.00006150465, z: 0.026027026}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
@@ -2843,6 +2802,7 @@ SkinnedMeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -2858,6 +2818,7 @@ SkinnedMeshRenderer:
   m_PreserveUVs: 0
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5

@@ -113,6 +113,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -128,6 +129,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -145,6 +147,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -160,6 +163,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -219,58 +223,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   versionNumber: 1
   layers:
-  - states:
-    - name: State A
-      hasUpdatedName: 0
-      guid:
-        guidSerialized: d902026d-6516-40a9-bed8-7c4249210163
-      speed: 1
-      clip: {fileID: 0}
-      type: 1
-      blendVariable: derp_derp
-      blendVariable2: 
-      blendTree:
-      - threshold: -3
-        threshold2: 0
-        clip: {fileID: 7400000, guid: 60fcf93512bebac4f890c3ebe54ac175, type: 2}
-      - threshold: 1
-        threshold2: 0
-        clip: {fileID: 7400000, guid: f2816587fa48a7f48a030f97ff7b205c, type: 2}
-      - threshold: 2
-        threshold2: 0
-        clip: {fileID: 7400000, guid: 2ca257280f8273448bedb60eb9f7d5eb, type: 2}
-      - threshold: 0
-        threshold2: 0
-        clip: {fileID: 0}
-    - name: New State
-      hasUpdatedName: 0
-      guid:
-        guidSerialized: 41509712-7aa8-4ccc-85f3-61688131f613
-      speed: 1
-      clip: {fileID: 0}
-      type: 0
-      blendVariable: 
-      blendVariable2: 
-      blendTree: []
-    transitions: []
+  - transitions: []
     startWeight: 1
     mask: {fileID: 0}
     type: 0
-  - states:
-    - name: New State
-      hasUpdatedName: 0
-      guid:
-        guidSerialized: 40f18e02-d46b-43c6-a6a4-7f62a927d667
-      speed: 1
-      clip: {fileID: 0}
-      type: 0
-      blendVariable: 
-      blendVariable2: 
-      blendTree: []
-    transitions: []
+    layersForEditor: []
+    serializedSingleClipStates: []
+    serializedBlendTree1Ds: []
+    serializedBlendTree2Ds: []
+    serializedStateOrder: []
+  - transitions: []
     startWeight: 1
     mask: {fileID: 0}
     type: 0
+    layersForEditor: []
+    serializedSingleClipStates: []
+    serializedBlendTree1Ds: []
+    serializedBlendTree2Ds: []
+    serializedStateOrder: []
   defaultTransition:
     duration: 1
     type: 1

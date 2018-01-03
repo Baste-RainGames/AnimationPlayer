@@ -426,7 +426,7 @@ namespace Animation_Player
                 EditorGUILayout.EndHorizontal();
             }
 
-            EditorGUILayout.LabelField("Playing clip " + animationPlayer.GetCurrentPlayingState(selectedLayer));
+            EditorGUILayout.LabelField("Playing clip " + animationPlayer.GetPlayingState(selectedLayer));
             for (int i = animationPlayer.GetStateCount(selectedLayer) - 1; i >= 0; i--)
             {
                 EditorGUILayout.LabelField("Current weigth for state " + i + ": " + animationPlayer.GetStateWeight(i, selectedLayer));

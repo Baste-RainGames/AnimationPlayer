@@ -266,7 +266,7 @@ namespace Animation_Player
         /// Gets the currently playing state. This is the last state you called Play on, and might not even have started blending in yet.
         /// </summary>
         /// <param name="layer">Layer to check in</param>
-        public AnimationState GetCurrentPlayingState(int layer = 0)
+        public AnimationState GetPlayingState(int layer = 0)
         {
             AssertLayerInBounds(layer, "get the current playing state");
             return layers[layer].GetCurrentPlayingState();
@@ -281,7 +281,7 @@ namespace Animation_Player
         public bool IsPlaying(string state, int layer = 0) 
         {
             AssertLayerInBounds(layer, "Checking if state is playing");
-            return GetCurrentPlayingState(layer).Name == state;
+            return GetPlayingState(layer).Name == state;
         }
 
         /// <summary>

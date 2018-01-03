@@ -44,11 +44,11 @@ Both animators and the programmers should at all times feel like they know what'
 - Comfortable to use API:
   - The concept of using Triggers, Bools, Floats and Ints to control an animation graph is gone!
   - To play an animation named "Attack", call animationPlayer.Play("Attack"). This will transition to that animation using the transition rules set up in the editor
-  - To get the name of the currently playing animation, call animationPlayer.GetCurrentPlayingState().Name;
-  - To get the length of the currently playing animation, call animationPlayer.GetCurrentPlayingState().Duration
+  - To get the name of the currently playing animation, call animationPlayer.GetPlayingState().Name;
+  - To get the length of the currently playing animation, call animationPlayer.GetPlayingState().Duration
   - If you want detailed information on what's going on, like if there's a transition, or what the state of the current blending between state is, that information is available
   - Generally, all information you'll want will be available. There shouldn't be anything that "we haven't exposed"
-  - Methods that doesn't take half the screen. No more GetCurrentAnimatorStateInfo(0)
+  - Methods that doesn't take half the screen. No more GetCurrentAnimatorStateInfo(0).IsName("SomeState"). It's just IsPlaying("SomeState").
 
 - Comfortable to use for non-technical Animators
   - Both states and transitions will have views that are intuitive to use, with real-time previews. 

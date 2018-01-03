@@ -325,7 +325,12 @@ ModelImporter:
     13700000: Scarf
     13700002: Teri_Mask_Golden
     13700004: Teri_Mesh
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cyan_002__Teri_RGB
+    second: {fileID: 2100000, guid: 2e7134057edc8d14dabe346d2c5ae71d, type: 2}
   materials:
     importMaterials: 1
     materialName: 0

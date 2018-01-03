@@ -146,7 +146,62 @@ ModelImporter:
     7400006: rigAction
     9500000: //RootNode
     13700000: Group41898
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: CoatFlap
+    second: {fileID: 2100000, guid: 939b24f4e1d81ae4aa49b2b07756951f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Material
+    second: {fileID: 2100000, guid: 336c19e77c6f0b14bb480f3b0c94f1ad, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Material_001
+    second: {fileID: 2100000, guid: b4380438457abd04aaf93e21c9580c23, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Material_003
+    second: {fileID: 2100000, guid: e9d7c0d2393f379489ce6b4ab418108b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Material_004
+    second: {fileID: 2100000, guid: 2a0db1493a8676145bd0c715caf7437d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Material_005
+    second: {fileID: 2100000, guid: 11a1551bc1d85be41aef78e0ed8fc084, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Metal
+    second: {fileID: 2100000, guid: 3b983c56b12278a4a9659864566a7def, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Pants
+    second: {fileID: 2100000, guid: deeeaa7065dd93843b92c194c5e9a879, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: RG_PBR2_Material
+    second: {fileID: 2100000, guid: 115e2193f9d428049a6416028e767466, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: RG_PBR2_Material_001
+    second: {fileID: 2100000, guid: 3d395ca435454384a94f77ec5addac38, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Shirt
+    second: {fileID: 2100000, guid: 6b0862e1a8d6ef245b93338174ab5bc4, type: 2}
   materials:
     importMaterials: 1
     materialName: 0

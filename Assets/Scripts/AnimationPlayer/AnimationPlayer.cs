@@ -195,6 +195,53 @@ namespace Animation_Player
         }
 
         /// <summary>
+        /// Plays a state after a certain amount of seconds. If any overload of
+        /// Play or SnapTo are called before that many seconds has passed, this
+        /// instruction gets discarded. Several PlayAfterSeconds in a row will
+        /// work as intended:
+        /// 
+        /// Example:
+        /// Play("State1");
+        /// PlayAfterSeconds(1, "State2");
+        /// Play("State3"); //Cancels the instruction to play State 2 after 1 second
+        /// //After 1 seconds has passed, State 3 will still be playing
+        ///
+        /// Play("State1");
+        /// PlayAfterSeconds(1, "State2");
+        /// SnapTo("State3") //Cancels the instruction to play State 2 after 1 second
+        /// //After 1 seconds has passed, State 3 will still be playing
+        /// 
+        /// Play("State1");
+        /// PlayAfterSeconds(1, "State2");
+        /// PlayAfterSeconds(2, "State3");
+        /// //After 1 seconds has passed, State 2 will start playing
+        /// //After 2 seconds has passed, State 3 will start playing
+        /// 
+        /// </summary>
+        /// <param name="seconds">How long to wait before playing the state.</param>
+        /// <param name="state">State to play.</param>
+        /// <param name="layer">Layer to play the state on.</param>
+        public void PlayAfterSeconds(float seconds, string state, int layer = 0)
+        {
+            AssertLayerInBounds(layer, "Playing animation after seconds");
+            int stateIdx = GetStateIdxFromName(state);
+            PlayAfterSeconds(seconds, stateIdx, layer);
+        }
+
+        /// <summary>
+        /// Plays a state after a certain amount of seconds. See overload with string state for details.
+        /// <param name="seconds">How long to wait before playing the state.</param>
+        /// <param name="state">Index of the state to play.</param>
+        /// <param name="layer">Layer to play the state on.</param>
+        /// </summary>
+        public void PlayAfterSeconds(float seconds, int state, int layer = 0)
+        {
+            AssertLayerInBounds(layer, "Playing a state after seconds");
+            AssertStateInBounds(layer, state, "Playing a state after seconds");
+            layers[layer].PlayAfterSeconds(seconds, state, defaultTransition);
+        }
+
+        /// <summary>
         /// Checks if the animation player has a state with the specified name.
         /// </summary>
         /// <param name="stateName">Name to check on</param>
@@ -341,7 +388,13 @@ namespace Animation_Player
             int stateIdx = layers[layer].GetStateIdx(state);
             if (stateIdx == -1)
             {
-                Debug.LogError($"Trying to get the state \"{state}\" on layer {layer}, but that doesn't exist! States that exist are:" +
+                if (!hasAwoken)
+                {
+                    Debug.LogError("Trying to get index of a state before AnimationPlayer has had the time to Awake yet! Please don't poll states before Start!");
+                    return -1;
+                }
+                
+                Debug.LogError($"Trying to get index of state \"{state}\" on layer {layer}, but that doesn't exist! States that exist are:" +
                                $"\n{layers[layer].states.PrettyPrint(s => s.Name)}", gameObject);
                 return -1;
             }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Security.Permissions;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
@@ -42,6 +43,8 @@ namespace Animation_Player
         private readonly Dictionary<string, float> blendVars = new Dictionary<string, float>();
         private readonly Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers = new Dictionary<string, List<BlendTreeController1D>>();
         private readonly Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers = new Dictionary<string, List<BlendTreeController2D>>();
+
+        private PlayAtTimeInstructionQueue playInstructionQueue = new PlayAtTimeInstructionQueue();
 
         public void InitializeSelf(PlayableGraph graph)
         {
@@ -139,8 +142,11 @@ namespace Animation_Player
             Play(state, transition);
         }
 
-        private void Play(int newState, TransitionData transitionData)
+        private void Play(int newState, TransitionData transitionData, bool clearQueuedPlayInstructions = true)
         {
+            if(clearQueuedPlayInstructions)
+                playInstructionQueue.Clear();
+
             if (newState < 0 || newState >= states.Count)
             {
                 Debug.LogError($"Trying to play out of bounds clip {newState}! There are {states.Count} clips in the animation player");
@@ -214,10 +220,16 @@ namespace Animation_Player
             }
         }
 
+        public void PlayAfterSeconds(float seconds, int state, TransitionData transition)
+        {
+            playInstructionQueue.Enqueue(new PlayAtTimeInstruction(Time.time + seconds, state, transition));
+        }
+
         public void Update()
         {
             HandleAnimationEvents();
             HandleTransitions();
+            HandleQueuedInstructions();
             firstFrame = false;
         }
 
@@ -283,6 +295,16 @@ namespace Animation_Player
                 transitioning = false;
                 if (states.Count != stateMixer.GetInputCount())
                     throw new Exception($"{states.Count} != {stateMixer.GetInputCount()}");
+            }
+        }
+
+        private void HandleQueuedInstructions()
+        {
+            while (playInstructionQueue.Count > 0 && playInstructionQueue.Peek().playAtTime < Time.time)
+            {
+                var instruction = playInstructionQueue.Peek();
+                Play(instruction.stateToPlay, instruction.transition, false);
+                playInstructionQueue.Pop();
             }
         }
 
@@ -486,6 +508,72 @@ namespace Animation_Player
                 return -1;
             return xIndex > yIndex ? 1 : 0;
         }
-    }
 
+        private struct PlayAtTimeInstruction
+        {
+            public float playAtTime;
+            public int stateToPlay;
+            public TransitionData transition;
+
+            public PlayAtTimeInstruction(float playAtTime, int stateToPlay, TransitionData transition)
+            {
+                this.playAtTime = playAtTime;
+                this.stateToPlay = stateToPlay;
+                this.transition = transition;
+            }
+        }
+
+        /// <summary>
+        /// Ordered queue of play at time instructions
+        /// </summary>
+        private class PlayAtTimeInstructionQueue
+        {
+            public int Count { get; private set; }
+            private const int bufferSizeIncrement = 10;
+            private PlayAtTimeInstruction[] instructions = new PlayAtTimeInstruction[bufferSizeIncrement];
+
+            public void Enqueue(PlayAtTimeInstruction instruction)
+            {
+                if (Count == instructions.Length)
+                {
+                    Array.Resize(ref instructions, instructions.Length + bufferSizeIncrement);
+                }
+
+                var toInsert = instruction;
+                for (int i = 0; i < Count - 1; i++)
+                {
+                    if (instruction.playAtTime < instructions[i].playAtTime)
+                    {
+                        var temp = toInsert;
+                        toInsert = instructions[i];
+                        instructions[i] = temp;
+                    }
+                }
+
+                instructions[Count] = toInsert;
+                Count++;
+            }
+
+            public PlayAtTimeInstruction Peek()
+            {
+                Debug.Assert(Count > 0, "Trying to peek play at time instructions, but there's no instructions!");
+                return instructions[0];
+            }
+
+            public void Pop()
+            {
+                for (int i = 0; i < Count - 1; i++)
+                {
+                    instructions[i] = instructions[i + 1];
+                }
+
+                Count--;
+            }
+
+            public void Clear()
+            {
+                Count = 0;
+            }
+        }
+    }
 }

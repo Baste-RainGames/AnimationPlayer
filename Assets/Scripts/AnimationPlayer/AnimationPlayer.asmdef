@@ -1,0 +1,8 @@
+{
+    "name": "AnimationPlayer",
+    "references": [
+        "GraphVisualizer"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": []
+}

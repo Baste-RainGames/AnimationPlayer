@@ -1,0 +1,10 @@
+{
+    "name": "AnimationPlayerEditor",
+    "references": [
+        "AnimationPlayer"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": []
+}

@@ -14,8 +14,8 @@ namespace Animation_Player
         private static GUIStyle popupStyle;
         private static GUIStyle dragAndDropBoxStyle;
 
-        public static void Draw(AnimationPlayer animationPlayer, PersistedInt selectedLayer,
-                                PersistedInt selectedState, PersistedEditMode selectedEditMode, AnimationPlayerEditor editor)
+        public static void Draw(AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedState, PersistedEditMode selectedEditMode,
+                                AnimationPlayerEditor editor, List<AnimationClip> multiSelectClips)
         {
             if (popupStyle == null)
             {
@@ -43,9 +43,17 @@ namespace Animation_Player
             var wrap = Screen.width < 420f;
             if (wrap)
             {
-                DrawSelection(layer, selectedState, selectedEditMode);
-                GUILayout.Space(10f);
-                DrawAddition(animationPlayer, selectedLayer, selectedState, editor, layer);
+                EditorGUILayout.BeginHorizontal();
+                GUILayout.FlexibleSpace();
+                EditorGUILayout.BeginVertical();
+                {
+                    DrawSelection(layer, selectedState);
+                    GUILayout.Space(10f);
+                    DrawAddition(animationPlayer, selectedLayer, selectedState, editor, layer, multiSelectClips);
+                }
+                EditorGUILayout.EndVertical();
+                GUILayout.FlexibleSpace();
+                EditorGUILayout.EndHorizontal();
             }
             else
             {
@@ -53,9 +61,9 @@ namespace Animation_Player
                 {
                     GUILayout.FlexibleSpace();
 
-                    DrawSelection(layer, selectedState, selectedEditMode);
+                    DrawSelection(layer, selectedState);
                     GUILayout.Space(20f);
-                    DrawAddition(animationPlayer, selectedLayer, selectedState, editor, layer);
+                    DrawAddition(animationPlayer, selectedLayer, selectedState, editor, layer, multiSelectClips);
 
                     GUILayout.FlexibleSpace();
                 }
@@ -63,7 +71,7 @@ namespace Animation_Player
             }
         }
 
-        private static void DrawSelection(AnimationLayer selectedLayer, PersistedInt selectedState, PersistedEditMode selectedEditMode)
+        private static void DrawSelection(AnimationLayer selectedLayer, PersistedInt selectedState)
         {
             UpdateLayerDropdownNames(selectedLayer);
 
@@ -76,8 +84,17 @@ namespace Animation_Player
         }
 
         private static void DrawAddition(AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedState, AnimationPlayerEditor editor,
-                                         AnimationLayer layer)
+                                         AnimationLayer layer, List<AnimationClip> multiSelectClips)
         {
+            if (multiSelectClips != null && multiSelectClips.Count > 0)
+            {
+                EditorGUILayout.BeginVertical(buttonWidth);
+                {
+                    DrawMultiSelectChoice(animationPlayer, selectedLayer, selectedState, multiSelectClips, editor);
+                }
+                EditorGUILayout.EndVertical();
+                return;
+            }
             EditorGUILayout.BeginVertical(buttonWidth);
             {
                 EditorGUILayout.LabelField("Add new state:");
@@ -120,27 +137,86 @@ namespace Animation_Player
                                                                   Where(clip => (clip.hideFlags & HideFlags.HideInHierarchy) == 0));
                         }
 
-                        if (animationClips.Count > 0)
+                        if (animationClips.Count == 1)
                         {
-                            EditorUtilities.RecordUndo(animationPlayer, "Added clip to Animation Player");
-                            var layer = animationPlayer.layers[selectedLayer];
-                            int numClipsBefore = layer.states.Count;
-
-                            foreach (var clip in animationClips)
-                            {
-                                var newStateName = GetUniqueStateName(clip.name, layer.states);
-                                var newState = SingleClipState.Create(newStateName, clip);
-                                layer.states.Add(newState);
-                            }
-
-                            selectedState.SetTo(numClipsBefore);
-
-                            editor.MarkDirty();
+                            AddClipsAsSeperateStates(animationPlayer, selectedLayer, selectedState, editor, animationClips);
+                        }
+                        else if (animationClips.Count > 1)
+                        {
+                            editor.StartDragAndDropMultiChoice(animationClips);
                         }
                     }
 
                     break;
             }
+        }
+
+        private static void DrawMultiSelectChoice(AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedState,
+                                                  List<AnimationClip> multiSelectClips, AnimationPlayerEditor editor)
+        {
+
+            EditorGUILayout.LabelField($"Adding {multiSelectClips.Count} clips! How do you want to add them?");
+            if (GUILayout.Button("Seperate Clips"))
+            {
+                AddClipsAsSeperateStates(animationPlayer, selectedLayer, selectedState, editor, multiSelectClips);
+                editor.StopDragAndDropMultiChoice();
+            }
+
+            if (GUILayout.Button("Blend Tree"))
+            {
+                AddClipsAsBlendTree(animationPlayer, selectedLayer, selectedState, editor, multiSelectClips);
+                editor.StopDragAndDropMultiChoice();
+            }
+
+            if (GUILayout.Button("Cancel"))
+            {
+                editor.StopDragAndDropMultiChoice();
+            }
+        }
+
+        private static void AddClipsAsSeperateStates(AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedState,
+                                                     AnimationPlayerEditor editor, List<AnimationClip> animationClips)
+        {
+            EditorUtilities.RecordUndo(animationPlayer, "Added clip to Animation Player");
+            var layer = animationPlayer.layers[selectedLayer];
+            int numClipsBefore = layer.states.Count;
+
+            foreach (var clip in animationClips)
+            {
+                var newStateName = GetUniqueStateName(clip.name, layer.states);
+                var newState = SingleClipState.Create(newStateName, clip);
+                layer.states.Add(newState);
+            }
+
+            selectedState.SetTo(numClipsBefore);
+
+            editor.MarkDirty();
+        }
+
+        private static void AddClipsAsBlendTree(AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedState,
+                                                AnimationPlayerEditor editor, List<AnimationClip> animationClips)
+        {
+            EditorUtilities.RecordUndo(animationPlayer, "Added clip to Animation Player");
+            var layer = animationPlayer.layers[selectedLayer];
+            int numClipsBefore = layer.states.Count;
+
+            var newStateName = GetUniqueStateName(BlendTree1D.DefaultName, layer.states);
+            var newState = BlendTree1D.Create(newStateName);
+
+            foreach (var clip in animationClips)
+            {
+                var newEntry = new BlendTreeEntry1D
+                {
+                    clip = clip
+                };
+                newState.blendTree.Add(newEntry);
+            }
+
+            layer.states.Add(newState);
+
+            selectedState.SetTo(numClipsBefore);
+
+            editor.MarkDirty();
         }
 
         private static void DrawAddStateButtons(AnimationPlayer animationPlayer, PersistedInt selectedState, AnimationPlayerEditor editor, AnimationLayer layer)

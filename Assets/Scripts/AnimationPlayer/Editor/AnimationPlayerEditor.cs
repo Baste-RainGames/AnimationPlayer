@@ -1,4 +1,5 @@
-﻿using UnityEditor;
+﻿using System.Collections.Generic;
+using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
@@ -31,8 +32,8 @@ namespace Animation_Player
         private static GUIStyle editLayerButton_Selected;
 
         private MetaDataDrawer metaDataDrawer;
-
         public AnimationStatePreviewer previewer;
+        private List<AnimationClip> multiChoiceAnimationClips;
 
         private object scriptReloadChecker;
 
@@ -174,7 +175,7 @@ namespace Animation_Player
             EditorUtilities.Splitter();
 
             var numStatesBefore = animationPlayer.layers[selectedLayer].states.Count;
-            StateSelectionAndAdditionDrawer.Draw(animationPlayer, selectedLayer, selectedState, selectedEditMode, this);
+            StateSelectionAndAdditionDrawer.Draw(animationPlayer, selectedLayer, selectedState, selectedEditMode, this, multiChoiceAnimationClips);
             if (numStatesBefore != animationPlayer.layers[selectedLayer].states.Count)
             {
                 Repaint();
@@ -329,20 +330,19 @@ namespace Animation_Player
             int indexToDelete = -1;
             EditorGUILayout.LabelField($"Animation events for {state.Name}");
             EditorUtilities.Splitter();
-            EditorUtilities.DrawIndented(() =>
+            for (var i = 0; i < state.animationEvents.Count; i++)
             {
-                for (var i = 0; i < state.animationEvents.Count; i++)
-                {
+                EditorUtilities.DrawIndented(() => { 
                     if (DrawEvent(state.animationEvents[i], state))
                         indexToDelete = i;
                     if (i != state.animationEvents.Count - 1)
                         GUILayout.Space(5);
-                }
-            });
+                });
+                EditorUtilities.Splitter();
+            }
             if (indexToDelete != -1)
                 state.animationEvents.RemoveAt(indexToDelete);
 
-            EditorUtilities.Splitter();
             EditorUtilities.DrawHorizontal(() =>
             {
                 GUILayout.FlexibleSpace();
@@ -379,6 +379,18 @@ namespace Animation_Player
                 EditorUtilities.SetDirty(animationPlayer);
 
             return shouldDelete;
+        }
+
+
+        public void StartDragAndDropMultiChoice(List<AnimationClip> animationClips)
+        {
+            multiChoiceAnimationClips = animationClips;
+        }
+
+        public void StopDragAndDropMultiChoice()
+        {
+            multiChoiceAnimationClips = null;
+            //Repaint();
         }
 
         private void DrawRuntimeDebugData()
@@ -448,7 +460,6 @@ namespace Animation_Player
 
         private float blendVal;
         private float blendVal2;
-
         private const float selectedLayerWidth = 108f;
 
         private const string persistedLayer = "APE_SelectedLayer_";
@@ -478,7 +489,7 @@ namespace Animation_Player
 
         public override bool RequiresConstantRepaint()
         {
-            return Application.isPlaying || previewer.IsShowingPreview;
+            return Application.isPlaying || previewer.IsShowingPreview || DragAndDrop.objectReferences.Length > 0;
         }
 
         private void OnDestroy()

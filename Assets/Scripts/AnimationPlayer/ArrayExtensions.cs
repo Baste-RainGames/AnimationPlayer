@@ -68,5 +68,12 @@ namespace Animation_Player
             var elementDivider = newLines ? "\n " : ", ";
             return PrettyPrint(array, printFunc, elementDivider, false);
         }
+
+        public static void Swap<T>(this IList<T> list, int idx1, int idx2)
+        {
+            var temp = list[idx1];
+            list[idx1] = list[idx2];
+            list[idx2] = temp;
+        }
     }
 }

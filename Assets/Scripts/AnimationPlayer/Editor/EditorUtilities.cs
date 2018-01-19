@@ -76,36 +76,31 @@ namespace Animation_Player
         private static readonly GUIStyle splitter;
         private static readonly Color splitterColor = EditorGUIUtility.isProSkin ? new Color(0.157f, 0.157f, 0.157f) : new Color(0.5f, 0.5f, 0.5f);
 
-        // GUILayout Style
-        public static void Splitter(Color rgb, float thickness = 1)
+        
+        public static void Splitter(float thickness = 1, float width = -1f, bool respectIndentLevel = true)
         {
-            Rect position = GUILayoutUtility.GetRect(GUIContent.none, splitter, GUILayout.Height(thickness));
-
-            if (Event.current.type == EventType.Repaint)
-            {
-                Color restoreColor = GUI.color;
-                GUI.color = rgb;
-                splitter.Draw(position, false, false, false, false);
-                GUI.color = restoreColor;
-            }
+            Splitter(thickness, splitterColor, splitter, width, respectIndentLevel);
         }
 
-        public static void Splitter(float thickness, GUIStyle splitterStyle)
+        // GUILayout Style
+        public static void Splitter(float thickness, Color color, GUIStyle splitterStyle, float width = -1f, bool respectIndentLevel = true)
         {
-            Rect position = GUILayoutUtility.GetRect(GUIContent.none, splitterStyle, GUILayout.Height(thickness));
+            Rect position;
+            if (width > 0f)
+                position = GUILayoutUtility.GetRect(GUIContent.none, splitterStyle, GUILayout.Height(thickness), GUILayout.Width(width));
+            else
+                position = GUILayoutUtility.GetRect(GUIContent.none, splitterStyle, GUILayout.Height(thickness));
+
+            if(respectIndentLevel)
+                position.x += EditorGUI.indentLevel * 18f;
 
             if (Event.current.type == EventType.Repaint)
             {
                 Color restoreColor = GUI.color;
-                GUI.color = splitterColor;
+                GUI.color = color;
                 splitterStyle.Draw(position, false, false, false, false);
                 GUI.color = restoreColor;
             }
-        }
-
-        public static void Splitter(float thickness = 1)
-        {
-            Splitter(thickness, splitter);
         }
 
         // GUI Style
@@ -246,26 +241,26 @@ namespace Animation_Player
 
         public static T ObjectField<T>(string label, T obj, float labelWidth, float objectSelectWidth) where T : Object
         {
-            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.BeginHorizontal(GUILayout.Width(labelWidth + objectSelectWidth));
             EditorGUILayout.LabelField(label, GUILayout.Width(labelWidth));
             obj = ObjectField(obj, GUILayout.Width(objectSelectWidth));
             EditorGUILayout.EndHorizontal();
             return obj;
         }
 
-        public static float FloatField(string label, float value, float width)
+        public static float FloatField(string label, float value, float labelWidth)
         {
             EditorGUILayout.BeginHorizontal();
-            LabelWithNoGap(label, width);
+            LabelWithNoGap(label, labelWidth);
             value = EditorGUILayout.FloatField(value);
             EditorGUILayout.EndHorizontal();
             return value;
         }
 
-        public static float FloatField(string label, float value, float width, float floatSelectWidth)
+        public static float FloatField(string label, float value, float labelWidth, float floatSelectWidth)
         {
-            EditorGUILayout.BeginHorizontal();
-            LabelWithNoGap(label, width);
+            EditorGUILayout.BeginHorizontal(GUILayout.Width(labelWidth + floatSelectWidth));
+            LabelWithNoGap(label, labelWidth);
             value = EditorGUILayout.FloatField(value, GUILayout.Width(floatSelectWidth));
             EditorGUILayout.EndHorizontal();
             return value;
@@ -306,6 +301,12 @@ namespace Animation_Player
         {
             //Note: Using EditorGUILayout.LabelField makes the label extend way past it's width. Probably due to GUILayoutUtility not interacting with it very well?
             GUILayout.Label(string.Empty, options);
+            return GUILayoutUtility.GetLastRect();
+        }
+
+        public static Rect ReserveRect(GUIStyle style, params GUILayoutOption[] options)
+        {
+            GUILayout.Label(string.Empty, style, options);
             return GUILayoutUtility.GetLastRect();
         }
 

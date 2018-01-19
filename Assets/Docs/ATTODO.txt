@@ -8,13 +8,14 @@ Animation states:
         * blend trees
             - Nested!
             * 2D (almost finished, need to implement the good algo!)
+            * allow state reordering
         - sequences (state A into state B into state C, etc.)
             - this can be used to change into a specific idle state after standing still.
         - random (bunch of states, selects a random one when you enter)
     - Check if it's possible to loop/not loop in the state, and how expensive that is compared to the native (stupid) way of doing it
     + Add support for dragging animation clips over the list of states to generate a new state
         + Also add support for dragging in the .fbx or .blend or whatever (ModelImporter), and add all clips in it
-        - If you drag in several, create a "Do you want to add many clips or blend tree" popup
+        + If you drag in several, create a "Do you want to add many clips or blend tree" popup
     * Preview (oh my!)
         + preview for single-clip states
         + preview for other kinds of states

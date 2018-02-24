@@ -10,8 +10,8 @@ public class TestScript : MonoBehaviour
     {
         animationPlayer = GetComponent<AnimationPlayer>();
         attack1Dur = animationPlayer.GetState("Attack").Duration;
-        attack2Dur = animationPlayer.GetState("Attack 2").Duration;
-        attack3Dur = animationPlayer.GetState("Attack 3").Duration;
+//        attack2Dur = animationPlayer.GetState("Attack 2").Duration;
+//        attack3Dur = animationPlayer.GetState("Attack 3").Duration;
     }
 
     void Update()
@@ -19,9 +19,10 @@ public class TestScript : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space))
         {
             animationPlayer.Play("Attack");
-            animationPlayer.PlayAfterSeconds(attack1Dur * .8f, "Attack 2");
-            animationPlayer.PlayAfterSeconds(attack1Dur + (attack2Dur * .8f), "Attack 3");
-            animationPlayer.PlayAfterSeconds(attack1Dur + attack2Dur + (attack3Dur * .8f), "Movement");
+            animationPlayer.PlayAfterSeconds(attack1Dur * .8f, "Movement");
+//            animationPlayer.PlayAfterSeconds(attack1Dur * .8f, "Attack 2");
+//            animationPlayer.PlayAfterSeconds(attack1Dur + (attack2Dur * .8f), "Attack 3");
+//            animationPlayer.PlayAfterSeconds(attack1Dur + attack2Dur + (attack3Dur * .8f), "Movement");
         }
 
         if (Input.GetKeyDown(KeyCode.Alpha1))

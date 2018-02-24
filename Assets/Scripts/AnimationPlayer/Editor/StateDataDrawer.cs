@@ -104,6 +104,10 @@ namespace Animation_Player
             {
                 Draw2DBlendTree((BlendTree2D) state, ref markDirty);
             }
+            else if(type == typeof(SelectRandomState))
+            {
+                DrawSelectRandomState((SelectRandomState) state, ref markDirty);
+            }
             else
             {
                 EditorGUILayout.LabelField($"Unknown animation state type: {type.Name}");
@@ -177,7 +181,11 @@ namespace Animation_Player
             GUILayout.Space(10f);
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("Add blend tree entry", GUILayout.Width(150f)))
+            {
                 state.blendTree.Add(new BlendTreeEntry1D());
+                markDirty = true;
+            }
+
             GUILayout.FlexibleSpace();
             EditorGUILayout.EndHorizontal();
         }
@@ -240,7 +248,34 @@ namespace Animation_Player
             GUILayout.Space(10f);
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("Add blend tree entry", GUILayout.Width(150f)))
+            {
                 state.blendTree.Add(new BlendTreeEntry2D());
+                markDirty = true;
+            }
+
+            GUILayout.FlexibleSpace();
+            EditorGUILayout.EndHorizontal();
+        }
+
+        private static void DrawSelectRandomState(SelectRandomState state, ref bool markDirty)
+        {
+            for (var i = 0; i < state.clips.Count; i++)
+            {
+                var oldClip = state.clips[i];
+
+                state.clips[i] = EditorUtilities.ObjectField("Clip", oldClip, 150f, 200f);
+                if (state.clips[i] != oldClip)
+                    markDirty |= state.OnClipAssigned(state.clips[i]);
+            }
+
+            GUILayout.Space(10f);
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Add new choice", GUILayout.Width(150f)))
+            {
+                state.clips.Add(null);
+                markDirty = true;
+            }
+
             GUILayout.FlexibleSpace();
             EditorGUILayout.EndHorizontal();
         }

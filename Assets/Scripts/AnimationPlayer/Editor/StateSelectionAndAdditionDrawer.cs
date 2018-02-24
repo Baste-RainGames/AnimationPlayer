@@ -244,6 +244,14 @@ namespace Animation_Player
                 selectedState.SetTo(layer.states.Count - 1);
                 editor.MarkDirty();
             }
+
+            if (GUILayout.Button("Play Random State", buttonWidth))
+            {
+                EditorUtilities.RecordUndo(animationPlayer, "Add random state to animation player");
+                layer.states.Add(SelectRandomState.Create(GetUniqueStateName(SelectRandomState.DefaultName, layer.states)));
+                selectedState.SetTo(layer.states.Count - 1);
+                editor.MarkDirty();
+            }
         }
 
         private static string GetUniqueStateName(string wantedName, List<AnimationState> otherStates)

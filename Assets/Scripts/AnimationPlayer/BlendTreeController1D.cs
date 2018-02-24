@@ -71,5 +71,8 @@ namespace Animation_Player
                 mixer.SetInputWeight(i, inputWeight);
             }
         }
+
+        public float GetMinThreshold() => thresholds[0];
+        public float GetMaxThreshold() => thresholds[thresholds.Length - 1];
     }
 }

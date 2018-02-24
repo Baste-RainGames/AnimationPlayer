@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace Animation_Player
 {
@@ -14,6 +15,9 @@ namespace Animation_Player
         private readonly List<BlendTreeController2D> inner2D_set2 = new List<BlendTreeController2D>();
         private readonly string blendVar;
 
+        public float MinValue { get; private set; }
+        public float MaxValue { get; private set; }
+
         public BlendVarController(string blendVar)
         {
             this.blendVar = blendVar;
@@ -24,16 +28,26 @@ namespace Animation_Player
         public void AddControllers(List<BlendTreeController1D> blendControllers1D)
         {
             inner1D.AddRange(blendControllers1D);
+            foreach (var blendController in blendControllers1D) {
+                MinValue = Mathf.Min(blendController.GetMinThreshold(), MinValue);
+                MaxValue = Mathf.Max(blendController.GetMaxThreshold(), MaxValue);
+            }
         }
 
         public void AddControllers(List<BlendTreeController2D> blendControllers2D)
         {
             foreach (var controller2D in blendControllers2D)
             {
-                if (controller2D.blendVar1 == blendVar)
+                if (controller2D.blendVar1 == blendVar) {
                     inner2D_set1.Add(controller2D);
-                else
+                    MinValue = Mathf.Min(controller2D.GetMinValForVar1(), MinValue);
+                    MaxValue = Mathf.Max(controller2D.GetMaxValForVar1(), MaxValue);
+                }
+                else {
                     inner2D_set2.Add(controller2D);
+                    MinValue = Mathf.Min(controller2D.GetMinValForVar2(), MinValue);
+                    MaxValue = Mathf.Max(controller2D.GetMaxValForVar2(), MaxValue);
+                }
             }
         }
 

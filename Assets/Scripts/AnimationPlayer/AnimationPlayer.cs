@@ -26,6 +26,7 @@ namespace Animation_Player
         //IK
         private Animator outputAnimator;
         private float currentIKLookAtWeight;
+        private Vector3 currentIKLookAtPosition;
         //@TODO: It would be nice to figure out if IK is available at runtime, but currently that's not possible!
         // This is because we currently do IK through having an AnimatorController with an IK layer on it on the animator, which works, 
         // but it's not possible to check if IK is turned on on an AnimatorController at runtime:  
@@ -44,6 +45,16 @@ namespace Animation_Player
             hasAwoken = true;
 
             if (layers.Length == 0)
+                return;
+            bool anyLayersWithStates = false;
+            for (int i = 0; i < layers.Length; i++) {
+                if (layers[i].states.Count > 0) {
+                    anyLayersWithStates = true;
+                    break;
+                }
+            }
+
+            if (!anyLayersWithStates)
                 return;
 
             //The playable graph is a directed graph of Playables.
@@ -126,6 +137,8 @@ namespace Animation_Player
         {
             AssertLayerInBounds(layer, state, "play a state");
             int stateIdx = GetStateIdxFromName(state, layer);
+            if (stateIdx == -1)
+                return;
             Play(stateIdx, layer);
         }
 
@@ -282,6 +295,18 @@ namespace Animation_Player
             return layers[layer].GetStateWeight(state);
         }
 
+        public float GetLayerWeight(int layer) {
+            AssertLayerInBounds(layer, "Getting weight of a layer");
+            if (layers.Length < 2)
+                return 1;
+            return rootPlayable.GetInputWeight(layer);
+        }
+
+        public void SetLayerWeigth(int layer, float weight) {
+            AssertLayerInBounds(layer, "Getting weight of a layer");
+            rootPlayable.SetInputWeight(layer, weight);
+        }
+
         /// <summary>
         /// Get a state by name.
         /// </summary>
@@ -344,12 +369,34 @@ namespace Animation_Player
             layers[layer].AddAllPlayingStatesTo(results);
         }
 
+        public void GetAllStates(List<AnimationState> result, int layer = 0) 
+        {
+            AssertLayerInBounds(layer, "get all states");
+            result.Clear();
+            for (int i = 0; i < layers[layer].states.Count; i++) {
+                result.Add(layers[layer].states[i]);
+            }
+        }
+
+        /// <summary>
+        /// Gets how many states there are in a layer
+        /// </summary>
+        /// <param name="layer">Layer to check in (default 0)</param>
+        /// <returns>The number of states in the layer</returns>
         public int GetStateCount(int layer = 0)
         {
             AssertLayerInBounds(layer, "get the state count");
             return layers[layer].states.Count;
         }
 
+        /// <summary>
+        /// Sets a blend var to a value. This will affect every state that blend variable controls.
+        /// If you're setting a blend variable a lot - like setting "Speed" every frame based on a rigidbody's velocity, consider getting a BlendVarController
+        /// instead, as that's faster. 
+        /// </summary>
+        /// <param name="var">The blend variable to set.</param>
+        /// <param name="value">The value to set it to.</param>
+        /// <param name="layer">The layer to set the blend var on @TODO: Stop having blend variables be layer-based, that's crazy, I think</param>
         public void SetBlendVar(string var, float value, int layer = 0)
         {
             AssertLayerInBounds(layer, "Set blend var");
@@ -475,8 +522,10 @@ namespace Animation_Player
         /// Sets the look at position.
         /// </summary>
         /// <param name="position">The position to lookAt.</param>
-        public void SetIKLookAtPosition(Vector3 position)
-            => outputAnimator.SetLookAtPosition(position);
+        public void SetIKLookAtPosition(Vector3 position) {
+            currentIKLookAtPosition = position;
+            outputAnimator.SetLookAtPosition(position);
+        }
 
         /// <summary>
         /// Equivalent to Animator.SetIKLookAtWeight
@@ -496,6 +545,9 @@ namespace Animation_Player
 
         /// <returns>The current IK Look at weight (0 - 1)</returns>
         public float GetIKLookAtWeight() => currentIKLookAtWeight;
+
+        /// <returns>The current IK Look at position</returns>
+        public Vector3 GetIKLookAtPosition() => currentIKLookAtPosition;
 
         /// <summary>
         /// Checks all layers for a blend tree that uses the named blendVar.

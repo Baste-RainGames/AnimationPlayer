@@ -76,13 +76,13 @@ namespace Animation_Player
         private static readonly GUIStyle splitter;
         private static readonly Color splitterColor = EditorGUIUtility.isProSkin ? new Color(0.157f, 0.157f, 0.157f) : new Color(0.5f, 0.5f, 0.5f);
 
-        
+
+        // GUILayout Style
         public static void Splitter(float thickness = 1, float width = -1f, bool respectIndentLevel = true)
         {
             Splitter(thickness, splitterColor, splitter, width, respectIndentLevel);
         }
 
-        // GUILayout Style
         public static void Splitter(float thickness, Color color, GUIStyle splitterStyle, float width = -1f, bool respectIndentLevel = true)
         {
             Rect position;
@@ -98,6 +98,19 @@ namespace Animation_Player
             {
                 Color restoreColor = GUI.color;
                 GUI.color = color;
+                splitterStyle.Draw(position, false, false, false, false);
+                GUI.color = restoreColor;
+            }
+        }
+
+        public static void Splitter(float thickness, GUIStyle splitterStyle)
+        {
+            Rect position = GUILayoutUtility.GetRect(GUIContent.none, splitterStyle, GUILayout.Height(thickness));
+
+            if (Event.current.type == EventType.Repaint)
+            {
+                Color restoreColor = GUI.color;
+                GUI.color = splitterColor;
                 splitterStyle.Draw(position, false, false, false, false);
                 GUI.color = restoreColor;
             }

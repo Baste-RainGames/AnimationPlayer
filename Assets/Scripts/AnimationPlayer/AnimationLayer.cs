@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.Security.Permissions;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
@@ -117,6 +116,16 @@ namespace Animation_Player
             layerMixer.SetLayerAdditive((uint) layerIndex, type == AnimationLayerType.Additive);
             if (mask != null)
                 layerMixer.SetLayerMaskFromAvatarMask((uint) layerIndex, mask);
+
+            if (layerIndex == 0)
+            {
+                //Doesn't make any sense for base layer to be additive!
+                layerMixer.SetLayerAdditive((uint) layerIndex, false);
+            }
+            else
+            {
+                layerMixer.SetLayerAdditive((uint) layerIndex, type == AnimationLayerType.Additive);
+            }
         }
 
         public bool HasState(string stateName)
@@ -227,6 +236,8 @@ namespace Animation_Player
 
         public void Update()
         {
+            if (states.Count == 0)
+                return;
             HandleAnimationEvents();
             HandleTransitions();
             HandleQueuedInstructions();

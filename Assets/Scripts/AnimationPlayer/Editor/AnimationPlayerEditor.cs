@@ -32,6 +32,7 @@ namespace Animation_Player
         private static GUIStyle editLayerButton_Selected;
 
         private MetaDataDrawer metaDataDrawer;
+
         public AnimationStatePreviewer previewer;
         private List<AnimationClip> multiChoiceAnimationClips;
 
@@ -257,6 +258,11 @@ namespace Animation_Player
 
             layer.startWeight = EditorGUILayout.Slider($"Layer {selectedLayer} Weight", layer.startWeight, 0f, 1f);
             layer.mask = EditorUtilities.ObjectField($"Layer {selectedLayer} Mask", layer.mask);
+
+            if(selectedLayer > 0) //Doesn't make any sense for base layer to be additive!
+                layer.type = (AnimationLayerType) EditorGUILayout.EnumPopup("Type", layer.type);
+            else
+                EditorGUILayout.LabelField(string.Empty);
         }
 
         private void DrawSelectedState()
@@ -330,19 +336,20 @@ namespace Animation_Player
             int indexToDelete = -1;
             EditorGUILayout.LabelField($"Animation events for {state.Name}");
             EditorUtilities.Splitter();
-            for (var i = 0; i < state.animationEvents.Count; i++)
+            EditorUtilities.DrawIndented(() =>
             {
-                EditorUtilities.DrawIndented(() => { 
+                for (var i = 0; i < state.animationEvents.Count; i++)
+                {
                     if (DrawEvent(state.animationEvents[i], state))
                         indexToDelete = i;
                     if (i != state.animationEvents.Count - 1)
                         GUILayout.Space(5);
-                });
-                EditorUtilities.Splitter();
-            }
+                }
+            });
             if (indexToDelete != -1)
                 state.animationEvents.RemoveAt(indexToDelete);
 
+            EditorUtilities.Splitter();
             EditorUtilities.DrawHorizontal(() =>
             {
                 GUILayout.FlexibleSpace();
@@ -420,24 +427,6 @@ namespace Animation_Player
                 return;
             }
 
-            for (int i = 0; i < animationPlayer.GetStateCount(selectedLayer); i++)
-            {
-                EditorGUILayout.BeginHorizontal();
-                {
-                    string stateName = animationPlayer.layers[selectedLayer].states[i].Name;
-
-                    if (GUILayout.Button($"Blend to {stateName} using default transition"))
-                        animationPlayer.Play(i, selectedLayer);
-
-                    if (GUILayout.Button($"Blend to {stateName} over .5 secs"))
-                        animationPlayer.Play(i, TransitionData.Linear(.5f), selectedLayer);
-
-                    if (GUILayout.Button($"Snap to {stateName}"))
-                        animationPlayer.SnapTo(i, selectedLayer);
-                }
-                EditorGUILayout.EndHorizontal();
-            }
-
             EditorGUILayout.LabelField("Playing clip " + animationPlayer.GetPlayingState(selectedLayer));
             for (int i = animationPlayer.GetStateCount(selectedLayer) - 1; i >= 0; i--)
             {
@@ -460,6 +449,7 @@ namespace Animation_Player
 
         private float blendVal;
         private float blendVal2;
+
         private const float selectedLayerWidth = 108f;
 
         private const string persistedLayer = "APE_SelectedLayer_";

@@ -1,10 +1,8 @@
 using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
-using System.Linq;
 using GraphVisualizer;
 using UnityEngine.Playables;
-using UnityEditor.Animations;
 
 public class PlayableGraphVisualizerWindow : EditorWindow, IHasCustomMenu
 {

@@ -6,16 +6,18 @@ Animation states:
     - Have the states get a GUID rather than an index, to support reordering and stuff better.
     - Different kinds of states:
         * blend trees
-            - Nested!
             * 2D (almost finished, need to implement the good algo!)
-            * allow state reordering
+            + allow state reordering
         - sequences (state A into state B into state C, etc.)
             - this can be used to change into a specific idle state after standing still.
-        - random (bunch of states, selects a random one when you enter)
+        * random (bunch of states, selects a random one when you enter)
+        - nested
+            - allow one kind of state to be a part of a different kind of state. So a random can contain blend trees and blend trees can contain blend trees and whatnot
     - Check if it's possible to loop/not loop in the state, and how expensive that is compared to the native (stupid) way of doing it
     + Add support for dragging animation clips over the list of states to generate a new state
         + Also add support for dragging in the .fbx or .blend or whatever (ModelImporter), and add all clips in it
-        + If you drag in several, create a "Do you want to add many clips or blend tree" popup
+        + If you drag in several, create a "Do you want to add many clips or blend tree" menu
+        - Add select random to the "do you want to add etc." menu
     * Preview (oh my!)
         + preview for single-clip states
         + preview for other kinds of states
@@ -44,6 +46,7 @@ Animation transitions:
         - Should have a list of ALL transitions?
 
 Misc
+    - Add delete buttons to blend trees etc.
     - Ensure that all public methods in AnimationPlayer have int overload, so it's not neccessary to pay the cost of sending in strings
     - Make the cached values in the editor be per-layer where appropriate (selected from/to state for transitions)
     - Make a caching system that doesn't depend on EditorPrefs? Cluttering the registry is an ugly hack.
@@ -55,11 +58,16 @@ Misc
         + list all clips used
         - list all blend variables
         - make sure all of these lists update when stuff is added. On changing tab is not enough, could have two inspectors open
-    - fix the parts of the window shifting around as you unfold stuff (like clips used in metadata)
-        - THAT STOPPED HAPPENING?
     - AnimationPlayer should have internal BlendVarControllers, so there's not duplication between SetBlendVar and GetBlendVarController().SetValue
+    - Dump info about which animations have been played for how long, often, etc.
 
 Issues:
     - Calling Play("MyState") every frame will cause MyState to never play, if wherever you're calling from executes Update before the AnimationPlayer.
       This is because the timer for when the transition was started gets reset to this frame every time you call it. I don't have any good solutions for
       this, but then again, calling Play("Attack") in Update is a bit insane.  
+
+Possible optimizations:
+    - We do what the Animator's doing, and have all the states that's in the AnimationPlayer added to the mixer, with the vast majority of them with weight 0.
+      It might be that it would be faster to only have the states that have a non-zero weight in the mixer. That would require re-writing quite a bit, and would make the 
+      visualizer less usefull, so only do it if there's an actual gain to be had.
+      

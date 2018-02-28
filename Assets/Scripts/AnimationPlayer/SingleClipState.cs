@@ -25,12 +25,14 @@ namespace Animation_Player
         public override Playable GeneratePlayable(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
                                                   Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers, Dictionary<string, float> blendVars)
         {
+            if(clip == null)
+                clip = new AnimationClip();
             var clipPlayable = AnimationClipPlayable.Create(graph, clip);
             clipPlayable.SetSpeed(speed);
             return clipPlayable;
         }
 
-        public override float Duration => clip?.length ?? 0f;
-        public override bool Loops => clip?.isLooping ?? false;
+        public override float Duration => clip != null ? clip.length : 0f;
+        public override bool Loops => clip != null && clip.isLooping;
     }
 }

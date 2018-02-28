@@ -3934,7 +3934,33 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   versionNumber: 1
   layers:
-  - transitions: []
+  - transitions:
+    - fromStateGUID:
+        guidSerialized: efe85563-89dc-4623-ab1c-b9380faa4eb0
+      toStateGUID:
+        guidSerialized: a45b0f9f-a65e-4102-9b3c-b4ae51727dea
+      transitionData:
+        duration: 0.1
+        type: 0
+        curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+    - fromStateGUID:
+        guidSerialized: efe85563-89dc-4623-ab1c-b9380faa4eb0
+      toStateGUID:
+        guidSerialized: 820a7dd3-ff51-4c6d-800e-913722ea6b28
+      transitionData:
+        duration: 0.1
+        type: 0
+        curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
     startWeight: 1
     mask: {fileID: 0}
     type: 0
@@ -3951,12 +3977,19 @@ MonoBehaviour:
     - m_Text: Attack 3
       m_Image: {fileID: 0}
       m_Tooltip: 
+    - m_Text: Empty
+      m_Image: {fileID: 0}
+      m_Tooltip: 
     serializedSingleClipStates:
     - name: Attack
       hasUpdatedName: 1
       guid:
         guidSerialized: efe85563-89dc-4623-ab1c-b9380faa4eb0
-      animationEvents: []
+      animationEvents:
+      - name: New Event
+        time: 0
+      - name: New Event
+        time: 0
       speed: 1
       clip: {fileID: 7400002, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
     - name: Attack 2
@@ -3973,6 +4006,13 @@ MonoBehaviour:
       animationEvents: []
       speed: 1
       clip: {fileID: 7400006, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+    - name: Empty
+      hasUpdatedName: 1
+      guid:
+        guidSerialized: b4765875-d5de-4eb2-b4f4-b69fca259615
+      animationEvents: []
+      speed: 1
+      clip: {fileID: 0}
     serializedBlendTree1Ds:
     - name: Movement
       hasUpdatedName: 1
@@ -3994,6 +4034,7 @@ MonoBehaviour:
     - guidSerialized: efe85563-89dc-4623-ab1c-b9380faa4eb0
     - guidSerialized: a45b0f9f-a65e-4102-9b3c-b4ae51727dea
     - guidSerialized: 820a7dd3-ff51-4c6d-800e-913722ea6b28
+    - guidSerialized: b4765875-d5de-4eb2-b4f4-b69fca259615
   defaultTransition:
     duration: 0.1
     type: 0

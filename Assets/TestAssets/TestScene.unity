@@ -345,31 +345,6 @@ Prefab:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].transitions.Array.size
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].layersForEditor.Array.size
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].serializedStateOrder.Array.size
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.size
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[0].animationEvents.Array.size
-      value: 2
-      objectReference: {fileID: 0}
     - target: {fileID: 4228501388723162, guid: 8c6e40d2ad94ce840adc4c3f05edbf33, type: 2}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -402,22 +377,6 @@ Prefab:
       propertyPath: m_RootOrder
       value: 2
       objectReference: {fileID: 0}
-    - target: {fileID: 4359669720949474, guid: 8c6e40d2ad94ce840adc4c3f05edbf33, type: 2}
-      propertyPath: m_LocalRotation.x
-      value: -0.55422044
-      objectReference: {fileID: 0}
-    - target: {fileID: 4359669720949474, guid: 8c6e40d2ad94ce840adc4c3f05edbf33, type: 2}
-      propertyPath: m_LocalRotation.y
-      value: 0.620517
-      objectReference: {fileID: 0}
-    - target: {fileID: 4359669720949474, guid: 8c6e40d2ad94ce840adc4c3f05edbf33, type: 2}
-      propertyPath: m_LocalRotation.z
-      value: -0.5396591
-      objectReference: {fileID: 0}
-    - target: {fileID: 4359669720949474, guid: 8c6e40d2ad94ce840adc4c3f05edbf33, type: 2}
-      propertyPath: m_LocalRotation.w
-      value: 0.1287105
-      objectReference: {fileID: 0}
     - target: {fileID: 4010792348866750, guid: 8c6e40d2ad94ce840adc4c3f05edbf33, type: 2}
       propertyPath: m_LocalRotation.x
       value: 0.6743086
@@ -434,145 +393,21 @@ Prefab:
       propertyPath: m_LocalRotation.w
       value: 0.06302864
       objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[1].name
-      value: attack2_teri
+    - target: {fileID: 4359669720949474, guid: 8c6e40d2ad94ce840adc4c3f05edbf33, type: 2}
+      propertyPath: m_LocalRotation.x
+      value: -0.55422044
       objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[1].hasUpdatedName
-      value: 1
+    - target: {fileID: 4359669720949474, guid: 8c6e40d2ad94ce840adc4c3f05edbf33, type: 2}
+      propertyPath: m_LocalRotation.y
+      value: 0.620517
       objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[1].guid.guidSerialized
-      value: a45b0f9f-a65e-4102-9b3c-b4ae51727dea
+    - target: {fileID: 4359669720949474, guid: 8c6e40d2ad94ce840adc4c3f05edbf33, type: 2}
+      propertyPath: m_LocalRotation.z
+      value: -0.5396591
       objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[1].speed
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[1].clip
-      value: 
-      objectReference: {fileID: 7400004, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].serializedStateOrder.Array.data[2].guidSerialized
-      value: a45b0f9f-a65e-4102-9b3c-b4ae51727dea
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].layersForEditor.Array.data[2].m_Text
-      value: attack2_teri
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[2].name
-      value: attack3_teri
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[2].hasUpdatedName
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[2].guid.guidSerialized
-      value: 820a7dd3-ff51-4c6d-800e-913722ea6b28
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[2].speed
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[2].clip
-      value: 
-      objectReference: {fileID: 7400006, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].serializedStateOrder.Array.data[3].guidSerialized
-      value: 820a7dd3-ff51-4c6d-800e-913722ea6b28
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].transitions.Array.data[0].fromStateGUID.guidSerialized
-      value: efe85563-89dc-4623-ab1c-b9380faa4eb0
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].transitions.Array.data[0].toStateGUID.guidSerialized
-      value: a45b0f9f-a65e-4102-9b3c-b4ae51727dea
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].transitions.Array.data[0].transitionData.duration
-      value: 0.1
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].transitions.Array.data[0].transitionData.curve.m_PreInfinity
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].transitions.Array.data[0].transitionData.curve.m_PostInfinity
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].transitions.Array.data[0].transitionData.curve.m_RotationOrder
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].layersForEditor.Array.data[3].m_Text
-      value: attack3_teri
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].transitions.Array.data[1].fromStateGUID.guidSerialized
-      value: efe85563-89dc-4623-ab1c-b9380faa4eb0
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].transitions.Array.data[1].toStateGUID.guidSerialized
-      value: 820a7dd3-ff51-4c6d-800e-913722ea6b28
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].transitions.Array.data[1].transitionData.duration
-      value: 0.1
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].transitions.Array.data[1].transitionData.curve.m_PreInfinity
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].transitions.Array.data[1].transitionData.curve.m_PostInfinity
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].transitions.Array.data[1].transitionData.curve.m_RotationOrder
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[0].animationEvents.Array.data[0].name
-      value: New Event
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[0].animationEvents.Array.data[1].name
-      value: New Event
+    - target: {fileID: 4359669720949474, guid: 8c6e40d2ad94ce840adc4c3f05edbf33, type: 2}
+      propertyPath: m_LocalRotation.w
+      value: 0.1287105
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 8c6e40d2ad94ce840adc4c3f05edbf33, type: 2}

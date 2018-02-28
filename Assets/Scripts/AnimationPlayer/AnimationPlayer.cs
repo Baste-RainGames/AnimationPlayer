@@ -344,6 +344,12 @@ namespace Animation_Player
             return layers[layer].GetCurrentPlayingState();
         }
 
+        public int GetIndexOfPlayingState(int layer = 0) 
+        {
+            AssertLayerInBounds(layer, "get the index of the current playing state");
+            return layers[layer].GetIndexOfPlayingState();
+        }
+
         /// <summary>
         /// Checks if the AnimationPlayer is playing a named state.
         /// </summary>

@@ -410,6 +410,12 @@ namespace Animation_Player
             return states[currentPlayedState];
         }
 
+        public int GetIndexOfPlayingState() {
+            if (states.Count == 0)
+                return -1;
+            return currentPlayedState;
+        }
+
         public void AddAllBlendVarsTo(List<string> result)
         {
             foreach (var key in blendVars.Keys)

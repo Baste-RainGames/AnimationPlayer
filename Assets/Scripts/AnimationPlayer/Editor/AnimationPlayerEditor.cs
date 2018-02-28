@@ -45,6 +45,7 @@ namespace Animation_Player
         {
             stateNamesNeedsUpdate = true;
             metaDataDrawer.usedClipsNeedsUpdate = true;
+            EditorUtilities.SetDirty(animationPlayer);
         }
 
         private void OnEnable()
@@ -332,6 +333,12 @@ namespace Animation_Player
 
         private void DrawEvents()
         {
+            if (animationPlayer.layers[selectedLayer].states.Count == 0)
+            {
+                EditorGUILayout.LabelField("No states on layer, can't make events");
+                return;
+            }
+
             var state = animationPlayer.GetState(selectedState, selectedLayer);
             int indexToDelete = -1;
             EditorGUILayout.LabelField($"Animation events for {state.Name}");

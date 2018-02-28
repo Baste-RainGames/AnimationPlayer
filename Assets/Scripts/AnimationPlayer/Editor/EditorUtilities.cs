@@ -143,12 +143,17 @@ namespace Animation_Player
         }
 
         private static readonly Dictionary<string, float> buttonClickTime = new Dictionary<string, float>();
+        private static object areYouSureStyleNullGuard;
         private static GUIStyle areYouSureStyle;
 
         public static bool AreYouSureButton(string text, string areYouSureText, string uniqueID, float timeout, params GUILayoutOption[] options)
         {
-            if (areYouSureStyle == null)
+            if (areYouSureStyleNullGuard == null)
             {
+                /* Unity persists GUIStyle objects between assembly reloads, but fails to persist their data.
+                 * So we need a object field to make sure the data's regenerated.
+                 */
+                areYouSureStyleNullGuard = new object(); 
                 var buttonTexture = GetReadableCopyOf(GUI.skin.button.normal.background);
                 var pixels = buttonTexture.GetPixels();
                 for (var i = 0; i < pixels.Length; i++)

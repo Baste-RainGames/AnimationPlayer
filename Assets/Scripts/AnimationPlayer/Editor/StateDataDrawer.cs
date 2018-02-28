@@ -98,8 +98,11 @@ namespace Animation_Player
         {
             var oldClip = state.clip;
             state.clip = EditorUtilities.ObjectField("Clip", state.clip, labelWidth);
-            if (state.clip != null && state.clip != oldClip)
-                markDirty |= state.OnClipAssigned(state.clip);
+            if (state.clip != oldClip)
+            {
+                state.OnClipAssigned(state.clip);
+                markDirty = true;
+            }
         }
 
         private static void Draw1DBlendTree(BlendTree1D state, ref bool markDirty)

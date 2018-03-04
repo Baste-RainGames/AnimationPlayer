@@ -71,9 +71,8 @@ namespace Animation_Player
         {
             get
             {
-                foreach (var entry in blendTree)
-                {
-                    if (entry?.clip?.isLooping ?? false)
+                foreach (var entry in blendTree) {
+                    if (entry != null && entry.clip != null && entry.clip.isLooping)
                         return true;
                 }
                 return false;

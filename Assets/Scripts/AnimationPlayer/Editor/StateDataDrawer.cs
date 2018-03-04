@@ -35,19 +35,33 @@ namespace Animation_Player
 
             if (!layer.states.IsInBounds(selectedState))
             {
-                Debug.LogError("Out of bounds state: " + selectedState + " out of " + layer.states.Count + " states! Resetting to 0");
+                Debug.LogError($"Out of bounds state: {selectedState} out of {layer.states.Count} states! Resetting to 0");
                 selectedState.SetTo(0);
                 return;
             }
 
-            EditorGUILayout.LabelField("State");
+            var stateName = layer.states[selectedState].Name;
+            EditorGUILayout.LabelField($"Settings for \"{stateName}\":");
 
             EditorGUI.indentLevel++;
             DrawStateData(layer.states[selectedState], ref markDirty);
 
             GUILayout.Space(20f);
 
-            var deleteThisState = DrawDeleteStateButton(selectedLayer, selectedState);
+            EditorGUILayout.BeginHorizontal();
+            if (selectedState == 0)
+            {
+                EditorGUILayout.LabelField("This is the default state of this layer", GUILayout.Width(250f));
+            }
+            else if (GUILayout.Button("Set as the default state of this layer", GUILayout.Width(250f)))
+            {
+                layer.states.Swap(selectedState, 0);
+                selectedState.SetTo(0);
+                markDirty = true;
+            }
+            GUILayout.FlexibleSpace();
+            var deleteThisState = EditorUtilities.AreYouSureButton($"Delete {stateName}", "Are you sure", $"DeleteState_{selectedState}_{selectedLayer}", 1f);
+            EditorGUILayout.EndHorizontal();
             EditorGUI.indentLevel--;
 
             if (deleteThisState)
@@ -58,6 +72,8 @@ namespace Animation_Player
 
             if (markDirty)
                 currentEditor.MarkDirty();
+
+            GUILayout.Space(20f);
 
             currentEditor.previewer.DrawStatePreview(selectedLayer, selectedState);
         }
@@ -98,8 +114,11 @@ namespace Animation_Player
         {
             var oldClip = state.clip;
             state.clip = EditorUtilities.ObjectField("Clip", state.clip, labelWidth);
-            if (state.clip != null && state.clip != oldClip)
-                markDirty |= state.OnClipAssigned(state.clip);
+            if (state.clip != oldClip)
+            {
+                state.OnClipAssigned(state.clip);
+                markDirty = true;
+            }
         }
 
         private static void Draw1DBlendTree(BlendTree1D state, ref bool markDirty)
@@ -216,27 +235,6 @@ namespace Animation_Player
                 state.blendTree.Add(new BlendTreeEntry2D());
             GUILayout.FlexibleSpace();
             EditorGUILayout.EndHorizontal();
-        }
-
-        private static void DrawBlendTreeEntry(AnimationState state, BlendTreeEntry2D blendTreeEntry, string blendVarName, string blendVarName2,
-                                               ref bool markDirty)
-        {
-            var oldClip = blendTreeEntry.clip;
-            blendTreeEntry.clip = EditorUtilities.ObjectField("Clip", blendTreeEntry.clip, 150f, 200f);
-            if (blendTreeEntry.clip != oldClip && blendTreeEntry.clip != null)
-                markDirty = state.OnClipAssigned(blendTreeEntry.clip);
-
-            blendTreeEntry.threshold1 = EditorUtilities.FloatField($"When '{blendVarName}' =", blendTreeEntry.threshold1, 150f, 200f);
-            blendTreeEntry.threshold2 = EditorUtilities.FloatField($"When '{blendVarName2}' =", blendTreeEntry.threshold2, 150f, 200f);
-        }
-
-        private static bool DrawDeleteStateButton(PersistedInt selectedLayer, PersistedInt selectedState)
-        {
-            EditorGUILayout.BeginHorizontal();
-            GUILayout.FlexibleSpace();
-            var deleteThisState = EditorUtilities.AreYouSureButton("Delete state", "are you sure", "DeleteState_" + selectedState + "_" + selectedLayer, 1f);
-            EditorGUILayout.EndHorizontal();
-            return deleteThisState;
         }
 
         private static void DeleteState(AnimationPlayer animationPlayer, AnimationLayer layer, PersistedInt selectedState)

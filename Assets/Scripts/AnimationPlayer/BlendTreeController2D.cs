@@ -135,5 +135,10 @@ namespace Animation_Player
                 this.thresholdPoint = thresholdPoint;
             }
         }
+
+        public float GetMinValForVar1() => minVal1;
+        public float GetMaxValForVar1() => maxVal1;
+        public float GetMinValForVar2() => minVal2;
+        public float GetMaxValForVar2() => maxVal2;
     }
 }

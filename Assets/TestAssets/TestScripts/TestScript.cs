@@ -41,6 +41,12 @@ public class TestScript : MonoBehaviour
             Debug.Log("2");
             animationPlayer.SetBlendVar("Speed", 2);
         }
+
+        if (Input.GetKeyDown(KeyCode.Alpha4))
+        {
+            Debug.Log("4");
+            animationPlayer.Play("Empty");
+        }
     }
 
 }

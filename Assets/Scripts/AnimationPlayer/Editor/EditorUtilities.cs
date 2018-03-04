@@ -76,13 +76,13 @@ namespace Animation_Player
         private static readonly GUIStyle splitter;
         private static readonly Color splitterColor = EditorGUIUtility.isProSkin ? new Color(0.157f, 0.157f, 0.157f) : new Color(0.5f, 0.5f, 0.5f);
 
-        
+
+        // GUILayout Style
         public static void Splitter(float thickness = 1, float width = -1f, bool respectIndentLevel = true)
         {
             Splitter(thickness, splitterColor, splitter, width, respectIndentLevel);
         }
 
-        // GUILayout Style
         public static void Splitter(float thickness, Color color, GUIStyle splitterStyle, float width = -1f, bool respectIndentLevel = true)
         {
             Rect position;
@@ -98,6 +98,19 @@ namespace Animation_Player
             {
                 Color restoreColor = GUI.color;
                 GUI.color = color;
+                splitterStyle.Draw(position, false, false, false, false);
+                GUI.color = restoreColor;
+            }
+        }
+
+        public static void Splitter(float thickness, GUIStyle splitterStyle)
+        {
+            Rect position = GUILayoutUtility.GetRect(GUIContent.none, splitterStyle, GUILayout.Height(thickness));
+
+            if (Event.current.type == EventType.Repaint)
+            {
+                Color restoreColor = GUI.color;
+                GUI.color = splitterColor;
                 splitterStyle.Draw(position, false, false, false, false);
                 GUI.color = restoreColor;
             }
@@ -130,12 +143,17 @@ namespace Animation_Player
         }
 
         private static readonly Dictionary<string, float> buttonClickTime = new Dictionary<string, float>();
+        private static object areYouSureStyleNullGuard;
         private static GUIStyle areYouSureStyle;
 
         public static bool AreYouSureButton(string text, string areYouSureText, string uniqueID, float timeout, params GUILayoutOption[] options)
         {
-            if (areYouSureStyle == null)
+            if (areYouSureStyleNullGuard == null)
             {
+                /* Unity persists GUIStyle objects between assembly reloads, but fails to persist their data.
+                 * So we need a object field to make sure the data's regenerated.
+                 */
+                areYouSureStyleNullGuard = new object(); 
                 var buttonTexture = GetReadableCopyOf(GUI.skin.button.normal.background);
                 var pixels = buttonTexture.GetPixels();
                 for (var i = 0; i < pixels.Length; i++)

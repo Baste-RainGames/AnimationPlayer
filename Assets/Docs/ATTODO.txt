@@ -31,6 +31,7 @@ Animation states:
             - min blend factor - default to 0. Only call the event if the current blend factor is larger than this
             - Play only first/repeat. If the animation loops, do we want this to happen every time, or just the first one?
     - Make it possible to play an animation relative to the current position. This will make Unity-created animations for eg. doors be a _LOT_ easier, and faster to boot.
+    - Add support for mirroring.
 
 Animation transitions:
     - Transition-by-clip:

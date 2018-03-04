@@ -153,6 +153,10 @@ namespace Animation_Player
                     if (GUILayout.Button("\u2193", upDownButtonStyle, upDownButtonOptions))
                         swapIndex = i + 1;
                     EditorGUI.EndDisabledGroup();
+
+					// Remove 1D blend tree entry
+					if (GUILayout.Button("Remove", GUILayout.Width(70f)))
+						state.blendTree.RemoveAt(i);
                 }
                 EditorGUILayout.EndHorizontal();
 
@@ -212,6 +216,10 @@ namespace Animation_Player
                     if (GUILayout.Button("\u2193", upDownButtonStyle, upDownButtonOptions))
                         swapIndex = i + 1;
                     EditorGUI.EndDisabledGroup();
+
+					// Remove 2D blend tree entry
+					if (GUILayout.Button("Remove", GUILayout.Width(70f)))
+						state.blendTree.RemoveAt(i);
                 }
                 EditorGUILayout.EndHorizontal();
 

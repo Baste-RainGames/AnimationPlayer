@@ -75,5 +75,23 @@ namespace Animation_Player
             list[idx1] = list[idx2];
             list[idx2] = temp;
         }
+
+        public static int GetRandomIdx<T>(this IList<T> list)
+        {
+            if (list == null)
+                throw new ArgumentNullException(nameof(list), "Can't get random idx from null list!");
+            if(list.Count == 0)
+                throw new ArgumentException("Can't get random idx from empty list!", nameof(list));
+            return UnityEngine.Random.Range(0, list.Count);
+        }
+
+        public static T GetRandom<T>(this IList<T> list)
+        {
+            if (list == null)
+                throw new ArgumentNullException(nameof(list), "Can't get random from null list!");
+            if(list.Count == 0)
+                throw new ArgumentException("Can't get random from empty list!", nameof(list));
+            return list[UnityEngine.Random.Range(0, list.Count)];
+        }
     }
 }

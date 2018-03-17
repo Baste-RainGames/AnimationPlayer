@@ -75,9 +75,9 @@ namespace Animation_Player
             {
                 //@TODO: Use pattern matching when C# 7
                 var type = state.GetType();
-                if (type == typeof(SingleClipState))
+                if (type == typeof(SingleClip))
                 {
-                    var singleClipState = (SingleClipState) state;
+                    var singleClipState = (SingleClip) state;
                     if (singleClipState.clip != null && !animationClipsUsed.Contains(singleClipState.clip))
                         animationClipsUsed.Add(singleClipState.clip);
                 }

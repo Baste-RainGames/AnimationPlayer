@@ -267,77 +267,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
---- !u!1 &1106143988
-GameObject:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  serializedVersion: 5
-  m_Component:
-  - component: {fileID: 1106143990}
-  - component: {fileID: 1106143989}
-  m_Layer: 0
-  m_Name: GameObject
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1106143989
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1106143988}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 191094f4537c4be1a92ab451fc346126, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  versionNumber: 1
-  layers:
-  - transitions: []
-    startWeight: 1
-    mask: {fileID: 0}
-    type: 0
-    layersForEditor:
-    - m_Text: Default
-      m_Image: {fileID: 0}
-      m_Tooltip: 
-    serializedSingleClipStates:
-    - name: Default
-      hasUpdatedName: 1
-      guid:
-        guidSerialized: cf0e9917-b05f-4780-a114-b4100765d869
-      animationEvents: []
-      speed: 1
-      clip: {fileID: 0}
-    serializedBlendTree1Ds: []
-    serializedBlendTree2Ds: []
-    serializedStateOrder:
-    - guidSerialized: cf0e9917-b05f-4780-a114-b4100765d869
-  defaultTransition:
-    duration: 0.1
-    type: 0
-    curve:
-      serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
---- !u!4 &1106143990
-Transform:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1106143988}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 8.317782, y: -12.381308, z: -29.08421}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_RootOrder: 3
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1644586055
 Prefab:
   m_ObjectHideFlags: 0
@@ -347,23 +276,18 @@ Prefab:
     m_Modifications:
     - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
         type: 2}
-      propertyPath: layers.Array.size
-      value: 2
+      propertyPath: layers.Array.data[0].layersForEditor.Array.size
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
         type: 2}
-      propertyPath: layers.Array.data[1].layersForEditor.Array.size
-      value: 1
+      propertyPath: layers.Array.data[0].serializedStateOrder.Array.size
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
         type: 2}
-      propertyPath: layers.Array.data[1].serializedStateOrder.Array.size
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[1].serializedSingleClipStates.Array.size
-      value: 1
+      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.size
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4228501388723162, guid: 8c6e40d2ad94ce840adc4c3f05edbf33, type: 2}
       propertyPath: m_LocalPosition.x
@@ -431,54 +355,109 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
         type: 2}
-      propertyPath: layers.Array.data[1].startWeight
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 95298409246985062, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: m_Controller
-      value: 
-      objectReference: {fileID: 9100000, guid: b0d2f31599d820a4ca6ee0388fc24eb4, type: 2}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[1].serializedSingleClipStates.Array.data[0].name
-      value: Wirt
+      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[0].name
+      value: Attack_1
       objectReference: {fileID: 0}
     - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
         type: 2}
-      propertyPath: layers.Array.data[1].serializedSingleClipStates.Array.data[0].guid.guidSerialized
-      value: b3dd63cc-f223-4520-93cf-349a09d49c11
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[1].serializedSingleClipStates.Array.data[0].speed
+      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[0].hasUpdatedName
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
         type: 2}
-      propertyPath: layers.Array.data[1].serializedStateOrder.Array.data[0].guidSerialized
-      value: b3dd63cc-f223-4520-93cf-349a09d49c11
+      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[0].guid.guidSerialized
+      value: 61a7e8b6-1602-4f5e-9bb0-5913808111b7
       objectReference: {fileID: 0}
     - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
         type: 2}
-      propertyPath: layers.Array.data[1].layersForEditor.Array.data[0].m_Text
-      value: Wirt
-      objectReference: {fileID: 0}
-    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
-        type: 2}
-      propertyPath: layers.Array.data[1].serializedSingleClipStates.Array.data[0].hasUpdatedName
+      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[0].speed
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
         type: 2}
-      propertyPath: layers.Array.data[1].serializedSingleClipStates.Array.data[0]._clip
+      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[0].clip
       value: 
-      objectReference: {fileID: 7400066, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+      objectReference: {fileID: 7400002, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
     - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
         type: 2}
-      propertyPath: layers.Array.data[1].serializedSingleClipStates.Array.data[0].clip
+      propertyPath: layers.Array.data[0].serializedStateOrder.Array.data[2].guidSerialized
+      value: 61a7e8b6-1602-4f5e-9bb0-5913808111b7
+      objectReference: {fileID: 0}
+    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
+        type: 2}
+      propertyPath: layers.Array.data[0].layersForEditor.Array.data[2].m_Text
+      value: Attack_
+      objectReference: {fileID: 0}
+    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
+        type: 2}
+      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[1].name
+      value: Attack_2
+      objectReference: {fileID: 0}
+    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
+        type: 2}
+      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[1].hasUpdatedName
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
+        type: 2}
+      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[1].guid.guidSerialized
+      value: 0640556f-54bc-4eda-b5b9-68f0d326ddf6
+      objectReference: {fileID: 0}
+    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
+        type: 2}
+      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[1].speed
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
+        type: 2}
+      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[1].clip
       value: 
-      objectReference: {fileID: 7400030, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+      objectReference: {fileID: 7400004, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
+        type: 2}
+      propertyPath: layers.Array.data[0].serializedStateOrder.Array.data[3].guidSerialized
+      value: 0640556f-54bc-4eda-b5b9-68f0d326ddf6
+      objectReference: {fileID: 0}
+    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
+        type: 2}
+      propertyPath: layers.Array.data[0].layersForEditor.Array.data[3].m_Text
+      value: Attack_2
+      objectReference: {fileID: 0}
+    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
+        type: 2}
+      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[2].name
+      value: Attack_3
+      objectReference: {fileID: 0}
+    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
+        type: 2}
+      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[2].hasUpdatedName
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
+        type: 2}
+      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[2].guid.guidSerialized
+      value: f20ee450-484c-425c-b839-ec3e9faaeb18
+      objectReference: {fileID: 0}
+    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
+        type: 2}
+      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[2].speed
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
+        type: 2}
+      propertyPath: layers.Array.data[0].serializedSingleClipStates.Array.data[2].clip
+      value: 
+      objectReference: {fileID: 7400006, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
+        type: 2}
+      propertyPath: layers.Array.data[0].serializedStateOrder.Array.data[4].guidSerialized
+      value: f20ee450-484c-425c-b839-ec3e9faaeb18
+      objectReference: {fileID: 0}
+    - target: {fileID: 114002790549453020, guid: 8c6e40d2ad94ce840adc4c3f05edbf33,
+        type: 2}
+      propertyPath: layers.Array.data[0].layersForEditor.Array.data[4].m_Text
+      value: Attack_3
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 8c6e40d2ad94ce840adc4c3f05edbf33, type: 2}
   m_IsPrefabParent: 0

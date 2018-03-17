@@ -66,7 +66,11 @@ Both animators and the programmers should at all times feel like they know what'
   - Avoid as many as possible performance gotchas. If there's an AnimationPlayer attached to a GameObject that's not currently playing any animations, that shouldn't have a huge overhead! 
 
 ## Contributions
-Yes, please! If you want to add something, do let me know, as I might've already have implemented it, but haven't gotten around to dragging it out of our project and into the standalone Animation Player.
+Yes, please!
+If you have a bug fix, or have a feature, I'd be happy to take pull requests! If you submit one, It'd be great if you could try to at least vaguely follow the code style (four spaces for indents, brackets on the next line)  
+
+Before you start working on something, please check Assets/Docs/ATTODO.txt, which contains a more comprehensive list of tasks I'm working on. If the thing you want to do is listed there, I might already have finished it, but not moved it over from the game I'm working on to this repository.
+Also, if you have an idea for a feature that's not listed under Goals above or in ATTODO, it's probably a good idea to create an issue on Github to ask if it's something I think fits the project.
 
 ## Motivation, aka. "Why I think you need to replace the AnimatorController in the first place."
 See Docs/Motivation.txt if you care

@@ -12,6 +12,7 @@ namespace Animation_Player
         private AnimationMixerPlayable mixer;
         private readonly float[] thresholds;
         private float lastValue;
+        public float CurrentValue => lastValue;
 
         public BlendTreeController1D(AnimationMixerPlayable mixer, float[] thresholds, Action<float> UpdateValueOnMainController)
         {

@@ -234,6 +234,27 @@ namespace Animation_Player
             playInstructionQueue.Enqueue(new PlayAtTimeInstruction(Time.time + seconds, state, transition));
         }
 
+        public void JumpToRelativeTime(float time) 
+        {
+            if (time > 1f) 
+            {
+                time = time % 1f;
+            }
+            else if (time < 0f) 
+            {
+                time = 1 - ((-time) % 1f);
+            }
+
+            for (int i = 0; i < stateMixer.GetInputCount(); i++) 
+            {
+                stateMixer.SetInputWeight(i, i == currentPlayedState ? 1f : 0f);
+            }
+
+            ClearFinishedTransitionStates();
+
+            stateMixer.GetInput(currentPlayedState).SetTime(time * states[currentPlayedState].Duration);
+        }
+
         public void Update()
         {
             if (states.Count == 0)
@@ -273,32 +294,8 @@ namespace Animation_Player
             }
 
             var currentInputCount = stateMixer.GetInputCount();
-            if (currentInputCount > states.Count)
-            {
-                //Have added additional copies of states to handle transitions. Clean these up if they have too low weight, to avoid excessive playable counts.
-                for (int i = currentInputCount - 1; i >= states.Count; i--)
-                {
-                    if (stateMixer.GetInputWeight(i) < 0.01f)
-                    {
-                        activeWhenBlendStarted.RemoveAt(i);
-                        valueWhenBlendStarted.RemoveAt(i);
-
-                        var removedPlayable = stateMixer.GetInput(i);
-                        removedPlayable.Destroy();
-
-                        //Shift all excess playables one index down.
-                        for (int j = i + 1; j < stateMixer.GetInputCount(); j++)
-                        {
-                            var playable = stateMixer.GetInput(j);
-                            var weight = stateMixer.GetInputWeight(j);
-                            containingGraph.Disconnect(stateMixer, j);
-                            containingGraph.Connect(playable, 0, stateMixer, j - 1);
-                            stateMixer.SetInputWeight(j - 1, weight);
-                        }
-
-                        stateMixer.SetInputCount(stateMixer.GetInputCount() - 1);
-                    }
-                }
+            if (currentInputCount > states.Count) {
+                ClearFinishedTransitionStates();
             }
 
             if (lerpVal >= 1)
@@ -306,6 +303,37 @@ namespace Animation_Player
                 transitioning = false;
                 if (states.Count != stateMixer.GetInputCount())
                     throw new Exception($"{states.Count} != {stateMixer.GetInputCount()}");
+            }
+        }
+
+        /// <summary>
+        /// We generate some extra states at times to handle blending properly. This cleans out the ones of those that are done blending out.
+        /// </summary>
+        private void ClearFinishedTransitionStates() 
+        {
+            var currentInputCount = stateMixer.GetInputCount();
+            for (int i = currentInputCount - 1; i >= states.Count; i--) 
+            {
+                if (stateMixer.GetInputWeight(i) < 0.01f) 
+                {
+                    activeWhenBlendStarted.RemoveAt(i);
+                    valueWhenBlendStarted.RemoveAt(i);
+
+                    var removedPlayable = stateMixer.GetInput(i);
+                    removedPlayable.Destroy();
+
+                    //Shift all excess playables one index down.
+                    for (int j = i + 1; j < stateMixer.GetInputCount(); j++) 
+                    {
+                        var playable = stateMixer.GetInput(j);
+                        var weight = stateMixer.GetInputWeight(j);
+                        containingGraph.Disconnect(stateMixer, j);
+                        containingGraph.Connect(playable, 0, stateMixer, j - 1);
+                        stateMixer.SetInputWeight(j - 1, weight);
+                    }
+
+                    stateMixer.SetInputCount(stateMixer.GetInputCount() - 1);
+                }
             }
         }
 
@@ -426,6 +454,25 @@ namespace Animation_Player
 
         public bool HasBlendTreeUsingBlendVar(string blendVar) {
             return blendVars.Keys.Contains(blendVar);
+        }
+
+        public void SwapClipOnState(int state, AnimationClip clip, PlayableGraph graph) {
+            var animationState = states[state];
+            if (!(animationState is SingleClipState)) {
+                Debug.LogError($"Trying to swap the clip on the state {animationState.Name}, " +
+                               $"but it is a {animationState.GetType().Name}! Only SingleClipState is supported");
+            }
+
+            var singleClipState = (SingleClipState) animationState;
+            singleClipState.clip = clip;
+            var newPlayable = singleClipState.GeneratePlayable(graph, varTo1DBlendControllers, varTo2DBlendControllers, blendVars);
+            var currentPlayable = (AnimationClipPlayable) stateMixer.GetInput(state);
+
+            var oldWeight = stateMixer.GetInputWeight(state);
+            graph.Disconnect(stateMixer, state);
+            currentPlayable.Destroy();
+            stateMixer.ConnectInput(state, newPlayable, 0);
+            stateMixer.SetInputWeight(state, oldWeight);
         }
 
 #if UNITY_EDITOR

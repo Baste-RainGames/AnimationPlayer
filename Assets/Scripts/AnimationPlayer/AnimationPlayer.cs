@@ -24,7 +24,7 @@ namespace Animation_Player
         private string visualizerClientName;
 
         //IK
-        private Animator outputAnimator;
+        public Animator OutputAnimator { get; private set; }
         private float currentIKLookAtWeight;
         private Vector3 currentIKLookAtPosition;
         //@TODO: It would be nice to figure out if IK is available at runtime, but currently that's not possible!
@@ -62,8 +62,8 @@ namespace Animation_Player
 
             // The AnimationPlayableOutput links the graph with an animator that plays the graph.
             // I think we can ditch the animator, but the documentation is kinda sparse!
-            outputAnimator = gameObject.EnsureComponent<Animator>();
-            AnimationPlayableOutput animOutput = AnimationPlayableOutput.Create(graph, $"{name}_animation_player", outputAnimator);
+            OutputAnimator = gameObject.EnsureComponent<Animator>();
+            AnimationPlayableOutput animOutput = AnimationPlayableOutput.Create(graph, $"{name}_animation_player", OutputAnimator);
 
             for (var i = 0; i < layers.Length; i++)
                 layers[i].InitializeSelf(graph);
@@ -237,7 +237,7 @@ namespace Animation_Player
         public void PlayAfterSeconds(float seconds, string state, int layer = 0)
         {
             AssertLayerInBounds(layer, "Playing animation after seconds");
-            int stateIdx = GetStateIdxFromName(state);
+            int stateIdx = GetStateIdxFromName(state, layer);
             PlayAfterSeconds(seconds, stateIdx, layer);
         }
 
@@ -252,6 +252,18 @@ namespace Animation_Player
             AssertLayerInBounds(layer, "Playing a state after seconds");
             AssertStateInBounds(layer, state, "Playing a state after seconds");
             layers[layer].PlayAfterSeconds(seconds, state, defaultTransition);
+        }
+
+        /// <summary>
+        /// Jumps the current played state to a certain time between 0 and 1.
+        /// Input time will be smartly modulated; 1.3 will be interpreted as 0.3, and -0.2 will be interpreted as 0.8
+        /// Animation events will be skipped, and any ongoing blends will be cleared. @TODO: maybe have a parameter for these?
+        /// </summary>
+        /// <param name="time">The time to set.</param>
+        /// <param name="layer">Layer to set the time of a state on.</param>
+        public void JumpToRelativeTime(float time, int layer = 0) {
+            AssertLayerInBounds(layer, "Jumping to a relative time");
+            layers[layer].JumpToRelativeTime(time);
         }
 
         /// <summary>
@@ -363,6 +375,18 @@ namespace Animation_Player
         }
 
         /// <summary>
+        /// Checks if the AnimationPlayer is playing a state.
+        /// </summary>
+        /// <param name="state">State to check if is being player</param>
+        /// <param name="layer">Layer to check on</param>
+        /// <returns></returns>
+        public bool IsPlaying(int state, int layer = 0) 
+        {
+            AssertLayerInBounds(layer, "Checking if state is playing");
+            return GetIndexOfPlayingState(layer) == state;
+        }
+
+        /// <summary>
         /// Retrives all of the currently playing states. The first element in the list will be the currently played state. All
         /// other results will be states that are not finished blending out
         /// </summary>
@@ -470,13 +494,33 @@ namespace Animation_Player
         }
 
         /// <summary>
+        /// Swaps the currently playing clip on a state.
+        /// Haven't quite figured out how this should work yet. Probably will get more options
+        /// </summary>
+        /// <param name="state">Index of the state to swap the clip on. This state must be a SingleClipState (for now)</param>
+        /// <param name="clip">The new clip to use on the state</param>
+        /// <param name="layer">Layer of the state</param>
+        public void SwapClipOnState(int state, AnimationClip clip, int layer = 0) 
+        {
+            AssertLayerInBounds(layer, state, "Swapping the clip on a state");
+            AssertStateInBounds(layer, state, "Swapping the clip on a state");
+            if (!Application.isPlaying) 
+            {
+                Debug.LogError("In edit mode, just set the clip on a state directly.");
+                return;
+            }
+
+            layers[layer].SwapClipOnState(state, clip, graph);
+        }
+
+        /// <summary>
         /// Equivalent to Animator.SetIKHintPosition
         /// Sets the position of an IK hint.
         /// </summary>
         /// <param name="hint">The AvatarIKHint that is set.</param>
         /// <param name="hintPosition">The position in world space.</param>
         public void SetIKHintPosition(AvatarIKHint hint, Vector3 hintPosition)
-            => outputAnimator.SetIKHintPosition(hint, hintPosition);
+            => OutputAnimator.SetIKHintPosition(hint, hintPosition);
 
         /// <summary>
         /// Equivalent to Animator.SetIKHintPositionWeight
@@ -485,7 +529,7 @@ namespace Animation_Player
         /// <param name="hint">The AvatarIKHint that is set.</param>
         /// <param name="weight">The translative weight.</param>
         public void SetIKHintPositionWeight(AvatarIKHint hint, float weight)
-            => outputAnimator.SetIKHintPositionWeight(hint, weight);
+            => OutputAnimator.SetIKHintPositionWeight(hint, weight);
 
         /// <summary>
         /// Equivalent to Animator.SetIKPosition
@@ -494,7 +538,7 @@ namespace Animation_Player
         /// <param name="goal">The AvatarIKGoal that is set.</param>
         /// <param name="goalPosition">The position in world space.</param>
         public void SetIKPosition(AvatarIKGoal goal, Vector3 goalPosition)
-            => outputAnimator.SetIKPosition(goal, goalPosition);
+            => OutputAnimator.SetIKPosition(goal, goalPosition);
 
         /// <summary>
         /// Equivalent to Animator.SetIKPositionWeight
@@ -503,7 +547,7 @@ namespace Animation_Player
         /// <param name="goal">The AvatarIKGoal that is set.</param>
         /// <param name="weight">The translative weight.</param>
         public void SetIKPositionWeight(AvatarIKGoal goal, float weight)
-            => outputAnimator.SetIKPositionWeight(goal, weight);
+            => OutputAnimator.SetIKPositionWeight(goal, weight);
 
         /// <summary>
         /// Equivalent to Animator.SetIKRotation
@@ -512,7 +556,7 @@ namespace Animation_Player
         /// <param name="goal">The AvatarIKGoal that is set.</param>
         /// <param name="goalRotation">The rotation in world space.</param>
         public void SetIKRotation(AvatarIKGoal goal, Quaternion goalRotation)
-            => outputAnimator.SetIKRotation(goal, goalRotation);
+            => OutputAnimator.SetIKRotation(goal, goalRotation);
 
         /// <summary>
         /// Equivalent to Animator.SetIKRotationWeight
@@ -521,7 +565,7 @@ namespace Animation_Player
         /// <param name="goal">The AvatarIKGoal that is set.</param>
         /// <param name="weight">The rotational weight.</param>
         public void SetIKRotationWeight(AvatarIKGoal goal, float weight)
-            => outputAnimator.SetIKRotationWeight(goal, weight);
+            => OutputAnimator.SetIKRotationWeight(goal, weight);
 
         /// <summary>
         /// Equivalent to Animator.SetLookAtPosition
@@ -530,7 +574,7 @@ namespace Animation_Player
         /// <param name="position">The position to lookAt.</param>
         public void SetIKLookAtPosition(Vector3 position) {
             currentIKLookAtPosition = position;
-            outputAnimator.SetLookAtPosition(position);
+            OutputAnimator.SetLookAtPosition(position);
         }
 
         /// <summary>
@@ -546,7 +590,7 @@ namespace Animation_Player
         public void SetIKLookAtWeight(float weight, float bodyWeight = 0f, float headWeight = 1f, float eyesWeight = 0f, float clampWeight = .5f)
         {
             currentIKLookAtWeight = weight; //animator has a getter for all the other IK things, but not this one!
-            outputAnimator.SetLookAtWeight(weight, bodyWeight, headWeight, eyesWeight, clampWeight);
+            OutputAnimator.SetLookAtWeight(weight, bodyWeight, headWeight, eyesWeight, clampWeight);
         }
 
         /// <returns>The current IK Look at weight (0 - 1)</returns>
@@ -622,23 +666,24 @@ namespace Animation_Player
         private void AssertLayerInBounds(int layer, string action)
         {
             if (!(layer >= 0 && layer < layers.Length))
-                Debug.LogError($"Trying to {action} on an out of bounds layer! (layer {layer}, there are {layers.Length} layers!)", gameObject);
+                Debug.LogError($"Trying to {action} on an out of bounds layer! (layer {layer}, there are {layers.Length} layers! " +
+                               $"GameObject {gameObject.name})", gameObject);
         }
 
         [Conditional("UNITY_ASSERTIONS")]
         private void AssertLayerInBounds(int layer, int state, string action)
         {
             if (!(layer >= 0 && layer < layers.Length))
-                Debug.LogError($"Trying to {action} on an out of bounds layer! (state {state} on layer {layer}, but there are {layers.Length} layers!)",
-                               gameObject);
+                Debug.LogError($"Trying to {action} on an out of bounds layer! (state {state} on layer {layer}, but there are {layers.Length} layers! " +
+                               $"GameObject {gameObject.name})", gameObject);
         }
 
         [Conditional("UNITY_ASSERTIONS")]
         private void AssertLayerInBounds(int layer, string state, string action)
         {
             if (!(layer >= 0 && layer < layers.Length))
-                Debug.LogError($"Trying to {action} on an out of bounds layer! (state {state} on layer {layer}, but there are {layers.Length} layers!)",
-                               gameObject);
+                Debug.LogError($"Trying to {action} on an out of bounds layer! (state {state} on layer {layer}, but there are {layers.Length} layers! " +
+                               $"GameObject {gameObject.name})", gameObject);
         }
 
         [Conditional("UNITY_ASSERTIONS")]
@@ -654,7 +699,7 @@ namespace Animation_Player
             if (!(state >= 0 && state < layers[layer].states.Count))
                 Debug.LogError(
                     $"Trying to {action} on an out of bounds state! (state {state} on layer {layer}, but there are {layers[layer].states.Count} " +
-                    $"states on that layer!)", gameObject);
+                    $"states on that layer! GameObject {gameObject.name})", gameObject);
         }
     }
 }

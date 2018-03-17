@@ -184,7 +184,7 @@ namespace Animation_Player
             foreach (var clip in animationClips)
             {
                 var newStateName = GetUniqueStateName(clip.name, layer.states);
-                var newState = SingleClipState.Create(newStateName, clip);
+                var newState = SingleClip.Create(newStateName, clip);
                 layer.states.Add(newState);
             }
 
@@ -221,10 +221,10 @@ namespace Animation_Player
 
         private static void DrawAddStateButtons(AnimationPlayer animationPlayer, PersistedInt selectedState, AnimationPlayerEditor editor, AnimationLayer layer)
         {
-            if (GUILayout.Button("Single Clip State", buttonWidth))
+            if (GUILayout.Button("Single Clip", buttonWidth))
             {
                 EditorUtilities.RecordUndo(animationPlayer, "Add state to animation player");
-                layer.states.Add(SingleClipState.Create(GetUniqueStateName(SingleClipState.DefaultName, layer.states)));
+                layer.states.Add(SingleClip.Create(GetUniqueStateName(SingleClip.DefaultName, layer.states)));
                 selectedState.SetTo(layer.states.Count - 1);
                 editor.MarkDirty();
             }
@@ -245,10 +245,10 @@ namespace Animation_Player
                 editor.MarkDirty();
             }
 
-            if (GUILayout.Button("Play Random State", buttonWidth))
+            if (GUILayout.Button("Play Random Clip", buttonWidth))
             {
                 EditorUtilities.RecordUndo(animationPlayer, "Add random state to animation player");
-                layer.states.Add(SelectRandomState.Create(GetUniqueStateName(SelectRandomState.DefaultName, layer.states)));
+                layer.states.Add(PlayRandomClip.Create(GetUniqueStateName(PlayRandomClip.DefaultName, layer.states)));
                 selectedState.SetTo(layer.states.Count - 1);
                 editor.MarkDirty();
             }

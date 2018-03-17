@@ -7,16 +7,16 @@ using UnityEngine.Playables;
 namespace Animation_Player
 {
     [Serializable]
-    public class SingleClipState : AnimationState
+    public class SingleClip : AnimationState
     {
         public const string DefaultName = "New State";
         public AnimationClip clip;
 
-        private SingleClipState() { }
+        private SingleClip() { }
 
-        public static SingleClipState Create(string name, AnimationClip clip = null)
+        public static SingleClip Create(string name, AnimationClip clip = null)
         {
-            var state = new SingleClipState();
+            var state = new SingleClip();
             state.Initialize(name, DefaultName);
             state.clip = clip;
             return state;

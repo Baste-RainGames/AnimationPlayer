@@ -460,12 +460,12 @@ namespace Animation_Player
 
         public void SwapClipOnState(int state, AnimationClip clip, PlayableGraph graph) {
             var animationState = states[state];
-            if (!(animationState is SingleClipState)) {
+            if (!(animationState is SingleClip)) {
                 Debug.LogError($"Trying to swap the clip on the state {animationState.Name}, " +
                                $"but it is a {animationState.GetType().Name}! Only SingleClipState is supported");
             }
 
-            var singleClipState = (SingleClipState) animationState;
+            var singleClipState = (SingleClip) animationState;
             singleClipState.clip = clip;
             var newPlayable = singleClipState.GeneratePlayable(graph, varTo1DBlendControllers, varTo2DBlendControllers, blendVars);
             var currentPlayable = (AnimationClipPlayable) stateMixer.GetInput(state);
@@ -482,20 +482,20 @@ namespace Animation_Player
 #endif
 
         [SerializeField]
-        private List<SingleClipState> serializedSingleClipStates = new List<SingleClipState>();
+        private List<SingleClip> serializedSingleClipStates = new List<SingleClip>();
         [SerializeField]
         private List<BlendTree1D> serializedBlendTree1Ds = new List<BlendTree1D>();
         [SerializeField]
         private List<BlendTree2D> serializedBlendTree2Ds = new List<BlendTree2D>();
         [SerializeField]
-        private List<SelectRandomState> serializedSelectRandomStates = new List<SelectRandomState>();
+        private List<PlayRandomClip> serializedSelectRandomStates = new List<PlayRandomClip>();
         [SerializeField]
         private SerializedGUID[] serializedStateOrder;
 
         public void OnBeforeSerialize()
         {
             if (serializedSingleClipStates == null)
-                serializedSingleClipStates = new List<SingleClipState>();
+                serializedSingleClipStates = new List<SingleClip>();
             else
                 serializedSingleClipStates.Clear();
 
@@ -509,14 +509,14 @@ namespace Animation_Player
             else
                 serializedBlendTree2Ds.Clear();
             if(serializedSelectRandomStates == null)
-                serializedSelectRandomStates = new List<SelectRandomState>();
+                serializedSelectRandomStates = new List<PlayRandomClip>();
             else 
                 serializedSelectRandomStates.Clear();
 
             //@TODO: Once Unity hits C# 7.0, this can be done through pattern matching. And oh how glorious it will be! 
             foreach (var state in states)
             {
-                var asSingleClip = state as SingleClipState;
+                var asSingleClip = state as SingleClip;
                 if (asSingleClip != null)
                 {
                     serializedSingleClipStates.Add(asSingleClip);
@@ -537,7 +537,7 @@ namespace Animation_Player
                     continue;
                 }
 
-                var asRandom = state as SelectRandomState;
+                var asRandom = state as PlayRandomClip;
                 if (asRandom != null)
                 {
                     serializedSelectRandomStates.Add(asRandom);

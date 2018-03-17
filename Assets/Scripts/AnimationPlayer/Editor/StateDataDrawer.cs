@@ -91,9 +91,9 @@ namespace Animation_Player
 
             //@TODO: C# 7 pattern matching
             var type = state.GetType();
-            if (type == typeof(SingleClipState))
+            if (type == typeof(SingleClip))
             {
-                DrawSingleClipState((SingleClipState) state, ref markDirty, labelWidth);
+                DrawSingleClipState((SingleClip) state, ref markDirty, labelWidth);
             }
             else if (type == typeof(BlendTree1D))
             {
@@ -104,9 +104,9 @@ namespace Animation_Player
             {
                 Draw2DBlendTree((BlendTree2D) state, ref markDirty);
             }
-            else if(type == typeof(SelectRandomState))
+            else if(type == typeof(PlayRandomClip))
             {
-                DrawSelectRandomState((SelectRandomState) state, ref markDirty);
+                DrawSelectRandomState((PlayRandomClip) state, ref markDirty);
             }
             else
             {
@@ -114,7 +114,7 @@ namespace Animation_Player
             }
         }
 
-        private static void DrawSingleClipState(SingleClipState state, ref bool markDirty, float labelWidth)
+        private static void DrawSingleClipState(SingleClip state, ref bool markDirty, float labelWidth)
         {
             var oldClip = state.clip;
             state.clip = EditorUtilities.ObjectField("Clip", state.clip, labelWidth);
@@ -257,8 +257,10 @@ namespace Animation_Player
             EditorGUILayout.EndHorizontal();
         }
 
-        private static void DrawSelectRandomState(SelectRandomState state, ref bool markDirty)
+        private static void DrawSelectRandomState(PlayRandomClip state, ref bool markDirty)
         {
+            EditorGUILayout.LabelField("Select randomly from:");
+            EditorGUI.indentLevel++;
             for (var i = 0; i < state.clips.Count; i++)
             {
                 var oldClip = state.clips[i];
@@ -270,6 +272,7 @@ namespace Animation_Player
                     markDirty = true;
                 }
             }
+            EditorGUI.indentLevel--;
 
             GUILayout.Space(10f);
             EditorGUILayout.BeginHorizontal();

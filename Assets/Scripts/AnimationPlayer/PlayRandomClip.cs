@@ -6,17 +6,17 @@ using UnityEngine.Playables;
 
 namespace Animation_Player {
     [Serializable]
-    public class SelectRandomState : AnimationState
+    public class PlayRandomClip : AnimationState
     {
         public const string DefaultName = "New Random State";
         public List<AnimationClip> clips = new List<AnimationClip>();
         private int playedClip;
 
-        private SelectRandomState() { }
+        private PlayRandomClip() { }
 
-        public static SelectRandomState Create(string name)
+        public static PlayRandomClip Create(string name)
         {
-            var state = new SelectRandomState();
+            var state = new PlayRandomClip();
             state.Initialize(name, DefaultName);
             return state;
         }

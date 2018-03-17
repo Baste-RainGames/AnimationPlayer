@@ -36,7 +36,7 @@ namespace Animation_Player {
         {
             playedClip = clipIdx;
             var clip = clips[playedClip];
-            var clipPlayable = AnimationClipPlayable.Create(graph, clip);
+            AnimationClipPlayable clipPlayable = AnimationClipPlayable.Create(graph, clip);
             clipPlayable.SetSpeed(speed);
             return clipPlayable;
         }
@@ -54,9 +54,14 @@ namespace Animation_Player {
             playedClip = wantedClip;
             var newPlayable = GeneratePlayableFor(graph, playedClip);
             var oldPlayable = ownPlayable;
+            var oldWeight = stateMixer.GetInputWeight(ownIndex);
+
+            var asClipPlayable = (AnimationClipPlayable) oldPlayable;
+            asClipPlayable.SetAnimatedProperties(clips[wantedClip]);
 
             graph.Disconnect(stateMixer, ownIndex);
-            graph.Connect(newPlayable, 0, stateMixer, ownIndex);
+            stateMixer.ConnectInput(ownIndex, newPlayable, 0);
+            stateMixer.SetInputWeight(ownIndex, oldWeight);
 
             oldPlayable.Destroy();
             ownPlayable = newPlayable;

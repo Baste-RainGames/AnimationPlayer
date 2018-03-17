@@ -158,9 +158,9 @@ namespace Animation_Player
                         swapIndex = i + 1;
                     EditorGUI.EndDisabledGroup();
 
-					// Remove 1D blend tree entry
-					if (GUILayout.Button("Remove", GUILayout.Width(70f)))
-						state.blendTree.RemoveAt(i);
+                    // Remove 1D blend tree entry
+                    if (GUILayout.Button("Remove", GUILayout.Width(70f)))
+                        state.blendTree.RemoveAt(i);
                 }
                 EditorGUILayout.EndHorizontal();
 
@@ -225,9 +225,9 @@ namespace Animation_Player
                         swapIndex = i + 1;
                     EditorGUI.EndDisabledGroup();
 
-					// Remove 2D blend tree entry
-					if (GUILayout.Button("Remove", GUILayout.Width(70f)))
-						state.blendTree.RemoveAt(i);
+                    // Remove 2D blend tree entry
+                    if (GUILayout.Button("Remove", GUILayout.Width(70f)))
+                        state.blendTree.RemoveAt(i);
                 }
                 EditorGUILayout.EndHorizontal();
 
@@ -265,7 +265,10 @@ namespace Animation_Player
 
                 state.clips[i] = EditorUtilities.ObjectField("Clip", oldClip, 150f, 200f);
                 if (state.clips[i] != oldClip)
-                    markDirty |= state.OnClipAssigned(state.clips[i]);
+                {
+                    state.OnClipAssigned(state.clips[i]);
+                    markDirty = true;
+                }
             }
 
             GUILayout.Space(10f);

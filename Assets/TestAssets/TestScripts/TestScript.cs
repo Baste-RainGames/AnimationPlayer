@@ -19,11 +19,27 @@ public class TestScript : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space))
         {
             animationPlayer.Play("Attack");
-            animationPlayer.PlayAfterSeconds(attack1Dur * .8f, "Movement");
-//            animationPlayer.PlayAfterSeconds(attack1Dur * .8f, "Attack 2");
-//            animationPlayer.PlayAfterSeconds(attack1Dur + (attack2Dur * .8f), "Attack 3");
-//            animationPlayer.PlayAfterSeconds(attack1Dur + attack2Dur + (attack3Dur * .8f), "Movement");
+            animationPlayer.PlayAfterSeconds(animationPlayer.GetPlayingState().Duration * .8f, "Movement");
         }
+        
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            animationPlayer.Play("Attack_1");
+            animationPlayer.PlayAfterSeconds(animationPlayer.GetPlayingState().Duration * .8f, "Movement");
+        }
+        
+        if (Input.GetKeyDown(KeyCode.W))
+        {
+            animationPlayer.Play("Attack_2");
+            animationPlayer.PlayAfterSeconds(animationPlayer.GetPlayingState().Duration * .8f, "Movement");
+        }
+        
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            animationPlayer.Play("Attack_3");
+            animationPlayer.PlayAfterSeconds(animationPlayer.GetPlayingState().Duration * .8f, "Movement");
+        }
+        
 
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {

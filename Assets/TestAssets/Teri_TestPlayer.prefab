@@ -3945,7 +3945,37 @@ MonoBehaviour:
     - m_Text: Attack
       m_Image: {fileID: 0}
       m_Tooltip: 
-    serializedSingleClipStates: []
+    - m_Text: Attack_1
+      m_Image: {fileID: 0}
+      m_Tooltip: 
+    - m_Text: Attack_2
+      m_Image: {fileID: 0}
+      m_Tooltip: 
+    - m_Text: Attack_3
+      m_Image: {fileID: 0}
+      m_Tooltip: 
+    serializedSingleClipStates:
+    - name: Attack_1
+      hasUpdatedName: 1
+      guid:
+        guidSerialized: 61a7e8b6-1602-4f5e-9bb0-5913808111b7
+      animationEvents: []
+      speed: 1
+      clip: {fileID: 7400002, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+    - name: Attack_2
+      hasUpdatedName: 1
+      guid:
+        guidSerialized: 0640556f-54bc-4eda-b5b9-68f0d326ddf6
+      animationEvents: []
+      speed: 1
+      clip: {fileID: 7400004, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+    - name: Attack_3
+      hasUpdatedName: 1
+      guid:
+        guidSerialized: f20ee450-484c-425c-b839-ec3e9faaeb18
+      animationEvents: []
+      speed: 1
+      clip: {fileID: 7400006, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
     serializedBlendTree1Ds:
     - name: Movement
       hasUpdatedName: 1
@@ -3970,12 +4000,15 @@ MonoBehaviour:
       animationEvents: []
       speed: 1
       clips:
-      - {fileID: 7400002, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
       - {fileID: 7400004, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
+      - {fileID: 7400002, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
       - {fileID: 7400006, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
     serializedStateOrder:
     - guidSerialized: fcf87d26-71f7-43b5-8cbd-5455b6a78d1c
     - guidSerialized: ce032eb2-8f53-4b09-b40c-dbf8965f931b
+    - guidSerialized: 61a7e8b6-1602-4f5e-9bb0-5913808111b7
+    - guidSerialized: 0640556f-54bc-4eda-b5b9-68f0d326ddf6
+    - guidSerialized: f20ee450-484c-425c-b839-ec3e9faaeb18
   defaultTransition:
     duration: 0.1
     type: 0

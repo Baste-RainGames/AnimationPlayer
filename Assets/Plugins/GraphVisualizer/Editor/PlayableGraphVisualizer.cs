@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using GraphVisualizer;
+using UnityEngine.Animations;
 using UnityEngine.Playables;
 
 public class SharedPlayableNode : Node
@@ -85,7 +86,13 @@ public class PlayableNode : SharedPlayableNode
             sb.AppendLine(InfoString("Speed", h.GetSpeed()));
             sb.AppendLine(InfoString("Duration", h.GetDuration()));
             sb.AppendLine(InfoString("Time", h.GetTime()));
-            //        sb.AppendLine(InfoString("Animation", h.animatedProperties));
+            if (h.IsPlayableOfType<AnimationClipPlayable>())
+            {
+                var clipPlayable = (AnimationClipPlayable) h;
+                var animationClip = clipPlayable.GetAnimationClip();
+                var clipName = animationClip == null ? "null" : animationClip.name;
+                sb.AppendLine(InfoString("Animation", clipName));
+            }
         }
 
         return sb.ToString();

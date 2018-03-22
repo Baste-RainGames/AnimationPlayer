@@ -11,6 +11,8 @@ namespace Animation_Player
         public readonly string blendVar2;
         private float minVal1, minVal2, maxVal1, maxVal2;
         private Vector2 currentBlendVector;
+        public float CurrentValue1 => currentBlendVector.x;
+        public float CurrentValue2 => currentBlendVector.y;
 
         private readonly AnimationMixerPlayable treeMixer;
         private readonly BlendTree2DMotion[] motions;

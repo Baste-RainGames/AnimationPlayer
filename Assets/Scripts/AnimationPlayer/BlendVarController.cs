@@ -10,7 +10,7 @@ namespace Animation_Player
     public class BlendVarController
     {
 
-        private readonly List<BlendTreeController1D> inner1D = new List<BlendTreeController1D>();
+        private readonly List<BlendTreeController1D> inner1D      = new List<BlendTreeController1D>();
         private readonly List<BlendTreeController2D> inner2D_set1 = new List<BlendTreeController2D>();
         private readonly List<BlendTreeController2D> inner2D_set2 = new List<BlendTreeController2D>();
         private readonly string blendVar;
@@ -51,6 +51,19 @@ namespace Animation_Player
             }
         }
 
+        public float GetBlendVar() {
+            foreach (var controller1D in inner1D)
+                return controller1D.CurrentValue;
+
+            foreach (var controller2D in inner2D_set1)
+                return controller2D.CurrentValue1;
+
+            foreach (var controller2D in inner2D_set2)
+                return controller2D.CurrentValue2;
+
+            return 0f; //error?
+        }
+
         public void SetBlendVar(float value)
         {
             foreach (var controller1D in inner1D)
@@ -67,6 +80,12 @@ namespace Animation_Player
             {
                 controller2D.SetValue2(value);
             }
+        }
+
+        public void DampBlendVarTowards(float target, ref float currentVelocity, float smoothTime) {
+            var currentValue = GetBlendVar();
+            var smoothed = Mathf.SmoothDamp(currentValue, target, ref currentVelocity, smoothTime);
+            SetBlendVar(smoothed);
         }
     }
 }

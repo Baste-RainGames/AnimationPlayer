@@ -11,6 +11,7 @@ namespace Animation_Player
         public bool IsShowingPreview { get; private set; }
 
         private readonly AnimationPlayer animationPlayer;
+        private AnimationState previewedState;
         private PlayableGraph previewGraph;
         private PreviewMode previewMode;
         private float manualModeTime;
@@ -23,12 +24,23 @@ namespace Animation_Player
 
         public void DrawStatePreview(PersistedInt selectedLayer, PersistedInt selectedState)
         {
-            //@TODO: handle changing state somehow
-
             var state = animationPlayer.layers[selectedLayer].states[selectedState];
             if (IsShowingPreview)
             {
-                DrawAnimationStatePreview(state);
+                var changedState = state != previewedState;
+                if (changedState) {
+                    if (previewMode == PreviewMode.Manual) {
+                        var currentTimeRelative = manualModeTime / previewedState.Duration;
+                        if (float.IsNaN(currentTimeRelative)) //If the previewed state's duration is 0f, which is the case for empty/null clips
+                            currentTimeRelative = 0f;
+                        manualModeTime = currentTimeRelative * state.Duration;
+                    }
+                    
+                    StopPreviewing();
+                    StartPreviewing(state);
+                }
+
+                DrawAnimationStatePreview(state, changedState);
             }
             else if (GUILayout.Button("Start previewing state"))
             {
@@ -39,6 +51,7 @@ namespace Animation_Player
         public void StartPreviewing(AnimationState state)
         {
             IsShowingPreview = true;
+            previewedState = state;
 
             previewGraph = PlayableGraph.Create();
             var animator = animationPlayer.gameObject.EnsureComponent<Animator>();
@@ -58,7 +71,7 @@ namespace Animation_Player
             Cleanup();
         }
 
-        private void DrawAnimationStatePreview(AnimationState previewedState)
+        private void DrawAnimationStatePreview(AnimationState previewedState, bool changedState)
         {
             EditorUtilities.Splitter();
 
@@ -89,7 +102,7 @@ namespace Animation_Player
             if (previewMode == PreviewMode.Manual) {
                 var last = manualModeTime;
                 manualModeTime = EditorGUILayout.Slider(manualModeTime, 0f, previewedState.Duration);
-                if (manualModeTime != last) {
+                if (manualModeTime != last || changedState) {
                     previewGraph.GetRootPlayable(0).SetTime(manualModeTime);
                     previewGraph.Evaluate();
                 }

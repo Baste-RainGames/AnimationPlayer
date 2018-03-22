@@ -5,6 +5,7 @@ using UnityEngine;
 public class TestScript : MonoBehaviour
 {
     private AnimationPlayer animationPlayer;
+    private int testIndex;
     public AnimationClip clip;
 
     void Start()
@@ -43,10 +44,10 @@ public class TestScript : MonoBehaviour
             if (!animationPlayer.HasState("Test", 0))
             {
                 var newState = SingleClip.Create("Test", clip);
-                animationPlayer.AddState(newState, 0);
+                testIndex = animationPlayer.AddState(newState);
             }
 
-            animationPlayer.Play("Test", 0);
+            animationPlayer.Play(testIndex);
             animationPlayer.PlayAfterSeconds(animationPlayer.GetPlayingState().Duration * .8f, "Movement");
         }
 

@@ -478,7 +478,7 @@ namespace Animation_Player
             stateMixer.SetInputWeight(state, oldWeight);
         }
 
-        public void AddState(AnimationState state)
+        public int AddState(AnimationState state)
         {
             states.Add(state);
             var playable = state.GeneratePlayable(containingGraph, varTo1DBlendControllers, varTo2DBlendControllers, blendVars);
@@ -519,7 +519,8 @@ namespace Animation_Player
                 stateMixer.SetInputWeight(i, weight);
             }
 
-            containingGraph.Connect(playable, 0, stateMixer, states.Count - 1);
+            containingGraph.Connect(playable, 0, stateMixer, indexOfNew);
+            return indexOfNew;
         }
 
 #if UNITY_EDITOR

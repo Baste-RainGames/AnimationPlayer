@@ -617,17 +617,18 @@ namespace Animation_Player
         /// Adds a new state to the AnimationPlayer, and makes sure that all the graphs are correctly setup.
         /// At edit time, just add new states directly into the layer's states
         /// </summary>
-        /// <param name="newState"></param>
-        /// <param name="layer"></param>
-        public void AddState(AnimationState newState, int layer = 0)
+        /// <param name="state">State to add.</param>
+        /// <param name="layer">Layer to add the state to.</param>
+        /// <returns>The index of the added state</returns>
+        public int AddState(AnimationState state, int layer = 0)
         {
             if (!Application.isPlaying)
             {
                 Debug.LogError("Don't call AnimationPlayer.AddState at runtime! Just add states to the layers directly!");
-                return;
+                return -1;
             }
             AssertLayerInBounds(layer, "Adding an animation state");
-            layers[layer].AddState(newState);
+            return layers[layer].AddState(state);
         }
 
         /// <summary>

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
@@ -610,6 +611,23 @@ namespace Animation_Player
                     return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// Adds a new state to the AnimationPlayer, and makes sure that all the graphs are correctly setup.
+        /// At edit time, just add new states directly into the layer's states
+        /// </summary>
+        /// <param name="newState"></param>
+        /// <param name="layer"></param>
+        public void AddState(AnimationState newState, int layer = 0)
+        {
+            if (!Application.isPlaying)
+            {
+                Debug.LogError("Don't call AnimationPlayer.AddState at runtime! Just add states to the layers directly!");
+                return;
+            }
+            AssertLayerInBounds(layer, "Adding an animation state");
+            layers[layer].AddState(newState);
         }
 
         /// <summary>

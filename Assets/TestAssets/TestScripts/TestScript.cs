@@ -1,27 +1,19 @@
-﻿using Animation_Player;
+﻿using System;
+using Animation_Player;
 using UnityEngine;
 
 public class TestScript : MonoBehaviour
 {
     private AnimationPlayer animationPlayer;
-    private float attack1Dur, attack2Dur, attack3Dur;
+    public AnimationClip clip;
 
     void Start()
     {
         animationPlayer = GetComponent<AnimationPlayer>();
-        attack1Dur = animationPlayer.GetState("Attack").Duration;
-//        attack2Dur = animationPlayer.GetState("Attack 2").Duration;
-//        attack3Dur = animationPlayer.GetState("Attack 3").Duration;
     }
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            animationPlayer.Play("Attack");
-            animationPlayer.PlayAfterSeconds(animationPlayer.GetPlayingState().Duration * .8f, "Movement");
-        }
-        
         if (Input.GetKeyDown(KeyCode.Q))
         {
             animationPlayer.Play("Attack_1");
@@ -39,7 +31,24 @@ public class TestScript : MonoBehaviour
             animationPlayer.Play("Attack_3");
             animationPlayer.PlayAfterSeconds(animationPlayer.GetPlayingState().Duration * .8f, "Movement");
         }
-        
+
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            animationPlayer.Play("Empty");
+            animationPlayer.PlayAfterSeconds(animationPlayer.GetPlayingState().Duration * .8f, "Movement");
+        }
+
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            if (!animationPlayer.HasState("Test", 0))
+            {
+                var newState = SingleClip.Create("Test", clip);
+                animationPlayer.AddState(newState, 0);
+            }
+
+            animationPlayer.Play("Test", 0);
+            animationPlayer.PlayAfterSeconds(animationPlayer.GetPlayingState().Duration * .8f, "Movement");
+        }
 
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
@@ -57,12 +66,6 @@ public class TestScript : MonoBehaviour
         {
             Debug.Log("2");
             animationPlayer.SetBlendVar("Speed", 2);
-        }
-
-        if (Input.GetKeyDown(KeyCode.Alpha4))
-        {
-            Debug.Log("4");
-            animationPlayer.Play("Empty");
         }
     }
 

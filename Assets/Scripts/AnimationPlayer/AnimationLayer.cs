@@ -32,7 +32,8 @@ namespace Animation_Player
         private List<bool> activeWhenBlendStarted;
         private List<float> valueWhenBlendStarted;
 
-        //transitionLookup[a, b] contains the index of the transition from a to b in transitions
+        // transitionLookup[a, b] contains the index of the transition from a to b in transitions
+        // transitionLookup[x, y] == -1 means that there is no transition defined between the states.
         private int[,] transitionLookup;
         private Playable[] runtimePlayables;
 
@@ -76,8 +77,8 @@ namespace Animation_Player
                 graph.Connect(playable, 0, stateMixer, i);
             }
 
-            activeWhenBlendStarted = new List<bool>();
-            valueWhenBlendStarted = new List<float>();
+            activeWhenBlendStarted = new List<bool>(states.Count);
+            valueWhenBlendStarted = new List<float>(states.Count);
             for (int i = 0; i < states.Count; i++)
             {
                 activeWhenBlendStarted.Add(false);
@@ -475,6 +476,50 @@ namespace Animation_Player
             currentPlayable.Destroy();
             stateMixer.ConnectInput(state, newPlayable, 0);
             stateMixer.SetInputWeight(state, oldWeight);
+        }
+
+        public void AddState(AnimationState state)
+        {
+            states.Add(state);
+            var playable = state.GeneratePlayable(containingGraph, varTo1DBlendControllers, varTo2DBlendControllers, blendVars);
+
+            var indexOfNew = states.Count - 1;
+            stateNameToIdx[state.Name] = indexOfNew;
+
+            Array.Resize(ref runtimePlayables, runtimePlayables.Length + 1);
+            runtimePlayables[runtimePlayables.Length - 1] = playable;
+
+            activeWhenBlendStarted.Add(false);
+            valueWhenBlendStarted.Add(0f);
+
+            var newLookup = new int[states.Count, states.Count];
+            for (int i = 0; i < transitionLookup.GetLength(0); i++)
+            for (int j = 0; j < transitionLookup.GetLength(1); j++)
+            {
+                newLookup[i, j] = transitionLookup[i, j];
+            }
+
+            for (int i = 0; i < states.Count; i++)
+            {
+                newLookup[i, indexOfNew] = -1;
+                newLookup[indexOfNew, i] = -1;
+            }
+
+            transitionLookup = newLookup;
+            
+            stateMixer.SetInputCount(stateMixer.GetInputCount() + 1);
+
+            //Shift all excess playables (ie blend helpers) one index up. Since their order doesn't count, could just swap the first one to the last index?
+            for (int i = stateMixer.GetInputCount() - 1; i > states.Count; i--)
+            {
+                var p = stateMixer.GetInput(i);
+                var weight = stateMixer.GetInputWeight(i);
+                containingGraph.Disconnect(stateMixer, i - 1);
+                containingGraph.Connect(p, 0, stateMixer, i);
+                stateMixer.SetInputWeight(i, weight);
+            }
+
+            containingGraph.Connect(playable, 0, stateMixer, states.Count - 1);
         }
 
 #if UNITY_EDITOR

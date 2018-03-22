@@ -9,15 +9,15 @@ namespace Animation_Player
     public abstract class AnimationState
     {
         [SerializeField]
-        protected string name;
+        private string name;
         [SerializeField]
-        protected bool hasUpdatedName;
+        private bool hasUpdatedName;
 
         [SerializeField]
-        protected SerializedGUID guid;
+        private SerializedGUID guid;
         public SerializedGUID GUID => guid;
 
-        public List<AnimationEvent> animationEvents;
+        public List<AnimationEvent> animationEvents = new List<AnimationEvent>();
         public double speed;
 
         //pseudo-constructor

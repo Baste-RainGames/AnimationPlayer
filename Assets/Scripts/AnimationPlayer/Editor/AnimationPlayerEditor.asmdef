@@ -1,7 +1,8 @@
 {
     "name": "AnimationPlayerEditor",
     "references": [
-        "AnimationPlayer"
+        "AnimationPlayer",
+        "SerializedPropertyExtension"
     ],
     "includePlatforms": [
         "Editor"

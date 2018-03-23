@@ -9,6 +9,8 @@ namespace Animation_Player
     public class AnimationPlayerEditor : Editor
     {
         private AnimationPlayer animationPlayer;
+        private SerializedObject animationPlayerSO;
+        private SerializedProperty layersSP;
 
         public enum AnimationPlayerEditMode
         {
@@ -50,7 +52,6 @@ namespace Animation_Player
 
         private void OnEnable()
         {
-            animationPlayer = (AnimationPlayer) target;
             HandleInitialization(false);
 
             if (animationPlayer.EnsureVersionUpgraded())
@@ -80,6 +81,10 @@ namespace Animation_Player
                 // Unity persists some objects through reload, and fails to persist others. This makes it hard to figure out if
                 // something needs to be re-cached. This solves that - we know that Unity can't persist a raw object, so if it's null, a reload is neccessary.
                 scriptReloadChecker = new object();
+
+                animationPlayer = (AnimationPlayer) target;
+                animationPlayerSO = serializedObject;
+                layersSP = animationPlayerSO.FindProperty(nameof(AnimationPlayer.layers));
 
                 metaDataDrawer = new MetaDataDrawer(animationPlayer);
                 stylesCreated = false;
@@ -119,6 +124,7 @@ namespace Animation_Player
 
                 if (animationPlayer.defaultTransition == default(TransitionData))
                     animationPlayer.defaultTransition = TransitionData.Linear(.1f); //default shouldn't be snap
+                EditorUtilities.SetDirty(animationPlayer);
                 return;
             }
 
@@ -220,10 +226,9 @@ namespace Animation_Player
 
                 if (GUILayout.Button("Add layer", GUILayout.Width(100f)))
                 {
-                    EditorUtilities.RecordUndo(animationPlayer, "Add layer to animation player");
-                    EditorUtilities.ExpandArrayByOne(ref animationPlayer.layers, AnimationLayer.CreateLayer);
-                    selectedLayer.SetTo(animationPlayer.layers.Length - 1);
-                    MarkDirty();
+                    layersSP.arraySize++;
+                    var newLayer = layersSP.GetArrayElementAtIndex(layersSP.arraySize - 1);
+                    SerializedPropertyHelper.SetValue(newLayer, AnimationLayer.CreateLayer());
                 }
 
                 EditorGUI.BeginDisabledGroup(numLayers < 2);
@@ -240,6 +245,7 @@ namespace Animation_Player
 
                 GUILayout.FlexibleSpace();
             }
+            animationPlayerSO.ApplyModifiedProperties();
             EditorGUILayout.EndHorizontal();
         }
 

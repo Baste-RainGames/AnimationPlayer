@@ -1,0 +1,8 @@
+{
+    "name": "SerializedPropertyExtension",
+    "references": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": []
+}

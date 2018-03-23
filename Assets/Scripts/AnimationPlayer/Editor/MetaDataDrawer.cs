@@ -73,7 +73,6 @@ namespace Animation_Player
 
             foreach (var state in animationPlayer.layers.SelectMany(layer => layer.states))
             {
-                //@TODO: Use pattern matching when C# 7
                 var type = state.GetType();
                 if (type == typeof(SingleClip))
                 {

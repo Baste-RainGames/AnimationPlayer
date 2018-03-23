@@ -84,7 +84,6 @@ namespace Animation_Player
                 metaDataDrawer = new MetaDataDrawer(animationPlayer);
                 stylesCreated = false;
                 transitionsNeedsUpdate = true;
-                MarkDirty();
             }
 
             if (isGUICall && !stylesCreated)
@@ -185,15 +184,6 @@ namespace Animation_Player
             }
 
             DrawSelectedState();
-
-            EditorUtilities.Splitter();
-
-            EditorGUILayout.LabelField("Default transition");
-
-            EditorUtilities.RecordUndo(animationPlayer, "Change default transition", () =>
-            {
-                animationPlayer.defaultTransition = AnimationTransitionDrawer.DrawTransitionData(animationPlayer.defaultTransition);
-            });
 
             EditorUtilities.Splitter();
 

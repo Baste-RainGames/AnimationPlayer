@@ -103,9 +103,17 @@ namespace Animation_Player
                     menu.ShowAsContext();
                 }
             });
+            
+            
+            EditorUtilities.Splitter();
+            EditorGUILayout.LabelField("Default transition");
+            EditorUtilities.RecordUndo(animationPlayer, "Change default transition", () =>
+            {
+                animationPlayer.defaultTransition = DrawTransitionData(animationPlayer.defaultTransition);
+            });
         }
 
-        public static TransitionData DrawTransitionData(TransitionData transitionData)
+        private static TransitionData DrawTransitionData(TransitionData transitionData)
         {
             transitionData.type = (TransitionType) EditorGUILayout.EnumPopup("Type", transitionData.type);
             transitionData.duration = EditorGUILayout.FloatField("Duration", transitionData.duration);

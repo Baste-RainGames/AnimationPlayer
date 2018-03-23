@@ -481,17 +481,24 @@ namespace Animation_Player
         }
 
         /// <summary>
-        /// Register a listener for an animation event
+        /// Register a listener for an animation event.
         /// </summary>
-        /// <param name="targetEvent">Event to listen to</param>
-        /// <param name="listener">Action to be called when targetEvent happens</param>
-        public void RegisterAnimationEventListener(string targetEvent, Action listener)
+        /// <param name="targetEvent">Event to listen to.</param>
+        /// <param name="listener">Action to be called when targetEvent fires.</param>
+        public void RegisterAnimationEventListener(string targetEvent, Action listener) 
         {
+            bool registeredAny = false;
             foreach (var layer in layers)
-                foreach (var state in layer.states)
-                    foreach (var animationEvent in state.animationEvents)
-                        if(animationEvent.name == targetEvent)
-                            animationEvent.RegisterListener(listener);
+            foreach (var state in layer.states)
+            foreach (var animationEvent in state.animationEvents)
+                if (animationEvent.name == targetEvent)
+                {
+                    animationEvent.RegisterListener(listener);
+                    registeredAny = true;
+                }
+
+            if (!registeredAny)
+                Debug.LogError($"Trying to register the event {targetEvent} on AnimationPlayer {name}, but it doesn't exist!", gameObject);
         }
 
         /// <summary>
@@ -503,8 +510,8 @@ namespace Animation_Player
         /// <param name="layer">Layer of the state</param>
         public void SwapClipOnState(int state, AnimationClip clip, int layer = 0) 
         {
-            AssertLayerInBounds(layer, state, "Swapping the clip on a state");
-            AssertStateInBounds(layer, state, "Swapping the clip on a state");
+            AssertLayerInBounds(layer, state, "Swap the clip on a state");
+            AssertStateInBounds(layer, state, "Swap the clip on a state");
             if (!Application.isPlaying) 
             {
                 Debug.LogError("In edit mode, just set the clip on a state directly.");

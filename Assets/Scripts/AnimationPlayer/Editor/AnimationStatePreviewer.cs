@@ -141,6 +141,8 @@ namespace Animation_Player
         {
             if (previewGraph.IsValid())
                 previewGraph.Destroy();
+            if (animationPlayer == null) //Happens when entering play mode with the animationplayer selected
+                return;
             
             //Reset the object to the bind pose. Only way I've found is to play an empty clip for a single frame.
             var resetGraph = PlayableGraph.Create();

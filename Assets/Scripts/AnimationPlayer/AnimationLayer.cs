@@ -22,7 +22,6 @@ namespace Animation_Player
         private PlayableGraph containingGraph;
         public AnimationMixerPlayable stateMixer { get; private set; }
         private int currentPlayedState;
-        private double timeOfPlayedStateLastFrame;
         private bool firstFrame = true;
 
         //blend info:
@@ -31,6 +30,7 @@ namespace Animation_Player
         private float transitionStartTime;
         private List<bool> activeWhenBlendStarted;
         private List<float> valueWhenBlendStarted;
+        private List<double> timeLastFrame;
 
         // transitionLookup[a, b] contains the index of the transition from a to b in transitions
         // transitionLookup[x, y] == -1 means that there is no transition defined between the states.
@@ -79,10 +79,12 @@ namespace Animation_Player
 
             activeWhenBlendStarted = new List<bool>(states.Count);
             valueWhenBlendStarted = new List<float>(states.Count);
+            timeLastFrame = new List<double>();
             for (int i = 0; i < states.Count; i++)
             {
                 activeWhenBlendStarted.Add(false);
                 valueWhenBlendStarted.Add(0f);
+                timeLastFrame.Add(0f);
             }
 
             transitionLookup = new int[states.Count, states.Count];
@@ -175,6 +177,8 @@ namespace Animation_Player
             if (!isCurrentlyPlaying)
             {
                 runtimePlayables[newState].SetTime(0f);
+                //Makes animation events set to time 0 play.
+                timeLastFrame[newState] = -Time.deltaTime;
             }
             else if (!states[newState].Loops)
             {
@@ -202,8 +206,6 @@ namespace Animation_Player
             }
 
             states[newState].OnWillStartPlaying(containingGraph, stateMixer, newState, ref runtimePlayables[newState]);
-
-            timeOfPlayedStateLastFrame = runtimePlayables[newState].GetTime();
 
             if (transitionData.duration <= 0f)
             {
@@ -269,9 +271,17 @@ namespace Animation_Player
 
         private void HandleAnimationEvents()
         {
-            var currentTime = stateMixer.GetInput(currentPlayedState).GetTime();
-            states[currentPlayedState].HandleAnimationEvents(timeOfPlayedStateLastFrame, currentTime, firstFrame);
-            timeOfPlayedStateLastFrame = currentTime;
+            for (int i = 0; i < states.Count; i++)
+            {
+                var time = stateMixer.GetInput(i).GetTime();
+                if (currentPlayedState == i || stateMixer.GetInputWeight(i) > 0f)
+                {
+                    var currentTime = stateMixer.GetInput(i).GetTime();
+                    states[i].HandleAnimationEvents(timeLastFrame[i], currentTime, stateMixer.GetInputWeight(i), firstFrame, currentPlayedState == i);
+                }
+
+                timeLastFrame[i] = time;
+            }
         }
 
         private void HandleTransitions()
@@ -491,6 +501,7 @@ namespace Animation_Player
 
             activeWhenBlendStarted.Add(false);
             valueWhenBlendStarted.Add(0f);
+            timeLastFrame.Add(0d);
 
             var newLookup = new int[states.Count, states.Count];
             for (int i = 0; i < transitionLookup.GetLength(0); i++)

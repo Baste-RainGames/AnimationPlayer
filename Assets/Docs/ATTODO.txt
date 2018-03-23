@@ -63,6 +63,7 @@ Misc
     + AnimationPlayer should have internal BlendVarControllers, so there's not duplication between SetBlendVar and GetBlendVarController().SetValue
     - Dump info about which animations have been played for how long, often, etc.
     - Make the Drag And Drop hint when dragging objects only show up if dragged objects are animation clips or has animation clips as sub assets.
+    - Make EVERYTHING have tooltips
 
 Issues:
     - Calling Play("MyState") every frame will cause MyState to never play, if wherever you're calling from executes Update before the AnimationPlayer.
@@ -73,4 +74,4 @@ Possible optimizations:
     - We do what the Animator's doing, and have all the states that's in the AnimationPlayer added to the mixer, with the vast majority of them with weight 0.
       It might be that it would be faster to only have the states that have a non-zero weight in the mixer. That would require re-writing quite a bit, and would make the 
       visualizer less usefull, so only do it if there's an actual gain to be had.
-      
+    - Do a check for GC!

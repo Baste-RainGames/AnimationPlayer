@@ -11,25 +11,35 @@ public class TestScript : MonoBehaviour
     void Start()
     {
         animationPlayer = GetComponent<AnimationPlayer>();
+        animationPlayer.RegisterAnimationEventListener("TestEvent1", TestEvent1);
+        animationPlayer.RegisterAnimationEventListener("TestEvent2", TestEvent2);
+    }
+
+    private void TestEvent2() {
+        print("Test Event 2!");
+    }
+
+    private void TestEvent1() {
+        print("Test Event 1!");
     }
 
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.Q))
         {
-            animationPlayer.Play("Attack_1");
+            animationPlayer.Play("Attack 1");
             animationPlayer.PlayAfterSeconds(animationPlayer.GetPlayingState().Duration * .8f, "Movement");
         }
         
         if (Input.GetKeyDown(KeyCode.W))
         {
-            animationPlayer.Play("Attack_2");
+            animationPlayer.Play("Attack 2");
             animationPlayer.PlayAfterSeconds(animationPlayer.GetPlayingState().Duration * .8f, "Movement");
         }
         
         if (Input.GetKeyDown(KeyCode.E))
         {
-            animationPlayer.Play("Attack_3");
+            animationPlayer.Play("Attack 3");
             animationPlayer.PlayAfterSeconds(animationPlayer.GetPlayingState().Duration * .8f, "Movement");
         }
 
@@ -46,7 +56,7 @@ public class TestScript : MonoBehaviour
                 var newState = SingleClip.Create("Test", clip);
                 testIndex = animationPlayer.AddState(newState);
             }
-
+        
             animationPlayer.Play(testIndex);
             animationPlayer.PlayAfterSeconds(animationPlayer.GetPlayingState().Duration * .8f, "Movement");
         }

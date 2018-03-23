@@ -341,47 +341,66 @@ namespace Animation_Player
 
             var state = animationPlayer.GetState(selectedState, selectedLayer);
             int indexToDelete = -1;
-            EditorGUILayout.LabelField($"Animation events for {state.Name}");
-            EditorUtilities.Splitter();
+            EditorGUILayout.LabelField($"Animation events for {state.Name}:");
             EditorUtilities.DrawIndented(() =>
             {
                 for (var i = 0; i < state.animationEvents.Count; i++)
                 {
                     if (DrawEvent(state.animationEvents[i], state))
                         indexToDelete = i;
-                    if (i != state.animationEvents.Count - 1)
-                        GUILayout.Space(5);
+                    EditorUtilities.Splitter();
                 }
             });
+
             if (indexToDelete != -1)
                 state.animationEvents.RemoveAt(indexToDelete);
 
-            EditorUtilities.Splitter();
             EditorUtilities.DrawHorizontal(() =>
             {
-                GUILayout.FlexibleSpace();
-                if (GUILayout.Button("Create new event"))
+                if (GUILayout.Button("Create new Animation Event"))
                 {
                     EditorUtilities.RecordUndo(animationPlayer, $"Added animation event to {state.Name}");
                     state.animationEvents.Add(new AnimationEvent {name = "New Event"});
                     MarkDirty();
                 }
+                GUILayout.FlexibleSpace();
             });
         }
 
+        
         private bool DrawEvent(AnimationEvent animationEvent, AnimationState containingState)
         {
+            const float  eventLabelWidth = 100f;
+            const string nameTooltip = "The name of the event, used when subscribing.";
+            const string timeTooltip = "When the event should fire, in real seconds.";
+            const string mustBeActiveTooltip = "Does the state have to be the active state for the event to fire?";
+            const string minWeightTooltip = "The minimum required weight for the state to fire.";
+
             bool shouldDelete = false;
             EditorGUI.BeginChangeCheck();
             EditorUtilities.DrawHorizontal(() =>
             {
-                EditorGUILayout.LabelField("name", GUILayout.Width(50f));
+                GUIContent nameContent = new GUIContent("Name", nameTooltip);
+                EditorGUILayout.LabelField(nameContent, GUILayout.Width(eventLabelWidth));
                 animationEvent.name = EditorGUILayout.TextField(animationEvent.name);
             });
             EditorUtilities.DrawHorizontal(() =>
             {
-                EditorGUILayout.LabelField("time", GUILayout.Width(50f));
+                var timeContent = new GUIContent("Time", timeTooltip);
+                EditorGUILayout.LabelField(timeContent, GUILayout.Width(eventLabelWidth));
                 animationEvent.time = EditorGUILayout.Slider((float) animationEvent.time, 0f, containingState.Duration);
+            });
+            EditorUtilities.DrawHorizontal(() =>
+            {
+                var mustBeActiveContent = new GUIContent("Must be active", mustBeActiveTooltip);
+                EditorGUILayout.LabelField(mustBeActiveContent, GUILayout.Width(eventLabelWidth));
+                animationEvent.mustBeActiveState = EditorGUILayout.Toggle(animationEvent.mustBeActiveState);
+            });
+            EditorUtilities.DrawHorizontal(() =>
+            {
+                var minWeightContent = new GUIContent("Minimum weight", minWeightTooltip);
+                EditorGUILayout.LabelField(minWeightContent, GUILayout.Width(eventLabelWidth));
+                animationEvent.minWeight = EditorGUILayout.Slider(animationEvent.minWeight, 0f, 1f);
             });
             EditorUtilities.DrawHorizontal(() =>
             {

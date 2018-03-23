@@ -11,6 +11,7 @@ namespace Animation_Player
     {
         public static void SetDirty(Component c)
         {
+            Debug.Log("Dirties!");
             if (Application.isPlaying)
                 return;
             EditorUtility.SetDirty(c);

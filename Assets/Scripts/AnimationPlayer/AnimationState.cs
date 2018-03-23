@@ -66,30 +66,38 @@ namespace Animation_Player
             return false;
         }
 
-        public void HandleAnimationEvents(double timeLastFrame, double timeCurrentFrame, bool firstFrame)
+        public void HandleAnimationEvents(double timeLastFrame, double timeCurrentFrame, float currentWeight, bool firstFrame, bool isActiveState)
         {
             if (Loops)
             {
-                timeLastFrame %= Duration;
+                var delta = timeCurrentFrame - timeLastFrame;
                 timeCurrentFrame %= Duration;
+
+                if (firstFrame)
+                {
+                    //Otherwise animation events set to time 0 wold not fire when the AnimationPlayer starts.
+                    timeLastFrame = -1f;
+                }
+                else
+                {
+                    //This moves the time last frame to before time 0 if we looped, which makes the code under easier.
+                    timeLastFrame = timeCurrentFrame - delta;
+                }
+
             }
             foreach (var animationEvent in animationEvents)
             {
-                bool shouldExecute = false;
-                if ((timeLastFrame < animationEvent.time || firstFrame) && timeCurrentFrame >= animationEvent.time)
+                if(currentWeight < animationEvent.minWeight)
+                    continue;
+                if(animationEvent.mustBeActiveState && !isActiveState)
+                    continue;
+
+                var lastFrameBefore = timeLastFrame < animationEvent.time;
+                var currentFrameAfter = timeCurrentFrame >= animationEvent.time;
+                if (lastFrameBefore && currentFrameAfter)
                 {
-                    shouldExecute = true;
-                }
-                else if (timeCurrentFrame < timeLastFrame) // Looped around!
-                {
-                    //handle events close to start and end of animation
-                    if(animationEvent.time < timeCurrentFrame)
-                        shouldExecute = true;
-                    else if(animationEvent.time > timeLastFrame)
-                        shouldExecute = true;
-                }
-                if (shouldExecute)
                     animationEvent.InvokeRegisteredListeners();
+                }
             }
         }
 

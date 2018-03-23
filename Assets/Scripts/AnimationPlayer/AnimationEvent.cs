@@ -5,10 +5,24 @@ namespace Animation_Player {
     [Serializable]
     public class AnimationEvent
     {
+        /// <summary>
+        /// Name of the Animation Event, used to bind event receivers.
+        /// </summary>
         public string name;
+        /// <summary>
+        /// At what time in the state the event should be played, in seconds.
+        /// </summary>
         public double time;
+        /// <summary>
+        /// Only play this animation event if it's on the active state. If false, it's also played on states being blended out of.
+        /// </summary>
+        public bool mustBeActiveState = true;
+        /// <summary>
+        /// The minimum weight needed for the event to fire. If the weight is less than this, the event will be skipped.
+        /// </summary>
+        public float minWeight = .5f;
 
-        private List<Action> registeredActions = new List<Action>();
+        private readonly List<Action> registeredActions = new List<Action>();
 
         public void RegisterListener(Action listener)
         {

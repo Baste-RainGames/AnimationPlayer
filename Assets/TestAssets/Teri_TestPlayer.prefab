@@ -340,7 +340,7 @@ MonoBehaviour:
     - m_Text: Movement
       m_Image: {fileID: 0}
       m_Tooltip: 
-    - m_Text: Attack
+    - m_Text: Attack 1
       m_Image: {fileID: 0}
       m_Tooltip: 
     - m_Text: Attack 2
@@ -353,15 +353,19 @@ MonoBehaviour:
       m_Image: {fileID: 0}
       m_Tooltip: 
     serializedSingleClipStates:
-    - name: Attack
+    - name: Attack 1
       hasUpdatedName: 1
       guid:
         guidSerialized: efe85563-89dc-4623-ab1c-b9380faa4eb0
       animationEvents:
+      - name: TestEvent1
+        time: 0.3149999976158142
+        mustBeActiveState: 0
+        minWeight: 0.5
       - name: New Event
-        time: 0
-      - name: New Event
-        time: 0
+        time: 0.4390000104904175
+        mustBeActiveState: 1
+        minWeight: 0.5
       speed: 1
       clip: {fileID: 7400002, guid: 889da77ec19d7ba4099e3746e3338109, type: 3}
     - name: Attack 2

@@ -8,6 +8,8 @@ Animation states:
         * blend trees
             * 2D (almost finished, need to implement the good algo!)
             + allow state reordering
+            - add speed to blend tree entries, not just the entire blend tree
+            - When updating thresholds on 1D trees, do the Unity thing and reorder the states?
         - sequences (state A into state B into state C, etc.)
             - this can be used to change into a specific idle state after standing still.
         * random (bunch of states, selects a random one when you enter)
@@ -64,6 +66,7 @@ Misc
     - Dump info about which animations have been played for how long, often, etc.
     - Make the Drag And Drop hint when dragging objects only show up if dragged objects are animation clips or has animation clips as sub assets.
     - Make EVERYTHING have tooltips
+    - Make sure nothing nullrefs for empty clips anywhere.
 
 Issues:
     - Calling Play("MyState") every frame will cause MyState to never play, if wherever you're calling from executes Update before the AnimationPlayer.

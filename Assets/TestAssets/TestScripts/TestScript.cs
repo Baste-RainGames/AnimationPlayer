@@ -12,7 +12,7 @@ public class TestScript : MonoBehaviour
     {
         animationPlayer = GetComponent<AnimationPlayer>();
         animationPlayer.RegisterAnimationEventListener("TestEvent1", TestEvent1);
-        animationPlayer.RegisterAnimationEventListener("TestEvent2", TestEvent2);
+//        animationPlayer.RegisterAnimationEventListener("TestEvent2", TestEvent2);
     }
 
     private void TestEvent2() {
@@ -77,6 +77,12 @@ public class TestScript : MonoBehaviour
         {
             Debug.Log("2");
             animationPlayer.SetBlendVar("Speed", 2);
+        }
+        
+        if (Input.GetKeyDown(KeyCode.Alpha4))
+        {
+            Debug.Log("2");
+            animationPlayer.SetBlendVar("Speed", 1.5f);
         }
     }
 

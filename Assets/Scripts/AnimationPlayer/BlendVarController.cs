@@ -17,6 +17,7 @@ namespace Animation_Player
 
         public float MinValue { get; private set; }
         public float MaxValue { get; private set; }
+        public string BlendVar => blendVar;
 
         public BlendVarController(string blendVar)
         {

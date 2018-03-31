@@ -3,9 +3,10 @@ using UnityEngine;
 
 namespace Animation_Player
 {
-    public class BlendTreeEntry
+    public abstract class BlendTreeEntry
     {
         public AnimationClip clip;
+        public float Duration => clip != null ? clip.length : 0f;
     }
 
     [Serializable]

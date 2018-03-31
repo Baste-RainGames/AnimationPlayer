@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Animations;
@@ -16,6 +17,11 @@ namespace Animation_Player
         private PreviewMode previewMode;
         private float manualModeTime;
         private float automaticModeTime;
+        
+        private readonly Dictionary<string, List<BlendTreeController1D>> previewControllers1D = new Dictionary<string, List<BlendTreeController1D>>();
+        private readonly Dictionary<string, List<BlendTreeController2D>> previewControllers2D = new Dictionary<string, List<BlendTreeController2D>>();
+        private readonly List<BlendVarController> blendVarControllers = new List<BlendVarController>();
+        private bool swapToManual;
 
         public AnimationStatePreviewer(AnimationPlayer player)
         {
@@ -57,12 +63,26 @@ namespace Animation_Player
             var animator = animationPlayer.gameObject.EnsureComponent<Animator>();
             var animOutput = AnimationPlayableOutput.Create(previewGraph, "AnimationOutput", animator);
 
-            animOutput.SetSourcePlayable(state.GeneratePlayable(previewGraph, new Dictionary<string, List<BlendTreeController1D>>(),
-                                                                new Dictionary<string, List<BlendTreeController2D>>(),
-                                                                new Dictionary<string, float>()));
+            previewControllers1D.Clear();
+            previewControllers2D.Clear();
+            blendVarControllers.Clear();
+            Dictionary<string, float> blendVars = new Dictionary<string, float>();
+            animOutput.SetSourcePlayable(state.GeneratePlayable(previewGraph, previewControllers1D, previewControllers2D, blendVars));
             previewGraph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
             previewGraph.GetRootPlayable(0).SetTime(0);
+            previewGraph.GetRootPlayable(0).SetPropagateSetTime(true);
             automaticModeTime = Time.time;
+
+            foreach (var blendVar in blendVars.Keys)
+            {
+                var controller = new BlendVarController(blendVar);
+                foreach (var kvp in previewControllers1D.Where(kvp => kvp.Key == blendVar))
+                    controller.AddControllers(kvp.Value);
+                foreach (var kvp in previewControllers2D.Where(kvp => kvp.Key == blendVar))
+                    controller.AddControllers(kvp.Value);
+                
+                blendVarControllers.Add(controller);
+            }
         }
 
         public void StopPreviewing()
@@ -87,23 +107,27 @@ namespace Animation_Player
                 EditorGUI.EndDisabledGroup();
 
                 EditorGUI.BeginDisabledGroup(previewMode == PreviewMode.Manual);
-                if (GUILayout.Button("Manual"))
+                if (GUILayout.Button("Manual") || swapToManual)
                     previewMode = PreviewMode.Manual;
                 EditorGUI.EndDisabledGroup();
             });
 
+            swapToManual = false;
+
+            var rootPlayable = previewGraph.GetRootPlayable(0);
             if (oldPreviewMode != previewMode) {
                 if (previewMode == PreviewMode.Automatic)
                     automaticModeTime = Time.realtimeSinceStartup;
                 else
-                    manualModeTime = (float) previewGraph.GetRootPlayable(0).GetTime();
+                    manualModeTime = (float) rootPlayable.GetTime();
             }
 
             if (previewMode == PreviewMode.Manual) {
                 var last = manualModeTime;
                 manualModeTime = EditorGUILayout.Slider(manualModeTime, 0f, previewedState.Duration);
-                if (manualModeTime != last || changedState) {
-                    previewGraph.GetRootPlayable(0).SetTime(manualModeTime);
+                if (manualModeTime != last || changedState)
+                {
+                    rootPlayable.SetTime(manualModeTime);
                     previewGraph.Evaluate();
                 }
             }
@@ -114,13 +138,45 @@ namespace Animation_Player
                 automaticModeTime = currentTime;
 
                 previewGraph.Evaluate(deltaTime);
-                var evaluatedTime = previewGraph.GetRootPlayable(0).GetTime();
+                var evaluatedTime = rootPlayable.GetTime();
                 if (evaluatedTime > previewedState.Duration) {
                     evaluatedTime %= previewedState.Duration;
-                    previewGraph.GetRootPlayable(0).SetTime(evaluatedTime);
+                    rootPlayable.SetTime(evaluatedTime);
                 }
 
-                EditorGUILayout.Slider((float) evaluatedTime, 0f, previewedState.Duration);
+                var oldTime = (float) evaluatedTime;
+                var newTime = EditorGUILayout.Slider(oldTime, 0f, previewedState.Duration);
+                if (newTime != oldTime)
+                {
+                    swapToManual = true;
+                    rootPlayable.SetTime(newTime);
+                }
+            }
+
+            for (int i = 0; i < rootPlayable.GetInputCount(); i++)
+            {
+                var input = rootPlayable.GetInput(i);
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.Slider(rootPlayable.GetInputWeight(i), 0f, 1f);
+                EditorGUILayout.Slider((float) input.GetTime(), 0f, 10f);
+                EditorGUILayout.EndHorizontal();
+            }
+
+            if (blendVarControllers.Count > 0)
+            {
+                EditorUtilities.Splitter();
+                EditorGUILayout.LabelField($"Blend vars for {previewedState.Name}");
+                foreach (var controller in blendVarControllers)
+                {
+                    var label = controller.BlendVar;
+                    var oldVal = controller.GetBlendVar();
+                    var newVal = EditorGUILayout.Slider(label, oldVal, controller.MinValue, controller.MaxValue);
+                    if (oldVal != newVal)
+                    {
+                        controller.SetBlendVar(newVal);
+                    }
+                }
+                EditorUtilities.Splitter();
             }
 
             SceneView.RepaintAll();
@@ -144,6 +200,7 @@ namespace Animation_Player
             if (animationPlayer == null) //Happens when entering play mode with the animationplayer selected
                 return;
             
+            Debug.Log("...");
             //Reset the object to the bind pose. Only way I've found is to play an empty clip for a single frame.
             var resetGraph = PlayableGraph.Create();
             var animator = animationPlayer.gameObject.EnsureComponent<Animator>();

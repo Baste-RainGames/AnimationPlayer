@@ -8,22 +8,37 @@ namespace Animation_Player
     public class BlendTreeController1D
     {
         private readonly Action<float> UpdateValueOnMainController;
+        private readonly AnimationMixerPlayable mixer;
+        private readonly BlendTreeData[] runtimeData;
+        private readonly bool compensateForDifferentDurations;
 
-        private AnimationMixerPlayable mixer;
-        private readonly float[] thresholds;
         private float lastValue;
         public float CurrentValue => lastValue;
 
-        public BlendTreeController1D(AnimationMixerPlayable mixer, float[] thresholds, Action<float> UpdateValueOnMainController)
+        public BlendTreeController1D(AnimationMixerPlayable mixer, AnimationClipPlayable[] playables, float[] thresholds, bool compensateForDifferentDurations, 
+                                     Action<float> UpdateValueOnMainController)
         {
+            if(thresholds.Length != playables.Length)
+                throw new Exception("Thresholds and playables doesn't match!");
             for (int i = 0; i < thresholds.Length - 2; i++)
-                //@TODO: should reorder these!
                 if (thresholds[i] >= thresholds[i + 1])
-                    throw new UnityException($"The thresholds on the blend tree should be be strictly increasing!");
+                    throw new Exception($"The thresholds on the blend tree should be be strictly increasing!");
 
-            this.mixer = mixer;
-            this.thresholds = thresholds;
             this.UpdateValueOnMainController = UpdateValueOnMainController;
+            this.compensateForDifferentDurations = compensateForDifferentDurations;
+            this.mixer = mixer;
+            runtimeData = new BlendTreeData[thresholds.Length];
+            for (int i = 0; i < runtimeData.Length; i++)
+            {
+                runtimeData[i] = new BlendTreeData
+                {
+                    threshold = thresholds[i],
+                    playable = playables[i],
+                    duration = playables[i].GetAnimationClip().length
+                };
+            }
+            if(compensateForDifferentDurations)
+                CompensateForDurations(0, 0);
         }
 
         public void SetValue(float value)
@@ -34,31 +49,30 @@ namespace Animation_Player
             lastValue = value;
 
             int idxOfLastLowerThanVal = -1;
-            for (int i = 0; i < thresholds.Length; i++)
+            for (int i = 0; i < runtimeData.Length; i++)
             {
-                var threshold = thresholds[i];
+                var threshold = runtimeData[i].threshold;
                 if (threshold <= value)
                     idxOfLastLowerThanVal = i;
                 else
                     break;
             }
 
-            int idxBefore = idxOfLastLowerThanVal;
-            int idxAfter = idxOfLastLowerThanVal + 1;
+            int idxBefore = Mathf.Max(idxOfLastLowerThanVal, 0);
+            int idxAfter  = Mathf.Min(idxOfLastLowerThanVal + 1, runtimeData.Length - 1);
 
             float fractionTowardsAfter;
-            if (idxBefore == -1)
-                fractionTowardsAfter = 1f; //now after is 0
-            else if (idxAfter == thresholds.Length)
-                fractionTowardsAfter = 0f; //now before is the last
-            else
+            if (idxBefore == idxAfter) //first or last clip
             {
-                var range = (thresholds[idxAfter] - thresholds[idxBefore]);
-                var distFromStart = (value - thresholds[idxBefore]);
+                fractionTowardsAfter = 0f;
+            }
+            else {
+                var range = (runtimeData[idxAfter].threshold - runtimeData[idxBefore].threshold);
+                var distFromStart = (value - runtimeData[idxBefore].threshold);
                 fractionTowardsAfter = distFromStart / range;
             }
 
-            for (int i = 0; i < thresholds.Length; i++)
+            for (int i = 0; i < runtimeData.Length; i++)
             {
                 float inputWeight;
 
@@ -71,9 +85,41 @@ namespace Animation_Player
 
                 mixer.SetInputWeight(i, inputWeight);
             }
+
+            if(compensateForDifferentDurations)
+                CompensateForDurations(idxBefore, idxAfter);
         }
 
-        public float GetMinThreshold() => thresholds[0];
-        public float GetMaxThreshold() => thresholds[thresholds.Length - 1];
+        /// <summary>
+        /// When blending between different clips that have different durations, it's often neccessary to speed the playables up or down so their durations
+        /// match. Consider blending a walk and run animation with different lengths - unless the feet hit the ground at the same time every time the clips
+        /// loop, the character's feet will be in a strange, in-between position.
+        /// The way we handle this is to always have all of the clips - even ones with weight 0 - always playing at a speed such that their duration matches
+        /// the currently played clip's duration.
+        /// </summary>
+        private void CompensateForDurations(int idxBefore, int idxAfter)
+        {
+            float durationBefore = runtimeData[idxBefore].duration;
+            float durationAfter  = runtimeData[idxAfter ].duration;
+            float loopDuration = Mathf.Lerp(durationBefore, durationAfter, mixer.GetInputWeight(idxAfter));
+
+            for (int i = 0; i < runtimeData.Length; i++)
+            {
+                var clipDuration = runtimeData[i].duration;
+                var requiredSpeed = clipDuration / loopDuration;
+                runtimeData[i].playable.SetSpeed(requiredSpeed);
+            }
+        }
+
+        public float GetMinThreshold() => runtimeData[0].threshold;
+        public float GetMaxThreshold() => runtimeData[runtimeData.Length - 1].threshold;
+
+        private struct BlendTreeData
+        {
+            public AnimationClipPlayable playable;
+            public float duration;
+            public float threshold;
+//            public float defaultSpeed;
+        }
     }
 }

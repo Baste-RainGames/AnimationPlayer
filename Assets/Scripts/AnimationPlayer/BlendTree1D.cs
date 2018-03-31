@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
+using UnityEngine.TestTools;
 
 namespace Animation_Player
 {
@@ -12,6 +14,7 @@ namespace Animation_Player
 
         public string blendVariable;
         public List<BlendTreeEntry1D> blendTree;
+        public bool compensateForDifferentDurations = true;
 
         private BlendTree1D() { }
 
@@ -34,17 +37,23 @@ namespace Animation_Player
 
             float[] thresholds = new float[blendTree.Count];
 
-            for (int j = 0; j < blendTree.Count; j++)
+            var innerPlayables = new AnimationClipPlayable[blendTree.Count]; 
+            for (int i = 0; i < blendTree.Count; i++)
             {
-                var blendTreeEntry = blendTree[j];
-                var clipPlayable = AnimationClipPlayable.Create(graph, blendTreeEntry.clip);
+                var blendTreeEntry = blendTree[i];
+                var clip = blendTreeEntry.clip;
+                if(clip == null)
+                    clip = new AnimationClip();
+                var clipPlayable = AnimationClipPlayable.Create(graph, clip);
                 clipPlayable.SetSpeed(speed);
-                graph.Connect(clipPlayable, 0, treeMixer, j);
-                thresholds[j] = blendTreeEntry.threshold;
+                graph.Connect(clipPlayable, 0, treeMixer, i);
+                thresholds[i] = blendTreeEntry.threshold;
+                innerPlayables[i] = clipPlayable;
             }
 
             treeMixer.SetInputWeight(0, 1f);
-            var blendController = new BlendTreeController1D(treeMixer, thresholds, val => blendVars[blendVariable] = val);
+            var blendController = new BlendTreeController1D(treeMixer, innerPlayables, thresholds, compensateForDifferentDurations, 
+                                                            val => blendVars[blendVariable] = val);
             varTo1DBlendControllers.GetOrAdd(blendVariable).Add(blendController);
             blendVars[blendVariable] = 0;
 

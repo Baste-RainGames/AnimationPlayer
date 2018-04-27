@@ -14,10 +14,10 @@ namespace Animation_Player
         private readonly List<BlendTreeController2D> inner2D_set1 = new List<BlendTreeController2D>();
         private readonly List<BlendTreeController2D> inner2D_set2 = new List<BlendTreeController2D>();
         private readonly string blendVar;
+        public string BlendVar => blendVar;
 
         public float MinValue { get; private set; }
         public float MaxValue { get; private set; }
-        public string BlendVar => blendVar;
 
         public BlendVarController(string blendVar)
         {
@@ -52,35 +52,30 @@ namespace Animation_Player
             }
         }
 
-        public float GetBlendVar() {
-            foreach (var controller1D in inner1D)
-                return controller1D.CurrentValue;
+        public float GetBlendVar() 
+        {
+            if(inner1D.Count > 0)
+                return inner1D[0].CurrentValue;
 
-            foreach (var controller2D in inner2D_set1)
-                return controller2D.CurrentValue1;
+            if(inner2D_set1.Count > 0)
+                return inner2D_set1[0].CurrentValue1;
 
-            foreach (var controller2D in inner2D_set2)
-                return controller2D.CurrentValue2;
+            if(inner2D_set2.Count > 0)
+                return inner2D_set2[0].CurrentValue2;
 
             return 0f; //error?
         }
 
         public void SetBlendVar(float value)
         {
-            foreach (var controller1D in inner1D)
-            {
-                controller1D.SetValue(value);
-            }
+            for (var i = 0; i < inner1D.Count; i++)
+                inner1D[i].SetValue(value);
 
-            foreach (var controller2D in inner2D_set1)
-            {
-                controller2D.SetValue1(value);
-            }
+            for (var i = 0; i < inner2D_set1.Count; i++)
+                inner2D_set1[i].SetValue1(value);
 
-            foreach (var controller2D in inner2D_set2)
-            {
-                controller2D.SetValue2(value);
-            }
+            for (var i = 0; i < inner2D_set2.Count; i++)
+                inner2D_set2[i].SetValue2(value);
         }
 
         public void DampBlendVarTowards(float target, ref float currentVelocity, float smoothTime) {

@@ -23,6 +23,7 @@ namespace Animation_Player
         public AnimationMixerPlayable stateMixer { get; private set; }
         private int currentPlayedState;
         private bool firstFrame = true;
+        private bool anyStatesHasAnimationEvents;
 
         //blend info:
         private bool transitioning;
@@ -70,6 +71,9 @@ namespace Animation_Player
             for (int i = 0; i < states.Count; i++)
             {
                 var state = states[i];
+                if (state.animationEvents.Count > 0)
+                    anyStatesHasAnimationEvents = true;
+
                 stateNameToIdx[state.Name] = i;
 
                 var playable = state.GeneratePlayable(graph, varTo1DBlendControllers, varTo2DBlendControllers, blendVars);
@@ -263,7 +267,8 @@ namespace Animation_Player
         {
             if (states.Count == 0)
                 return;
-            HandleAnimationEvents();
+            if(anyStatesHasAnimationEvents)
+                HandleAnimationEvents();
             HandleTransitions();
             HandleQueuedInstructions();
             firstFrame = false;
@@ -491,6 +496,8 @@ namespace Animation_Player
         public int AddState(AnimationState state)
         {
             states.Add(state);
+            if (state.animationEvents.Count > 0)
+                anyStatesHasAnimationEvents = true;
             var playable = state.GeneratePlayable(containingGraph, varTo1DBlendControllers, varTo2DBlendControllers, blendVars);
 
             var indexOfNew = states.Count - 1;

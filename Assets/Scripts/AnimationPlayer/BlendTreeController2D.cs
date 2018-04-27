@@ -10,6 +10,8 @@ namespace Animation_Player
         public readonly string blendVar1;
         public readonly string blendVar2;
         private float minVal1, minVal2, maxVal1, maxVal2;
+        private float changeThreshold1Pos, changeThreshold2Pos;
+        private float changeThreshold1Neg, changeThreshold2Neg;
         private Vector2 currentBlendVector;
         public float CurrentValue1 => currentBlendVector.x;
         public float CurrentValue2 => currentBlendVector.y;
@@ -41,14 +43,25 @@ namespace Animation_Player
             minVal2 = Mathf.Min(threshold2, minVal2);
             maxVal1 = Mathf.Max(threshold, maxVal1);
             maxVal2 = Mathf.Max(threshold2, maxVal2);
+
+            const float thresholdForChange = .01f;
+            changeThreshold1Pos = Mathf.Abs(maxVal1 - minVal1) * thresholdForChange;
+            changeThreshold2Pos = Mathf.Abs(maxVal2 - minVal2) * thresholdForChange;
+            changeThreshold1Neg = -changeThreshold1Pos;
+            changeThreshold2Neg = -changeThreshold2Pos;
         }
 
         public void SetValue1(float value)
         {
-            var last = currentBlendVector.x;
-            currentBlendVector.x = Mathf.Clamp(value, minVal1, maxVal1);
-            if (last != currentBlendVector.x)
+            var lastVal = currentBlendVector.x;
+            var newVal  = Mathf.Clamp(value, minVal1, maxVal1);
+
+            var diff = lastVal - newVal;
+            var update = diff < changeThreshold1Neg || diff > changeThreshold1Pos;
+
+            if (update) 
             {
+                currentBlendVector.x = newVal;
                 UpdateValue1OnMainController(value);
                 Recalculate();
             }
@@ -56,11 +69,18 @@ namespace Animation_Player
 
         public void SetValue2(float value)
         {
-            var last = currentBlendVector.y;
-            currentBlendVector.y = Mathf.Clamp(value, minVal2, maxVal2);
-            if (last != currentBlendVector.y)
+            var lastVal = currentBlendVector.y;
+            var newVal  = Mathf.Clamp(value, minVal2, maxVal2);
+
+            var diff = lastVal - newVal;
+            var update = diff < changeThreshold2Neg || diff > changeThreshold2Pos;
+
+            if (update) 
+            {
+                currentBlendVector.y = newVal;
                 UpdateValue2OnMainController(value);
-            Recalculate();
+                Recalculate();
+            }
         }
 
         public void SetValue(string blendVar, float value)

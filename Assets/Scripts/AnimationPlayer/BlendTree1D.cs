@@ -29,7 +29,8 @@ namespace Animation_Player
         }
 
         public override Playable GeneratePlayable(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
-                                                  Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers, Dictionary<string, float> blendVars)
+                                                  Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers,
+                                                  List<BlendTreeController2D> all2DControllers, Dictionary<string, float> blendVars)
         {
             var treeMixer = AnimationMixerPlayable.Create(graph, blendTree.Count, true);
             if (blendTree.Count == 0)

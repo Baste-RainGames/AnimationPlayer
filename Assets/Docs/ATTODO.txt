@@ -49,6 +49,7 @@ Animation transitions:
         - Should have a list of ALL transitions?
 
 Misc
+    - Move AnimationPlayer.Update to it's own method that runs after Update, using the new player loop system, when it's available (2018.1)
     - Add delete buttons to blend trees etc.
     - Ensure that all public methods in AnimationPlayer have int overload, so it's not neccessary to pay the cost of sending in strings
     - Make the cached values in the editor be per-layer where appropriate (selected from/to state for transitions)

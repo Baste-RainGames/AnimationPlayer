@@ -25,8 +25,9 @@ namespace Animation_Player {
         public override float Duration => (clips?.Count ?? 0) == 0 ? 0f : (clips[0]?.length ?? 0f); 
         public override bool Loops => (clips?.Count ?? 0) == 0 ? false : (clips[0]?.isLooping ?? false);
 
-        public override Playable GeneratePlayable(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers, 
-                                                  Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers, Dictionary<string, float> blendVars)
+        public override Playable GeneratePlayable(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
+                                                  Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers,
+                                                  List<BlendTreeController2D> all2DControllers, Dictionary<string, float> blendVars)
         {
             playedClip = clips.GetRandomIdx();
             return GeneratePlayableFor(graph, playedClip);

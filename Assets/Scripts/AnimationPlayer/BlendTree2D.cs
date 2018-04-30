@@ -27,7 +27,8 @@ namespace Animation_Player
         }
 
         public override Playable GeneratePlayable(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
-                                                  Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers, Dictionary<string, float> blendVars)
+                                                  Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers,
+                                                  List<BlendTreeController2D> all2DControllers, Dictionary<string, float> blendVars)
         {
             var treeMixer = AnimationMixerPlayable.Create(graph, blendTree.Count, true);
             if (blendTree.Count == 0)
@@ -36,6 +37,7 @@ namespace Animation_Player
             Action<float> setVar1 = val => blendVars[blendVariable] = val;
             Action<float> setVar2 = val => blendVars[blendVariable2] = val;
             var controller = new BlendTreeController2D(blendVariable, blendVariable2, treeMixer, blendTree.Count, setVar1, setVar2);
+            all2DControllers.Add(controller);
             varTo2DBlendControllers.GetOrAdd(blendVariable).Add(controller);
             varTo2DBlendControllers.GetOrAdd(blendVariable2).Add(controller);
             blendVars[blendVariable] = 0;
@@ -48,8 +50,10 @@ namespace Animation_Player
                 clipPlayable.SetSpeed(speed);
                 graph.Connect(clipPlayable, 0, treeMixer, j);
 
-                controller.Add(j, blendTreeEntry.threshold1, blendTreeEntry.threshold2);
+                controller.AddThresholdsForClip(j, blendTreeEntry.threshold1, blendTreeEntry.threshold2);
             }
+
+            controller.OnAllThresholdsAdded();
 
             treeMixer.SetInputWeight(0, 1f);
             return treeMixer;

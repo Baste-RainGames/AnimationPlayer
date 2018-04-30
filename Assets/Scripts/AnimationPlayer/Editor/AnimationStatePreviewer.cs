@@ -20,6 +20,7 @@ namespace Animation_Player
         
         private readonly Dictionary<string, List<BlendTreeController1D>> previewControllers1D = new Dictionary<string, List<BlendTreeController1D>>();
         private readonly Dictionary<string, List<BlendTreeController2D>> previewControllers2D = new Dictionary<string, List<BlendTreeController2D>>();
+        private readonly List<BlendTreeController2D> all2DControllers = new List<BlendTreeController2D>();
         private readonly List<BlendVarController> blendVarControllers = new List<BlendVarController>();
         private bool swapToManual;
 
@@ -65,9 +66,10 @@ namespace Animation_Player
 
             previewControllers1D.Clear();
             previewControllers2D.Clear();
+            all2DControllers.Clear();
             blendVarControllers.Clear();
             Dictionary<string, float> blendVars = new Dictionary<string, float>();
-            animOutput.SetSourcePlayable(state.GeneratePlayable(previewGraph, previewControllers1D, previewControllers2D, blendVars));
+            animOutput.SetSourcePlayable(state.GeneratePlayable(previewGraph, previewControllers1D, previewControllers2D, all2DControllers , blendVars));
             previewGraph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
             previewGraph.GetRootPlayable(0).SetTime(0);
             previewGraph.GetRootPlayable(0).SetPropagateSetTime(true);
@@ -153,6 +155,10 @@ namespace Animation_Player
                 }
             }
 
+            foreach (var controller2D in all2DControllers) {
+                controller2D.Update();
+            }
+
             for (int i = 0; i < rootPlayable.GetInputCount(); i++)
             {
                 var input = rootPlayable.GetInput(i);
@@ -200,7 +206,6 @@ namespace Animation_Player
             if (animationPlayer == null) //Happens when entering play mode with the animationplayer selected
                 return;
             
-            Debug.Log("...");
             //Reset the object to the bind pose. Only way I've found is to play an empty clip for a single frame.
             var resetGraph = PlayableGraph.Create();
             var animator = animationPlayer.gameObject.EnsureComponent<Animator>();

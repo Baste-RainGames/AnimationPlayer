@@ -44,6 +44,7 @@ namespace Animation_Player
         private readonly Dictionary<string, float> blendVars = new Dictionary<string, float>();
         private readonly Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers = new Dictionary<string, List<BlendTreeController1D>>();
         private readonly Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers = new Dictionary<string, List<BlendTreeController2D>>();
+        private readonly List<BlendTreeController2D> all2DControllers = new List<BlendTreeController2D>();
 
         private PlayAtTimeInstructionQueue playInstructionQueue = new PlayAtTimeInstructionQueue();
 
@@ -76,7 +77,7 @@ namespace Animation_Player
 
                 stateNameToIdx[state.Name] = i;
 
-                var playable = state.GeneratePlayable(graph, varTo1DBlendControllers, varTo2DBlendControllers, blendVars);
+                var playable = state.GeneratePlayable(graph, varTo1DBlendControllers, varTo2DBlendControllers, all2DControllers, blendVars);
                 runtimePlayables[i] = playable;
                 graph.Connect(playable, 0, stateMixer, i);
             }
@@ -194,7 +195,7 @@ namespace Animation_Player
                 // Later, when the copy's weight hits zero, we discard it.
 
                 var original = runtimePlayables[newState];
-                var copy = states[newState].GeneratePlayable(containingGraph, varTo1DBlendControllers, varTo2DBlendControllers, blendVars);
+                var copy = states[newState].GeneratePlayable(containingGraph, varTo1DBlendControllers, varTo2DBlendControllers, all2DControllers, blendVars);
                 var copyIndex = stateMixer.GetInputCount();
                 stateMixer.SetInputCount(copyIndex + 1);
 
@@ -271,6 +272,9 @@ namespace Animation_Player
                 HandleAnimationEvents();
             HandleTransitions();
             HandleQueuedInstructions();
+            for (int i = 0; i < all2DControllers.Count; i++) {
+                all2DControllers[i].Update();
+            }
             firstFrame = false;
         }
 
@@ -483,7 +487,7 @@ namespace Animation_Player
 
             var singleClipState = (SingleClip) animationState;
             singleClipState.clip = clip;
-            var newPlayable = singleClipState.GeneratePlayable(graph, varTo1DBlendControllers, varTo2DBlendControllers, blendVars);
+            var newPlayable = singleClipState.GeneratePlayable(graph, varTo1DBlendControllers, varTo2DBlendControllers, all2DControllers, blendVars);
             var currentPlayable = (AnimationClipPlayable) stateMixer.GetInput(state);
 
             var oldWeight = stateMixer.GetInputWeight(state);
@@ -498,7 +502,7 @@ namespace Animation_Player
             states.Add(state);
             if (state.animationEvents.Count > 0)
                 anyStatesHasAnimationEvents = true;
-            var playable = state.GeneratePlayable(containingGraph, varTo1DBlendControllers, varTo2DBlendControllers, blendVars);
+            var playable = state.GeneratePlayable(containingGraph, varTo1DBlendControllers, varTo2DBlendControllers, all2DControllers, blendVars);
 
             var indexOfNew = states.Count - 1;
             stateNameToIdx[state.Name] = indexOfNew;

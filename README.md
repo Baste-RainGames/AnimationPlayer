@@ -9,9 +9,9 @@ This means that this isn't in any way stable! Use at your own caution, don't exp
 
 The AnimationPlayer is a Unity Component which is used to play animations. Like the built-in Animator Controller, you define both which animations states exist, and how to transition between them. 
 
-Unlike the AnimatorController, the AnimationPlayer does not think of your states and transitions as a graph. Instead, when you ask to Play a state, the AnimationPlayer checks if there's a transition defined from the current state to the state you're trying to play. If the transition exists, it's used. If not, a (user-defined) default transition is used.
+Unlike the AnimatorController, the AnimationPlayer does not listen for variables to trigger transitions between states. Instead, you tell it to play a state. The AnimationPlayer checks if there's a transition defined from the current state to the state you told it to play. If a transition is defined, it's used. If not, a (user-defined) default transition is used.
 
-This both makes the API a lot simpler, and makes the player a lot less bug prone. You don't have to worry about a Trigger that's not consumed right away, causing your graph to get into an invalid state. When you call Play("Attack"), you're guaranteed that the animation player will start transitioning to "Attack" right away.
+This both makes the API a lot simpler, and makes the player a lot less bug prone. When you call Play("Attack"), you're guaranteed that the animation player will start transitioning to "Attack" right away.
 
 Both animators and the programmers should at all times feel like they know what's going on. 
 
@@ -30,10 +30,11 @@ Both animators and the programmers should at all times feel like they know what'
   - Animation Selections allow you to select randomly from a set of clips when a state is played. 
   - Transition-by-clip are transitions containing a clip which you blend through. Usefull for tuning a transition without having to introduce an entire state for the job.
   - Metadata view to quickly check which clips and models are used by the animation player.
-  - Features to mass-replace clips in cases where you're replacing the bone structure of a model
+  - Features to mass-replace clips in cases where you're replacing the bone structure of a model, or something similar.
   - Animation events live in the states in the Animation Player, rather than on the clips. This makes it much easier to work with the events. You also don't have to wait for a reimport of the entire .fbx model whenever you want to move the timing of an event.
   - Several possible transitions between the same states will be available. In that case, you'll name the transitions: Play("state name", "transition name")
   - Non-linear transitions. It will be possible to eg. ease into a new state. This will reduce the need for custom-made transition states.
+  - You can add and remove new states and transitions at runtime. There's not a strict seperation between the edit time and runtime representation of your animation data.
 
 - Simple to use
   - If you just want to play a single animation on a single object, you can simply drag the animation into the component, and you're done. 
@@ -43,11 +44,11 @@ Both animators and the programmers should at all times feel like they know what'
 
 - Comfortable to use API:
   - The concept of using Triggers, Bools, Floats and Ints to control an animation graph is gone!
-  - To play an animation named "Attack", call animationPlayer.Play("Attack"). This will transition to that animation using the transition rules set up in the editor
+  - To play an animation named "Attack", call animationPlayer.Play("Attack"). This will transition to that animation using the transition rules set up in the editor.
   - To get the name of the currently playing animation, call animationPlayer.GetPlayingState().Name;
-  - To get the length of the currently playing animation, call animationPlayer.GetPlayingState().Duration
-  - If you want detailed information on what's going on, like if there's a transition, or what the state of the current blending between state is, that information is available
-  - Generally, all information you'll want will be available. There shouldn't be anything that "we haven't exposed"
+  - To get the length of the currently playing animation, call animationPlayer.GetPlayingState().Duration;
+  - If you want detailed information on what's going on, like if there's a transition, or what the state of the current blending between state is, that information is available.
+  - Generally, all information you'll want will be available. There shouldn't be anything that "we haven't exposed".
   - Methods that doesn't take half the screen. No more GetCurrentAnimatorStateInfo(0).IsName("SomeState"). It's just IsPlaying("SomeState").
 
 - Comfortable to use for non-technical Animators
@@ -58,12 +59,12 @@ Both animators and the programmers should at all times feel like they know what'
 
 - Easy to understand
   - The animationPlayer only considers a single state as the currently played state, and immediately sets that when you change state. So if you call Play("Attack"), attack is the currently played state. On the same frame, even!
-  - As few as possible gotchas when it comes to ordering of things. 
+  - As few as possible gotchas when it comes to ordering of things.
   - Both the editor side and the API will be well-documented, and examples for both will be included.
-  - Tools that graphs the AnimationPlayer's state over time, and visualizes what messages were received at what times, and how the player reacted to those messages.
+  - Tools that graphs the AnimationPlayer's state over time, and visualizes what messages were received at what times, and how the player reacted to those messages. This will make it much easier to hunt down bugs, and to understand what's going on.
 
 - Be at least as fast as playing animations through an AnimatorController. Preferably a lot faster
-  - Avoid as many as possible performance gotchas. If there's an AnimationPlayer attached to a GameObject that's not currently playing any animations, that shouldn't have a huge overhead! 
+  - Avoid as many as possible performance gotchas. If there's an AnimationPlayer attached to a GameObject that's not currently playing any animations, that shouldn't have any overhead! 
 
 ## Contributions
 Yes, please!

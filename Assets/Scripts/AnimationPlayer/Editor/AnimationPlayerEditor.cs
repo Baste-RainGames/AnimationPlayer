@@ -469,9 +469,6 @@ namespace Animation_Player
             selectedState.SetTo(Mathf.Clamp(selectedState, 0, layer.states.Count - 1));
         }
 
-        private float blendVal;
-        private float blendVal2;
-
         private const float selectedLayerWidth = 108f;
 
         private const string persistedLayer = "APE_SelectedLayer_";
@@ -501,12 +498,13 @@ namespace Animation_Player
 
         public override bool RequiresConstantRepaint()
         {
-            return Application.isPlaying || previewer.IsShowingPreview || DragAndDrop.objectReferences.Length > 0;
+            return Application.isPlaying || (previewer != null && previewer.IsShowingPreview) || DragAndDrop.objectReferences.Length > 0;
         }
 
         private void OnDestroy()
         {
-            previewer.Cleanup();
+            if(previewer != null)
+                previewer.Cleanup();
         }
     }
 }

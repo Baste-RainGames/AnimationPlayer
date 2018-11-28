@@ -64,6 +64,10 @@ namespace Animation_Player
             EditorGUILayout.EndHorizontal();
             EditorGUI.indentLevel--;
 
+            GUILayout.Space(20f);
+
+            currentEditor.previewer.DrawStatePreview(selectedLayer, selectedState);
+
             if (deleteThisState)
             {
                 DeleteState(animationPlayer, layer, selectedState);
@@ -72,10 +76,6 @@ namespace Animation_Player
 
             if (markDirty)
                 currentEditor.MarkDirty();
-
-            GUILayout.Space(20f);
-
-            currentEditor.previewer.DrawStatePreview(selectedLayer, selectedState);
         }
 
         private static void DrawStateData(AnimationState state, ref bool markDirty)

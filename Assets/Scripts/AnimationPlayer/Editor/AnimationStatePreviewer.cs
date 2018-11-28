@@ -205,16 +205,37 @@ namespace Animation_Player
                 previewGraph.Destroy();
             if (animationPlayer == null) //Happens when entering play mode with the animationplayer selected
                 return;
-            
+
             //Reset the object to the bind pose. Only way I've found is to play an empty clip for a single frame.
             var resetGraph = PlayableGraph.Create();
-            var animator = animationPlayer.gameObject.EnsureComponent<Animator>();
-            var animOutput = AnimationPlayableOutput.Create(resetGraph, "Cleanup Graph", animator);
-            animOutput.SetSourcePlayable(AnimationClipPlayable.Create(resetGraph, new AnimationClip()));
-            resetGraph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
-            resetGraph.GetRootPlayable(0).SetTime(0);
-            resetGraph.Evaluate();
-            resetGraph.Destroy();
+            try {
+                var animator = animationPlayer.gameObject.EnsureComponent<Animator>();
+                var animOutput = AnimationPlayableOutput.Create(resetGraph, "Cleanup Graph", animator);
+                var state = animationPlayer.layers[0].states[0];
+
+                AnimationClip clip;
+                if (state is BlendTree1D blendTree1D)
+                    clip = blendTree1D.blendTree[0].clip;
+                else if (state is BlendTree2D blendTree2D)
+                    clip = blendTree2D.blendTree[0].clip;
+                else if (state is PlayRandomClip randomClip)
+                    clip = randomClip.clips[0];
+                else if (state is SingleClip singleClip)
+                    clip = singleClip.clip;
+                else
+                    throw new System.Exception("Unknown type");
+
+                // A solution where we play an empty clip worked ay one point, but broke. I really just want to get the model into the bind pose,
+                // but Unity really resists that idea.
+                animOutput.SetSourcePlayable(AnimationClipPlayable.Create(resetGraph, clip));
+                resetGraph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
+                resetGraph.GetRootPlayable(0).SetTime(0);
+                resetGraph.Evaluate();
+            }
+            catch { }
+            finally {
+                resetGraph.Destroy();
+            }
         }
     }
 }

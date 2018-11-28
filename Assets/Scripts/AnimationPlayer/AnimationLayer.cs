@@ -25,6 +25,9 @@ namespace Animation_Player
         private bool firstFrame = true;
         private bool anyStatesHasAnimationEvents;
 
+        private AnimationLayerMixerPlayable layerMixer; //only use for re-initting!
+        private int layerIndex; //only use for re-initting!
+
         //blend info:
         private bool transitioning;
         private TransitionData currentTransitionData;
@@ -118,6 +121,9 @@ namespace Animation_Player
 
         public void InitializeLayerBlending(PlayableGraph graph, int layerIndex, AnimationLayerMixerPlayable layerMixer)
         {
+            this.layerMixer = layerMixer;
+            this.layerIndex = layerIndex;
+
             graph.Connect(stateMixer, 0, layerMixer, layerIndex);
 
             layerMixer.SetInputWeight(layerIndex, startWeight);
@@ -499,6 +505,11 @@ namespace Animation_Player
 
         public int AddState(AnimationState state)
         {
+            if (states.Count == 0) {
+                HandleAddedFirstStateAfterStartup(state);
+                return 0;
+            }
+
             states.Add(state);
             if (state.animationEvents.Count > 0)
                 anyStatesHasAnimationEvents = true;
@@ -543,6 +554,26 @@ namespace Animation_Player
 
             containingGraph.Connect(playable, 0, stateMixer, indexOfNew);
             return indexOfNew;
+        }
+
+        /// <summary>
+        /// If the first state gets added after Initialize and InitializeLayerBlending has run, we disconnect and destroy the empty state mixer, and then
+        /// re-initialize.
+        /// </summary>
+        private void HandleAddedFirstStateAfterStartup(AnimationState state)
+        {
+            states.Add(state);
+
+            // layerMixer.IsValid => there's more than 1 layer.
+            if(layerMixer.IsValid())
+                containingGraph.Disconnect(layerMixer, layerIndex);
+
+            stateMixer.Destroy();
+
+            InitializeSelf(containingGraph);
+
+            if(layerMixer.IsValid())
+                InitializeLayerBlending(containingGraph, layerIndex, layerMixer);
         }
 
 #if UNITY_EDITOR

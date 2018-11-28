@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
@@ -39,11 +38,12 @@ namespace Animation_Player
         //        public bool IKAvailable { get; private set; }
 
         private bool hasAwoken;
-
         private void Awake()
         {
-            EnsureVersionUpgraded();
+            if(hasAwoken)
+                return;
             hasAwoken = true;
+            EnsureVersionUpgraded();
 
             if (layers.Length == 0)
                 return;
@@ -103,6 +103,16 @@ namespace Animation_Player
         {
             if (graph.IsValid())
                 graph.Destroy();
+        }
+
+        /// <summary>
+        /// Ensures that the AnimationPlayer is ready - ie. has had Awake called. Use this if you're calling something before you can be sure that the
+        /// AnimationPlayer's gotten around to calling Awake yet, like if you're calling into AnimationPlayer from Awake. 
+        /// </summary>
+        public void EnsureReady() 
+        {
+            if(!hasAwoken)
+                Awake();
         }
 
         /// <summary>
@@ -253,6 +263,17 @@ namespace Animation_Player
             AssertLayerInBounds(layer, "Playing a state after seconds");
             AssertStateInBounds(layer, state, "Playing a state after seconds");
             layers[layer].PlayAfterSeconds(seconds, state, defaultTransition);
+        }
+
+        /// <summary>
+        /// As PlayAfterSeconds, but with the default state.
+        /// </summary>
+        /// <param name="seconds">How long to wait before playing the state.</param>
+        /// <param name="layer">Layer to play the state on.</param>
+        public void PlayDefaultStateAfterSeconds(float seconds, int layer = 0) 
+        {
+            AssertLayerInBounds(layer, "Playing default after seconds");
+            layers[layer].PlayAfterSeconds(seconds, 0, defaultTransition);
         }
 
         /// <summary>
@@ -468,7 +489,8 @@ namespace Animation_Player
             {
                 if (!hasAwoken)
                 {
-                    Debug.LogError("Trying to get index of a state before AnimationPlayer has had the time to Awake yet! Please don't poll states before Start!");
+                    Debug.LogError("Trying to get index of a state before AnimationPlayer has had the time to Awake yet! " +
+                                   $"Please call {nameof(EnsureReady)}, or wait until Start with whatever you're doing!");
                     return -1;
                 }
                 
@@ -634,6 +656,7 @@ namespace Animation_Player
                 Debug.LogError("Don't call AnimationPlayer.AddState at runtime! Just add states to the layers directly!");
                 return -1;
             }
+
             AssertLayerInBounds(layer, "Adding an animation state");
             return layers[layer].AddState(state);
         }

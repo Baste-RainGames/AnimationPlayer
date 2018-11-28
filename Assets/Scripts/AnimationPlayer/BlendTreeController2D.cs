@@ -115,6 +115,7 @@ namespace Animation_Player
                 currentBlendVector.x = currentSetValue1;
                 currentBlendVector.y = currentSetValue2;
                 Recalculate();
+                shouldRecalculate = false;
             }
         }
 

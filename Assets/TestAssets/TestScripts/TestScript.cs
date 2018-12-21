@@ -3,7 +3,7 @@ using Animation_Player;
 using UnityEngine;
 
 public class TestScript : MonoBehaviour
-{
+{/*
     private AnimationPlayer animationPlayer;
     private int testIndex;
     public AnimationClip clip;
@@ -85,5 +85,5 @@ public class TestScript : MonoBehaviour
             animationPlayer.SetBlendVar("Speed", 1.5f);
         }
     }
-
+*/
 }

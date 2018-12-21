@@ -83,7 +83,6 @@ namespace Animation_Player
                     //This moves the time last frame to before time 0 if we looped, which makes the code under easier.
                     timeLastFrame = timeCurrentFrame - delta;
                 }
-
             }
             foreach (var animationEvent in animationEvents)
             {

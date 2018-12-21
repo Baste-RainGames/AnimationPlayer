@@ -1,0 +1,57 @@
+ (0,0): [12-21-2018 04:40:12.312 PM] Unity incremental compiler server
+ (0,0): [12-21-2018 04:40:12.645 PM] watchdog active on pid: 10652
+ (0,0): [12-21-2018 04:40:15.464 PM] SerializedPropertyExtension.dll: no prior compilation found in cache. Caller PID: 10652
+ (0,0): [12-21-2018 04:40:15.464 PM] Unity.TextMeshPro.dll: no prior compilation found in cache. Caller PID: 10652
+ (0,0): [12-21-2018 04:40:15.477 PM] GraphVisualizer.dll: no prior compilation found in cache. Caller PID: 10652
+ (0,0): [12-21-2018 04:40:15.484 PM] SerializedPropertyExtension.dll compiling...
+ (0,0): [12-21-2018 04:40:15.488 PM] Unity.TextMeshPro.dll compiling...
+ (0,0): [12-21-2018 04:40:15.489 PM] GraphVisualizer.dll compiling...
+ (0,0): [12-21-2018 04:40:15.504 PM] Unity.PackageManagerUI.Editor.dll: no prior compilation found in cache. Caller PID: 10652
+ (0,0): [12-21-2018 04:40:15.516 PM] Unity.PackageManagerUI.Editor.dll compiling...
+ (0,0): [12-21-2018 04:40:18.990 PM] SerializedPropertyExtension.dll: emitting IL to : C:\Users\Rain\workspace\AnimationPlayer\Temp\SerializedPropertyExtension.dll
+ (0,0): [12-21-2018 04:40:18.990 PM] GraphVisualizer.dll: emitting IL to : C:\Users\Rain\workspace\AnimationPlayer\Temp\GraphVisualizer.dll
+ (0,0): [12-21-2018 04:40:18.990 PM] Unity.PackageManagerUI.Editor.dll: emitting IL to : C:\Users\Rain\workspace\AnimationPlayer\Temp\Unity.PackageManagerUI.Editor.dll
+ (0,0): [12-21-2018 04:40:19.040 PM] GraphVisualizer.dll compilation finished in 3552ms  source files re-parsed: 1 metadata reloaded: 163
+ (0,0): [12-21-2018 04:40:19.047 PM] SerializedPropertyExtension.dll compilation finished in 3563ms  source files re-parsed: 2 metadata reloaded: 150
+ (0,0): [12-21-2018 04:40:19.052 PM] GraphVisualizer.dll: session status updated to IncrementalCompilationStatus.Finished for Caller PID: 10652
+ (0,0): [12-21-2018 04:40:19.059 PM] SerializedPropertyExtension.dll: session status updated to IncrementalCompilationStatus.Finished for Caller PID: 10652
+ (0,0): [12-21-2018 04:40:19.232 PM] Unity.PackageManagerUI.Editor.dll compilation finished in 3716ms  source files re-parsed: 44 metadata reloaded: 131
+ (0,0): [12-21-2018 04:40:19.244 PM] Unity.PackageManagerUI.Editor.dll: session status updated to IncrementalCompilationStatus.Finished for Caller PID: 10652
+ (0,0): [12-21-2018 04:40:19.258 PM] Unity.TextMeshPro.dll: emitting IL to : C:\Users\Rain\workspace\AnimationPlayer\Temp\Unity.TextMeshPro.dll
+ (0,0): [12-21-2018 04:40:19.363 PM] Unity.TextMeshPro.dll compilation finished in 3875ms  source files re-parsed: 45 metadata reloaded: 169
+ (0,0): [12-21-2018 04:40:19.375 PM] Unity.TextMeshPro.dll: session status updated to IncrementalCompilationStatus.Finished for Caller PID: 10652
+ (0,0): [12-21-2018 04:40:19.418 PM] AnimationPlayer.dll: no prior compilation found in cache. Caller PID: 10652
+ (0,0): [12-21-2018 04:40:19.431 PM] AnimationPlayer.dll compiling...
+ (0,0): [12-21-2018 04:40:19.546 PM] GraphVisualizerEditor.dll: no prior compilation found in cache. Caller PID: 10652
+ (0,0): [12-21-2018 04:40:19.591 PM] GraphVisualizerEditor.dll compiling...
+ (0,0): [12-21-2018 04:40:19.723 PM] Unity.TextMeshPro.Editor.dll: no prior compilation found in cache. Caller PID: 10652
+ (0,0): [12-21-2018 04:40:19.753 PM] GraphVisualizerEditor.dll: emitting IL to : C:\Users\Rain\workspace\AnimationPlayer\Temp\GraphVisualizerEditor.dll
+ (0,0): [12-21-2018 04:40:19.755 PM] AnimationPlayer.dll: emitting IL to : C:\Users\Rain\workspace\AnimationPlayer\Temp\AnimationPlayer.dll
+ (0,0): [12-21-2018 04:40:19.753 PM] Unity.TextMeshPro.Editor.dll compiling...
+ (0,0): [12-21-2018 04:40:19.837 PM] GraphVisualizerEditor.dll compilation finished in 246ms  source files re-parsed: 8 metadata reloaded: 0
+ (0,0): [12-21-2018 04:40:19.849 PM] GraphVisualizerEditor.dll: session status updated to IncrementalCompilationStatus.Finished for Caller PID: 10652
+ (0,0): [12-21-2018 04:40:19.837 PM] AnimationPlayer.dll compilation finished in 406ms  source files re-parsed: 20 metadata reloaded: 1
+ (0,0): [12-21-2018 04:40:20.042 PM] AnimationPlayer.dll: session status updated to IncrementalCompilationStatus.Finished for Caller PID: 10652
+ (0,0): [12-21-2018 04:40:20.106 PM] Unity.TextMeshPro.Editor.dll: emitting IL to : C:\Users\Rain\workspace\AnimationPlayer\Temp\Unity.TextMeshPro.Editor.dll
+ (0,0): [12-21-2018 04:40:20.249 PM] AnimationPlayerEditor.dll: no prior compilation found in cache. Caller PID: 10652
+ (0,0): [12-21-2018 04:40:20.261 PM] AnimationPlayerEditor.dll compiling...
+ (0,0): [12-21-2018 04:40:20.279 PM] Unity.TextMeshPro.Editor.dll compilation finished in 525ms  source files re-parsed: 39 metadata reloaded: 1
+ (0,0): [12-21-2018 04:40:20.291 PM] Unity.TextMeshPro.Editor.dll: session status updated to IncrementalCompilationStatus.Finished for Caller PID: 10652
+ (0,0): [12-21-2018 04:40:20.349 PM] AnimationPlayerEditor.dll: emitting IL to : C:\Users\Rain\workspace\AnimationPlayer\Temp\AnimationPlayerEditor.dll
+ (0,0): [12-21-2018 04:40:20.415 PM] AnimationPlayerEditor.dll compilation finished in 155ms  source files re-parsed: 9 metadata reloaded: 2
+ (0,0): [12-21-2018 04:40:20.427 PM] AnimationPlayerEditor.dll: session status updated to IncrementalCompilationStatus.Finished for Caller PID: 10652
+ (0,0): [12-21-2018 04:40:22.768 PM] Assembly-CSharp.dll: no prior compilation found in cache. Caller PID: 10652
+ (0,0): [12-21-2018 04:40:22.781 PM] Assembly-CSharp.dll compiling...
+ (0,0): [12-21-2018 04:40:22.827 PM] Assembly-CSharp.dll: emitting IL to : C:\Users\Rain\workspace\AnimationPlayer\Temp\Assembly-CSharp.dll
+ (0,0): [12-21-2018 04:40:22.862 PM] Assembly-CSharp.dll compilation finished in 81ms  source files re-parsed: 3 metadata reloaded: 4
+ (0,0): [12-21-2018 04:40:22.876 PM] Assembly-CSharp.dll: session status updated to IncrementalCompilationStatus.Finished for Caller PID: 10652
+ (0,0): [12-21-2018 04:42:22.998 PM] Assembly-CSharp.dll compiling...
+ (0,0): [12-21-2018 04:42:23.050 PM] Assembly-CSharp.dll: emitting IL to : C:\Users\Rain\workspace\AnimationPlayer\Temp\Assembly-CSharp.dll
+ (0,0): [12-21-2018 04:42:23.083 PM] Assembly-CSharp.dll compilation finished in 84ms  source files re-parsed: 1 metadata reloaded: 0
+ (0,0): [12-21-2018 04:42:23.095 PM] Assembly-CSharp.dll: compilation was cached, 1 file(s) were found to have changed. Caller PID: 10652
+ (0,0): [12-21-2018 04:42:23.107 PM] Assembly-CSharp.dll: session status updated to IncrementalCompilationStatus.Finished for Caller PID: 10652
+ (0,0): [12-21-2018 04:42:23.519 PM] Assembly-CSharp-Editor.dll: no prior compilation found in cache. Caller PID: 10652
+ (0,0): [12-21-2018 04:42:23.531 PM] Assembly-CSharp-Editor.dll compiling...
+ (0,0): [12-21-2018 04:42:23.565 PM] Assembly-CSharp-Editor.dll: emitting IL to : C:\Users\Rain\workspace\AnimationPlayer\Temp\Assembly-CSharp-Editor.dll
+ (0,0): [12-21-2018 04:42:23.598 PM] Assembly-CSharp-Editor.dll compilation finished in 67ms  source files re-parsed: 1 metadata reloaded: 1
+ (0,0): [12-21-2018 04:42:23.610 PM] Assembly-CSharp-Editor.dll: session status updated to IncrementalCompilationStatus.Finished for Caller PID: 10652

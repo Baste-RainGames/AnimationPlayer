@@ -29,7 +29,7 @@ namespace Animation_Player
             animationPlayer = player;
         }
 
-        public void DrawStatePreview(PersistedInt selectedLayer, PersistedInt selectedState)
+        public void DrawStatePreview(int selectedLayer, int selectedState)
         {
             var state = animationPlayer.layers[selectedLayer].states[selectedState];
             if (IsShowingPreview)
@@ -201,8 +201,10 @@ namespace Animation_Player
 
         public void Cleanup()
         {
-            if (previewGraph.IsValid())
-                previewGraph.Destroy();
+            if (!previewGraph.IsValid())
+                return;
+
+            previewGraph.Destroy();
             if (animationPlayer == null) //Happens when entering play mode with the animationplayer selected
                 return;
 

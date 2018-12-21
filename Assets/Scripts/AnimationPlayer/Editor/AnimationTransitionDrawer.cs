@@ -6,8 +6,8 @@ namespace Animation_Player
 {
     public static class AnimationTransitionDrawer
     {
-        public static void DrawTransitions(AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedStateIdx,
-                                           PersistedInt selectedToStateIdx, string[] stateNamesInLayer)
+        public static void DrawTransitions(AnimationPlayer animationPlayer, int selectedLayer, int selectedStateIdx, PersistedInt selectedToStateIdx,
+                                           string[] stateNamesInLayer)
         {
             var layer = animationPlayer.layers[selectedLayer];
             if (layer.states.Count == 0)

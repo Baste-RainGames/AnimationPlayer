@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
+
 using Debug = UnityEngine.Debug;
+using UObject = UnityEngine.Object;
 
 namespace Animation_Player
 {
@@ -14,6 +15,8 @@ namespace Animation_Player
         private const int lastVersion = 1;
         [SerializeField, HideInInspector]
         private int versionNumber;
+
+        public static StateID DefaultState => 0;
 
         public AnimationLayer[] layers;
         public TransitionData defaultTransition;
@@ -67,7 +70,7 @@ namespace Animation_Player
             AnimationPlayableOutput animOutput = AnimationPlayableOutput.Create(graph, $"{name}_animation_player", OutputAnimator);
 
             for (var i = 0; i < layers.Length; i++)
-                layers[i].InitializeSelf(graph);
+                layers[i].InitializeSelf(graph, defaultTransition);
 
             if (layers.Length <= 1)
             {
@@ -116,165 +119,115 @@ namespace Animation_Player
         }
 
         /// <summary>
-        /// Play a state, using an instant transition. The state will immediately be the current played state. 
-        /// </summary>
-        /// <param name="state">Name of the state to play</param>
-        /// <param name="layer">Layer the state should be played on</param>
-        public void SnapTo(string state, int layer = 0)
-        {
-            AssertLayerInBounds(layer, state, "Snap to state");
-            Play(state, TransitionData.Instant(), layer);
-        }
-
-        /// <summary>
-        /// Play a state, using an instant transition. The state will immediately be the current played state. 
-        /// </summary>
-        /// <param name="state">state index to play</param>
-        /// <param name="layer">Layer the state should be played on</param>
-        public void SnapTo(int state, int layer = 0)
-        {
-            AssertLayerInBounds(layer, state, "Snap to state");
-            Play(state, TransitionData.Instant(), layer);
-        }
-
-        /// <summary>
-        /// Play a state, using the defined transition between the current state and that state if it exists,
-        /// or the player's default transition if it doesn't.
-        /// The state will immediately be the current played state. 
-        /// </summary>
-        /// <param name="state">Name of the state to play</param>
-        /// <param name="layer">Layer the state should be played on</param>
-        public void Play(string state, int layer = 0)
-        {
-            AssertLayerInBounds(layer, state, "play a state");
-            int stateIdx = GetStateIdxFromName(state, layer);
-            if (stateIdx == -1)
-                return;
-            Play(stateIdx, layer);
-        }
-
-        /// <summary>
-        /// Plays the default state of the state machine
-        /// </summary>
-        /// <param name="layer">Layer to play the default state on</param>
-        public void PlayDefaultState(int layer = 0)
-        {
-            AssertLayerInBounds(layer, "play the default state");
-            Play(0, layer);
-        }
-
-        /// <summary>
-        /// Return to playing the default state if the named state is the current played state.
-        /// This is usefull if you want to play an animation, and then return to idle, but don't want
-        /// to intervene if something else has changed the currently played state. 
-        /// </summary>
-        /// <param name="state">State to check if is playing</param>
-        /// <param name="layer">Layer this is happening on</param>
-        public void PlayDefaultStateIfPlaying(string state, int layer = 0)
-        {
-            AssertLayerInBounds(layer, state, "return to default state");
-            if (layers[layer].GetCurrentPlayingState().Name == state)
-                Play(0, layer);
-        }
-
-        /// <summary>
         /// Play a state, using the defined transition between the current state and that state if it exists,
         /// or the player's default transition if it doesn't.
         /// The state will immediately be the current played state.
         /// </summary>
         /// <param name="state">state index to play</param>
         /// <param name="layer">Layer the state should be played on</param>
-        public void Play(int state, int layer = 0)
+        public void Play(StateID state, LayerID layer = default)
         {
-            AssertLayerInBounds(layer, state, "play a state");
-            AssertStateInBounds(layer, state, "play a state");
-            layers[layer].PlayUsingInternalTransition(state, defaultTransition);
+            Play(state, layer, "Play state");
+        }
+
+        private void Play(StateID state, LayerID layer, string actionIDForErrors)
+        {
+            var (layerIndex, stateIndex, foundIndices) = GetLayerAndStateIndices(state, layer, actionIDForErrors);
+            if (!foundIndices)
+                return;
+            layers[layerIndex].Play(stateIndex, TransitionData.UseDefined());
         }
 
         /// <summary>
-        /// Play a state. The state will immediately be the current played state. 
-        /// </summary>
-        /// <param name="state">Name of the state to play</param>
-        /// <param name="transitionData">How to transition into the state</param>
-        /// <param name="layer">Layer the state should be played on</param>
-        public void Play(string state, TransitionData transitionData, int layer = 0)
-        {
-            AssertLayerInBounds(layer, state, "play a state");
-            int stateIdx = GetStateIdxFromName(state, layer);
-            Play(stateIdx, transitionData, layer);
-        }
-
-        /// <summary>
-        /// Play a state. The state will immediately be the current played state. 
+        /// Play a state, using a custom transition. The state will immediately be the current played state.
         /// </summary>
         /// <param name="state">state index to play</param>
         /// <param name="transitionData">How to transition into the state</param>
         /// <param name="layer">Layer the state should be played on</param>
-        public void Play(int state, TransitionData transitionData, int layer = 0)
+        public void Play(StateID state, TransitionData transitionData, LayerID layer = default)
         {
-            AssertLayerInBounds(layer, state, "play a state");
-            AssertStateInBounds(layer, state, "play a state");
-            AssertTransitionDataFine(transitionData);
-            layers[layer].PlayUsingExternalTransition(state, transitionData);
+            Play(state, transitionData, layer, "Play state with transition");
+        }
+
+        private void Play(StateID state, TransitionData transitionData, LayerID layer, string actionIDForErrors)
+        {
+            var (layerIndex, stateIndex, foundIndices) = GetLayerAndStateIndices(state, layer, actionIDForErrors);
+            if (!foundIndices)
+                return;
+
+            if (transitionData.type == TransitionType.Curve && transitionData.curve != null) {
+                Debug.LogError(
+                    $"Trying to transition using a curve, but the curve is null! " +
+                    $"Error happened for AnimationPlayer on GameObject {gameObject.name})", gameObject
+                );
+                return;
+            }
+
+            layers[layerIndex].Play(stateIndex, transitionData);
         }
 
         /// <summary>
-        /// Plays a state after a certain amount of seconds. If any overload of
-        /// Play or SnapTo are called before that many seconds has passed, this
-        /// instruction gets discarded. Several PlayAfterSeconds in a row will
-        /// work as intended:
-        /// 
-        /// Example:
-        /// Play("State1");
-        /// PlayAfterSeconds(1, "State2");
-        /// Play("State3"); //Cancels the instruction to play State 2 after 1 second
-        /// //After 1 seconds has passed, State 3 will still be playing
-        ///
-        /// Play("State1");
-        /// PlayAfterSeconds(1, "State2");
-        /// SnapTo("State3") //Cancels the instruction to play State 2 after 1 second
-        /// //After 1 seconds has passed, State 3 will still be playing
-        /// 
-        /// Play("State1");
-        /// PlayAfterSeconds(1, "State2");
-        /// PlayAfterSeconds(2, "State3");
-        /// //After 1 seconds has passed, State 2 will start playing
-        /// //After 2 seconds has passed, State 3 will start playing
-        /// 
+        /// Play a state, using an instant transition. The state will immediately be the current played state.
         /// </summary>
-        /// <param name="seconds">How long to wait before playing the state.</param>
-        /// <param name="state">State to play.</param>
-        /// <param name="layer">Layer to play the state on.</param>
-        public void PlayAfterSeconds(float seconds, string state, int layer = 0)
+        /// <param name="state">state index to play</param>
+        /// <param name="layer">Layer the state should be played on</param>
+        public void SnapTo(StateID state, LayerID layer = default)
         {
-            AssertLayerInBounds(layer, "Playing animation after seconds");
-            int stateIdx = GetStateIdxFromName(state, layer);
-            PlayAfterSeconds(seconds, stateIdx, layer);
+            Play(state, TransitionData.Instant(), layer, "Snap to state");
         }
 
         /// <summary>
-        /// Plays a state after a certain amount of seconds. See overload with string state for details.
-        /// <param name="seconds">How long to wait before playing the state.</param>
-        /// <param name="state">Index of the state to play.</param>
-        /// <param name="layer">Layer to play the state on.</param>
+        /// Plays the default state of the state machine
         /// </summary>
-        public void PlayAfterSeconds(float seconds, int state, int layer = 0)
+        /// <param name="layer">Layer to play the default state on</param>
+        public void PlayDefaultState(LayerID layer = default)
         {
-            AssertLayerInBounds(layer, "Playing a state after seconds");
-            AssertStateInBounds(layer, state, "Playing a state after seconds");
-            layers[layer].PlayAfterSeconds(seconds, state, defaultTransition);
+            Play(0, layer, "Play default state");
         }
 
-        /// <summary>
-        /// As PlayAfterSeconds, but with the default state.
-        /// </summary>
-        /// <param name="seconds">How long to wait before playing the state.</param>
-        /// <param name="layer">Layer to play the state on.</param>
-        public void PlayDefaultStateAfterSeconds(float seconds, int layer = 0) 
+        public bool IsPlaying(StateID state, LayerID layer = default)
         {
-            AssertLayerInBounds(layer, "Playing default after seconds");
-            layers[layer].PlayAfterSeconds(seconds, 0, defaultTransition);
+            var (layerIndex, stateIndex, foundIndices) = GetLayerAndStateIndices(state, layer, "Check if a state is playing");
+            if (!foundIndices)
+                return false;
+            return layers[layerIndex].GetIndexOfPlayingState() == stateIndex;
         }
+
+        public void QueueStateChange(StateID state) => QueueStateChange(state, default, default, default);
+        public void QueueStateChange(StateID state, QueueInstruction instruction) => QueueStateChange(state, instruction, default, default);
+        public void QueueStateChange(StateID state, TransitionData transition) => QueueStateChange(state, default, transition, default);
+        public void QueueStateChange(StateID state, LayerID layer) => QueueStateChange(state, default, default, layer);
+        public void QueueStateChange(StateID state, QueueInstruction instruction, TransitionData transition) => QueueStateChange(state, instruction, transition, default);
+        public void QueueStateChange(StateID state, QueueInstruction instruction, LayerID layer) => QueueStateChange(state, instruction, default, layer);
+        public void QueueStateChange(StateID state, TransitionData transition, LayerID layer) => QueueStateChange(state, default, transition, layer);
+
+        public void QueueStateChange(StateID state, QueueInstruction instruction, TransitionData transition, LayerID layer)
+        {
+            var (layerIndex, stateIndex, foundIndices) = GetLayerAndStateIndices(state, layer, $"Play a state when the next state is done");
+            if (!foundIndices)
+                return;
+
+            layers[layerIndex].QueuePlayCommand(stateIndex, instruction, transition);
+        }
+
+        public void ClearQueuedPlayCommands(LayerID layer = default)
+        {
+            var (layerIndex, foundIndices) = GetLayerIndex(layer, $"Clearing queued play commands");
+            if (!foundIndices)
+                return;
+
+            layers[layerIndex].ClearQueuedPlayCommands();
+        }
+
+        // /// <summary>
+        // /// As PlayAfterSeconds, but with the default state.
+        // /// </summary>
+        // /// <param name="seconds">How long to wait before playing the state.</param>
+        // /// <param name="layer">Layer to play the state on.</param>
+        // public void PlayDefaultStateAfterSeconds(float seconds, LayerID layer = default)
+        // {
+        //     PlayAfterSeconds(seconds, 0, layer);
+        // }
 
         /// <summary>
         /// Jumps the current played state to a certain time between 0 and 1.
@@ -283,9 +236,13 @@ namespace Animation_Player
         /// </summary>
         /// <param name="time">The time to set.</param>
         /// <param name="layer">Layer to set the time of a state on.</param>
-        public void JumpToRelativeTime(float time, int layer = 0) {
-            AssertLayerInBounds(layer, "Jumping to a relative time");
-            layers[layer].JumpToRelativeTime(time);
+        public void JumpToRelativeTime(float time, LayerID layer = default)
+        {
+            var (layerIndex, foundIndex) = GetLayerIndex(layer, "Jumping to a relative time");
+            if (!foundIndex)
+                return;
+
+            layers[layerIndex].JumpToRelativeTime(time);
         }
 
         /// <summary>
@@ -294,10 +251,13 @@ namespace Animation_Player
         /// <param name="stateName">Name to check on</param>
         /// <param name="layer">Layer to check (default 0)</param>
         /// <returns>true if there is a state with the name on the layer</returns>
-        public bool HasState(string stateName, int layer = 0)
+        public bool HasState(string stateName, LayerID layer = default)
         {
-            AssertLayerInBounds(layer, "Check if state exists");
-            return layers[layer].HasState(stateName);
+            var (layerIndex, foundIndex) = GetLayerIndex(layer, "Check if state exists");
+            if (!foundIndex)
+                return false;
+
+            return layers[layerIndex].HasState(stateName);
         }
 
         /// <summary>
@@ -308,137 +268,219 @@ namespace Animation_Player
         /// <param name="state">State to check for</param>
         /// <param name="layer">Layer to check in</param>
         /// <returns>The weight for state in layer</returns>
-        public float GetStateWeight(string state, int layer = 0)
+        public float GetStateWeight(StateID state, LayerID layer)
         {
-            AssertLayerInBounds(layer, state, "get a state weight");
-            int stateIdx = GetStateIdxFromName(state, layer);
-            return layers[layer].GetStateWeight(stateIdx);
+            var (layerIndex, stateIndex, foundIndices) = GetLayerAndStateIndices(state, layer, "Get the weight of a layer");
+            if (!foundIndices)
+                return 0;
+            return layers[layerIndex].GetStateWeight(stateIndex);
         }
 
         /// <summary>
-        /// Finds the weight of a state in the layer's blend, eg. how much the state is playing.
-        /// This is a number between 0 and 1, with 0 for "not playing" and 1 for "playing completely"
-        /// These do not neccessarilly sum to 1.
+        /// Get the weight of a layer. This is it's current weight in the playable layer mixer.
+        /// If there's only a single layer, this method always returns 1.
         /// </summary>
-        /// <param name="state">State to check for</param>
-        /// <param name="layer">Layer to check in</param>
-        /// <returns>The weight for state in layer</returns>
-        public float GetStateWeight(int state, int layer = 0)
+        /// <param name="layer">Layer to get the weight of.</param>
+        /// <returns>The weight of layer in the layer mixer.</returns>
+        public float GetLayerWeight(LayerID layer)
         {
-            AssertLayerInBounds(layer, state, "get a state weight");
-            return layers[layer].GetStateWeight(state);
-        }
+            var (layerIndex, foundLayer) = GetLayerIndex(layer, "Get the weight of a layer");
+            if (!foundLayer)
+                return 0;
 
-        public float GetLayerWeight(int layer) {
-            AssertLayerInBounds(layer, "Getting weight of a layer");
-            if (layers.Length < 2)
+            if (layers.Length < 2) {
+                // The root playable is the layer's state mixer if there's only a single layer, so we need this special case
                 return 1;
-            return rootPlayable.GetInputWeight(layer);
-        }
+            }
 
-        public void SetLayerWeigth(int layer, float weight) {
-            AssertLayerInBounds(layer, "Getting weight of a layer");
-            rootPlayable.SetInputWeight(layer, weight);
+            return rootPlayable.GetInputWeight(layerIndex);
         }
 
         /// <summary>
-        /// Get a state by name.
+        /// Set the weight of a layer in the playable layer mixer.
+        /// </summary>
+        /// <param name="layer">Layer to set the weight of.</param>
+        /// <param name="weight">Weight to set the layer to. \</param>
+        public void SetLayerWeight(LayerID layer, float weight)
+        {
+            var (layerIndex, foundLayer) = GetLayerIndex(layer, "Set the weight of a layer");
+            if (!foundLayer)
+                return;
+
+            if (layers.Length < 2) {
+                Debug.LogWarning($"You're setting the weight of {layer} to {weight}, but there's only one layer!");
+            }
+
+            rootPlayable.SetInputWeight(layerIndex, weight);
+        }
+
+        /// <summary>
+        /// Get a state. You probably want to use other ways of interacting with the state, editing the details of the state generally doesn't affect the
+        /// played graph.
         /// </summary>
         /// <param name="state">State to get</param>
-        /// <param name="layer">Layer to Look in</param>
-        /// <returns></returns>
-        public AnimationState GetState(string state, int layer = 0) 
+        /// <param name="layer">Layer to get the state from</param>
+        /// <returns>The state container.</returns>
+        public AnimationState GetState(StateID state, LayerID layer = default)
         {
-            AssertLayerInBounds(layer, "getting a state");
-            int stateIdx = GetStateIdxFromName(state, layer);
-            AssertStateInBounds(layer, stateIdx, "getting a state");
-            return layers[layer].states[stateIdx];
-        }
+            var (layerIndex, stateIndex, foundIndices) = GetLayerAndStateIndices(state, layer, "Get a state");
+            if (!foundIndices)
+                return null;
 
-        /// <summary>
-        /// Get a state by index.
-        /// </summary>
-        /// <param name="state">Index of the state</param>
-        /// <param name="layer">Layer to look in.</param>
-        /// <returns></returns>
-        public AnimationState GetState(int state, int layer = 0)
-        {
-            AssertLayerInBounds(layer, "getting a state");
-            AssertStateInBounds(layer, state, "getting a state");
-            return layers[layer].states[state];
+            return layers[layerIndex].states[stateIndex];
         }
 
         /// <summary>
         /// Gets the currently playing state. This is the last state you called Play on, and might not even have started blending in yet.
         /// </summary>
-        /// <param name="layer">Layer to check in</param>
-        public AnimationState GetPlayingState(int layer = 0)
+        /// <param name="layer">Layer to get the currently playing state in.</param>
+        /// <returns>The currently playing state.</returns>
+        public AnimationState GetPlayingState(LayerID layer = default)
         {
-            AssertLayerInBounds(layer, "get the current playing state");
-            return layers[layer].GetCurrentPlayingState();
-        }
+            var (layerIndex, foundLayer) = GetLayerIndex(layer, "get the current playing state");
+            if (!foundLayer)
+                return null;
 
-        public int GetIndexOfPlayingState(int layer = 0) 
-        {
-            AssertLayerInBounds(layer, "get the index of the current playing state");
-            return layers[layer].GetIndexOfPlayingState();
-        }
-
-        /// <summary>
-        /// Checks if the AnimationPlayer is playing a named state.
-        /// </summary>
-        /// <param name="state">State to check if is being player</param>
-        /// <param name="layer">Layer to check on</param>
-        /// <returns></returns>
-        public bool IsPlaying(string state, int layer = 0) 
-        {
-            AssertLayerInBounds(layer, "Checking if state is playing");
-            return GetPlayingState(layer).Name == state;
+            return layers[layerIndex].GetCurrentPlayingState();
         }
 
         /// <summary>
-        /// Checks if the AnimationPlayer is playing a state.
+        /// Gets the index of the currently playing state. This is the last state you called Play on, and might not even have started blending in yet.
         /// </summary>
-        /// <param name="state">State to check if is being player</param>
-        /// <param name="layer">Layer to check on</param>
-        /// <returns></returns>
-        public bool IsPlaying(int state, int layer = 0) 
+        /// <param name="layer">Layer to get the currently playing state's index in.</param>
+        /// <returns>The currently playing state's index.</returns>
+        public int GetIndexOfPlayingState(LayerID layer = default)
         {
-            AssertLayerInBounds(layer, "Checking if state is playing");
-            return GetIndexOfPlayingState(layer) == state;
+            var (layerIndex, foundLayer) = GetLayerIndex(layer, "get the index of the current playing state");
+            if (!foundLayer)
+                return -1;
+
+            return layers[layerIndex].GetIndexOfPlayingState();
+        }
+
+        /// <summary>
+        /// Gets the name of the currently playing state. This is the last state you called Play on, and might not even have started blending in yet.
+        /// </summary>
+        /// <param name="layer">Layer to get the currently playing state's name in.</param>
+        /// <returns>The currently playing state's name.</returns>
+        public string GetNameOfPlayingState(LayerID layer = default)
+        {
+            var (layerIndex, foundLayer) = GetLayerIndex(layer, "get the index of the current playing state");
+            if (!foundLayer)
+                return null;
+
+            return layers[layerIndex].GetCurrentPlayingState().Name;
         }
 
         /// <summary>
         /// Retrives all of the currently playing states. The first element in the list will be the currently played state. All
         /// other results will be states that are not finished blending out
         /// </summary>
-        /// <param name="results">result container</param>
-        /// <param name="layer">Layer to chedck in</param>
-        public void GetAllPlayingStates(List<AnimationState> results, int layer = 0)
+        /// <param name="results">Result container for the states.</param>
+        /// <param name="layer">Layer to get the states from.</param>
+        /// <param name="clearResultsList">Should the results list be cleared before the states are added?</param>
+        public void GetAllPlayingStates(List<AnimationState> results, LayerID layer = default, bool clearResultsList = true)
         {
-            AssertLayerInBounds(layer, "get all playing states");
-            results.Clear();
-            layers[layer].AddAllPlayingStatesTo(results);
+            var (layerIndex, foundLayer) = GetLayerIndex(layer, "get all playing states");
+            if (!foundLayer)
+                return;
+
+            if(clearResultsList)
+                results.Clear();
+
+            layers[layerIndex].AddAllPlayingStatesTo(results);
         }
 
-        public void GetAllStates(List<AnimationState> result, int layer = 0) 
+        /// <summary>
+        /// Retrives all of the indices of currently playing states. The first element in the list will be the currently played state. All
+        /// other results will be states that are not finished blending out
+        /// </summary>
+        /// <param name="results">Result container for the state indices.</param>
+        /// <param name="layer">Layer to get the state indices from.</param>
+        /// <param name="clearResultsList">Should the results list be cleared before the state indices are added?</param>
+        public void GetAllPlayingStateIndices(List<int> results, LayerID layer = default, bool clearResultsList = true)
         {
-            AssertLayerInBounds(layer, "get all states");
-            result.Clear();
-            for (int i = 0; i < layers[layer].states.Count; i++) {
-                result.Add(layers[layer].states[i]);
+            var (layerIndex, foundLayer) = GetLayerIndex(layer, "get all playing state indices");
+            if (!foundLayer)
+                return;
+
+            if(clearResultsList)
+                results.Clear();
+
+            layers[layerIndex].AddAllPlayingStatesTo(results);
+        }
+
+        /// <summary>
+        /// Retrives all of the names of currently playing states. The first element in the list will be the currently played state. All
+        /// other results will be states that are not finished blending out.
+        /// </summary>
+        /// <param name="results">Result container for the state names.</param>
+        /// <param name="layer">Layer to get state names from.</param>
+        /// <param name="clearResultsList">Should the results list be cleared before the state names are added?</param>
+        public void GetAllPlayingStateNames(List<string> results, LayerID layer = default, bool clearResultsList = true)
+        {
+            var (layerIndex, foundLayer) = GetLayerIndex(layer, "get all playing state names");
+            if (!foundLayer)
+                return;
+
+            if(clearResultsList)
+                results.Clear();
+
+            layers[layerIndex].AddAllPlayingStatesTo(results);
+        }
+
+        /// <summary>
+        /// Get all of the states in a layer of the AnimationPlayer.
+        /// </summary>
+        /// <param name="results">Result container for the states.</param>
+        /// <param name="layer">Layer to get the states from.</param>
+        /// <param name="clearResultsList">Should the results list be cleared before the states are added?</param>
+        public void GetAllStates(List<AnimationState> results, LayerID layer = default, bool clearResultsList = true)
+        {
+            var (layerIndex, foundLayer) = GetLayerIndex(layer, "get all states");
+            if (!foundLayer)
+                return;
+
+            if(clearResultsList)
+                results.Clear();
+
+            for (int i = 0; i < layers[layerIndex].states.Count; i++) {
+                results.Add(layers[layerIndex].states[i]);
+            }
+        }
+
+        /// <summary>
+        /// Get all of the names of the states in the AnimationPlayer.
+        /// </summary>
+        /// <param name="results">Result container for the state naems.</param>
+        /// <param name="layer">Layer to get the state names from.</param>
+        /// <param name="clearResultsList">Should the results list be cleared before the states are added?</param>
+        public void GetAllStateNames(List<string> results, LayerID layer = default, bool clearResultsList = true)
+        {
+            var (layerIndex, foundLayer) = GetLayerIndex(layer, "get all state names");
+            if (!foundLayer)
+                return;
+
+            if(clearResultsList)
+                results.Clear();
+
+            for (int i = 0; i < layers[layerIndex].states.Count; i++) {
+                results.Add(layers[layerIndex].states[i].Name);
             }
         }
 
         /// <summary>
         /// Gets how many states there are in a layer
         /// </summary>
-        /// <param name="layer">Layer to check in (default 0)</param>
+        /// <param name="layer">Layer to check in</param>
         /// <returns>The number of states in the layer</returns>
-        public int GetStateCount(int layer = 0)
+        public int GetStateCount(LayerID layer = default)
         {
-            AssertLayerInBounds(layer, "get the state count");
-            return layers[layer].states.Count;
+            var (layerIndex, foundLayer) = GetLayerIndex(layer, "get the state count");
+            if (!foundLayer)
+                return 0;
+
+            return layers[layerIndex].states.Count;
         }
 
         /// <summary>
@@ -449,28 +491,51 @@ namespace Animation_Player
         /// <param name="var">The blend variable to set.</param>
         /// <param name="value">The value to set it to.</param>
         /// <param name="layer">The layer to set the blend var on @TODO: Stop having blend variables be layer-based, that's crazy, I think</param>
-        public void SetBlendVar(string var, float value, int layer = 0)
+        public void SetBlendVar(string var, float value, LayerID layer = default)
         {
-            AssertLayerInBounds(layer, "Set blend var");
-            layers[layer].SetBlendVar(var, value);
+            var (layerIndex, foundLayer) = GetLayerIndex(layer, $"set the blend var \"{var}\" to {value}");
+            if (!foundLayer)
+                return;
+
+            layers[layerIndex].SetBlendVar(var, value);
         }
 
-        public float GetBlendVar(string var, int layer = 0)
+        /// <summary>
+        /// Get the current value of a blend var
+        /// </summary>
+        /// <param name="var">The blend var to get the value of.</param>
+        /// <param name="layer">Layer to get the blend var value in.</param>
+        /// <returns>The current weight of var.</returns>
+        public float GetBlendVar(string var, LayerID layer = default)
         {
-            AssertLayerInBounds(layer, "Get blend var");
-            return layers[layer].GetBlendVar(var);
+            var (layerIndex, foundLayer) = GetLayerIndex(layer, $"get the blend var \"{var}\"");
+            if (!foundLayer)
+                return 0f;
+
+            return layers[layerIndex].GetBlendVar(var);
         }
 
+        /// <summary>
+        /// Gets all blend variables on all layers.
+        /// </summary>
+        /// <returns>A list containing all the blend variables on all layers.</returns>
         public List<string> GetBlendVariables()
         {
             List<string> result = new List<string>();
-            GetBlendVariables(result);
+            GetBlendVariables(result, false);
             return result;
         }
 
-        private void GetBlendVariables(List<string> result)
+        /// <summary>
+        /// Adds all blend variables on all layers to a list.
+        /// </summary>
+        /// <param name="result">Result to add the blend variables to.</param>
+        /// <param name="clearResultsList">Should the results list be cleared before the blend variables are added?</param>
+        private void GetBlendVariables(List<string> result, bool clearResultsList)
         {
-            result.Clear();
+            if(clearResultsList)
+                result.Clear();
+
             foreach (var layer in layers)
             {
                 layer.AddAllBlendVarsTo(result);
@@ -479,24 +544,126 @@ namespace Animation_Player
 
         /// <summary>
         /// Gets the index of a state from it's name.
-        /// This method is used internally whenever you send in a string Play("Idle"), so it's recommended to cache the result
-        /// of this method instead of sending in strings.
+        /// When you call Play("name"), the AnimationPlayer compares all state names with the name until it finds a match, so you can use this to cache that
+        /// comparison for some  minor speed gains.
         /// </summary>
-        public int GetStateIdxFromName(string state, int layer = 0)
+        /// <param name="state">The name of the state you're looking for.</param>
+        /// <param name="layer">The layer to look for state in.</param>
+        public int GetStateIndex(string state, LayerID layer = default)
         {
-            int stateIdx = layers[layer].GetStateIdx(state);
+            var (_, stateIndex, foundIndex) = GetLayerAndStateIndices(state, layer, "Get a state from it's name");
+            return foundIndex ? stateIndex : -1;
+        }
+
+        /// <summary>
+        /// Gets the index of a layer from it's name.
+        /// When you call Play(state, "layer"), the AnimationPlayer compares all layer names with the name until it finds a match, so you can use this to cache that
+        /// comparison for some  minor speed gains.
+        /// </summary>
+        public int GetLayerIndex(string layer)
+        {
+            var (layerIndex, foundIndex) = GetLayerIndex(layer, "Get a layer from it's name");
+            return foundIndex ? layerIndex : -1;
+        }
+
+        private (int layerIndex, bool foundIndex) GetLayerIndex(LayerID layerID, string actionIDForErrors) {
+            try
+            {
+                var layerIndex = GetLayerIndex_ThrowOnFailure(layerID, actionIDForErrors);
+                return (layerIndex, true);
+            }
+            catch (StateException exception)
+            {
+                Debug.LogException(exception, exception.context);
+                return (-1, false);
+            }
+        }
+
+        private (int layerIndex, int stateIndex, bool foundIndices) GetLayerAndStateIndices(StateID stateID, LayerID layerID, string actionIDForErrors)
+        {
+            try
+            {
+                var layerIndex = GetLayerIndex_ThrowOnFailure(layerID, actionIDForErrors);
+                var stateIndex = GetStateIndex_ThrowOnFailure(stateID, layerID, layerIndex, actionIDForErrors);
+                return (layerIndex, stateIndex, true);
+            }
+            catch (StateException exception)
+            {
+                Debug.LogException(exception, exception.context);
+                return (-1, -1, false);
+            }
+        }
+
+        private int GetLayerIndex_ThrowOnFailure(LayerID layerID, string actionIDForErrors) {
+            int layerIndex;
+            if (!layerID.isNameBased) {
+                layerIndex = layerID.index;
+
+                if (!(layerIndex >= 0 && layerIndex < layers.Length)) {
+                    var errorMsg =
+                        $"Trying to {actionIDForErrors} on an out of bounds layer! (layer {layerIndex}, but there are  {layers.Length} layers! " +
+                        $"Error happened for AnimationPlayer on GameObject {gameObject.name})";
+                    throw new StateException (errorMsg, gameObject);
+                }
+            }
+            else {
+                layerIndex = -1;
+                for (int i = 0; i < layers.Length; i++) {
+                    if (string.Equals(layerID.name, layers[i].name, StringComparison.InvariantCulture)) {
+                        layerIndex = i;
+                        break;
+                    }
+                }
+
+                if (layerIndex == -1) {
+                    var errorMsg =
+                        $"Trying to {actionIDForErrors} on layer {layerID}, but that layer doesn't exist! Layers that exist are:\n" +
+                        $"{layers.PrettyPrint(true, l => l.name)}\n" +
+                        $"Error happened for AnimationPlayer on GameObject {gameObject.name})";
+                    throw new StateException(errorMsg, gameObject);
+                }
+            }
+
+            return layerIndex;
+
+        }
+
+        private int GetStateIndex_ThrowOnFailure(StateID stateID, LayerID layerID, int layerIndex, string actionIDForErrors) {
+            if (!stateID.isNameBased)
+            {
+                if (!(stateID.index >= 0 && stateID.index < layers[layerIndex].states.Count)) {
+                    if (!hasAwoken) {
+                        throw new StateException (
+                            $"Trying to {actionIDForErrors} on an out of bounds state, due to the Animation player not having awoken yet! State {stateID.index} Layer {layerIndex}" +
+                            $"Error happened for AnimationPlayer on GameObject {gameObject.name})", gameObject
+                        );
+                    }
+                    else {
+                        throw new StateException (
+                            $"Trying to {actionIDForErrors} on an out of bounds state! (state {stateID.index} on layer {layerIndex}, but there are {layers[layerIndex].states.Count} " +
+                            $"states on that layer! " +
+                            $"Error happened for AnimationPlayer on GameObject {gameObject.name})", gameObject
+                        );
+                    }
+                }
+
+                return stateID.index;
+            }
+
+            int stateIdx = layers[layerIndex].GetStateIdx(stateID.name);
             if (stateIdx == -1)
             {
-                if (!hasAwoken)
-                {
-                    Debug.LogError("Trying to get index of a state before AnimationPlayer has had the time to Awake yet! " +
-                                   $"Please call {nameof(EnsureReady)}, or wait until Start with whatever you're doing!");
-                    return -1;
-                }
-                
-                Debug.LogError($"Trying to get index of state \"{state}\" on layer {layer}, but that doesn't exist! States that exist are:" +
-                               $"\n{layers[layer].states.PrettyPrint(s => s.Name)}", gameObject);
-                return -1;
+                var errorMsg =
+                    !hasAwoken ?
+                        $"Trying to {actionIDForErrors} \"{stateID}\" on layer {layerID} before AnimationPlayer has had the time to Awake yet! " +
+                        $"Please call {nameof(EnsureReady)}, or wait until Start with whatever you're doing! " +
+                        $"Error happened for AnimationPlayer on GameObject {gameObject.name})"
+                        :
+                        $"Trying to {actionIDForErrors} \"{stateID}\" on layer {layerID}, but that doesn't exist! States that exist are:" +
+                        $"\n{layers[layerIndex].states.PrettyPrint(true, s => s.Name)} " +
+                        $"Error happened for AnimationPlayer on GameObject {gameObject.name})";
+
+                throw new StateException(errorMsg, gameObject);
             }
 
             return stateIdx;
@@ -527,20 +694,22 @@ namespace Animation_Player
         /// Swaps the currently playing clip on a state.
         /// Haven't quite figured out how this should work yet. Probably will get more options
         /// </summary>
-        /// <param name="state">Index of the state to swap the clip on. This state must be a SingleClipState (for now)</param>
         /// <param name="clip">The new clip to use on the state</param>
+        /// <param name="state">Index of the state to swap the clip on. This state must be a SingleClipState (for now)</param>
         /// <param name="layer">Layer of the state</param>
-        public void SwapClipOnState(int state, AnimationClip clip, int layer = 0) 
+        public void SwapClipOnState(AnimationClip clip, StateID state, LayerID layer = default)
         {
-            AssertLayerInBounds(layer, state, "Swap the clip on a state");
-            AssertStateInBounds(layer, state, "Swap the clip on a state");
-            if (!Application.isPlaying) 
+            if (!Application.isPlaying)
             {
                 Debug.LogError("In edit mode, just set the clip on a state directly.");
                 return;
             }
 
-            layers[layer].SwapClipOnState(state, clip, graph);
+            var (layerIndex, stateIndex, foundIndices) = GetLayerAndStateIndices(state, layer, "Swap clip on a state");
+            if (!foundIndices)
+                return;
+
+            layers[layerIndex].SwapClipOnState(stateIndex, clip, graph);
         }
 
         /// <summary>
@@ -649,7 +818,7 @@ namespace Animation_Player
         /// <param name="state">State to add.</param>
         /// <param name="layer">Layer to add the state to.</param>
         /// <returns>The index of the added state</returns>
-        public int AddState(AnimationState state, int layer = 0)
+        public int AddState(AnimationState state, LayerID layer)
         {
             if (!Application.isPlaying)
             {
@@ -657,8 +826,11 @@ namespace Animation_Player
                 return -1;
             }
 
-            AssertLayerInBounds(layer, "Adding an animation state");
-            return layers[layer].AddState(state);
+            var (layerIndex, foundLayer) = GetLayerIndex(layer, $"Add an animation state");
+            if (!foundLayer)
+                return -1;
+
+            return layers[layerIndex].AddState(state);
         }
 
         /// <summary>
@@ -711,44 +883,78 @@ namespace Animation_Player
             return true;
         }
 
-        [Conditional("UNITY_ASSERTIONS")]
-        private void AssertLayerInBounds(int layer, string action)
+        private class StateException : Exception {
+            public readonly UObject context;
+            public StateException(string message, UObject context) : base(message) {
+                this.context = context;
+            }
+        }
+    }
+
+
+    public struct QueueInstruction
+    {
+        internal QueueStateType type;
+        internal float timeParam;
+        internal bool boolParam;
+
+        public bool CountFromQueued => boolParam;
+
+        public static QueueInstruction AfterSeconds(float seconds, bool countFromNow = true)
         {
-            if (!(layer >= 0 && layer < layers.Length))
-                Debug.LogError($"Trying to {action} on an out of bounds layer! (layer {layer}, there are {layers.Length} layers! " +
-                               $"GameObject {gameObject.name})", gameObject);
+            return new QueueInstruction
+            {
+                type      = QueueStateType.AfterSeconds,
+                timeParam = seconds,
+                boolParam = countFromNow,
+            };
         }
 
-        [Conditional("UNITY_ASSERTIONS")]
-        private void AssertLayerInBounds(int layer, int state, string action)
+        public static QueueInstruction WhenCurrentDone()
         {
-            if (!(layer >= 0 && layer < layers.Length))
-                Debug.LogError($"Trying to {action} on an out of bounds layer! (state {state} on layer {layer}, but there are {layers.Length} layers! " +
-                               $"GameObject {gameObject.name})", gameObject);
+            return new QueueInstruction
+            {
+                type = QueueStateType.WhenCurrentDone,
+            };
         }
 
-        [Conditional("UNITY_ASSERTIONS")]
-        private void AssertLayerInBounds(int layer, string state, string action)
+        public static QueueInstruction SecondsBeforeDone(float seconds)
         {
-            if (!(layer >= 0 && layer < layers.Length))
-                Debug.LogError($"Trying to {action} on an out of bounds layer! (state {state} on layer {layer}, but there are {layers.Length} layers! " +
-                               $"GameObject {gameObject.name})", gameObject);
+            return new QueueInstruction
+            {
+                type = QueueStateType.BeforeCurrentDone_Seconds,
+                timeParam = seconds
+            };
         }
 
-        [Conditional("UNITY_ASSERTIONS")]
-        private void AssertTransitionDataFine(TransitionData transitionData)
+        /// <summary>
+        /// The next state should be played before the current state is finished by a fraction of it's duration.
+        /// So if the current animation is 3 seconds long, and the fraction is 0.1f, the next state should be played 0.3 seconds
+        /// before the current state is finished.
+        ///
+        /// The fraction is taken as a fraction of the state that is playing when this instruction becomes the next instruction. So if you:
+        /// Play(1 second anim)
+        /// Queue(2 second anim)
+        ///
+        /// and then call this with a fraction of .1f, that fraction will resolve to 0.2 seconds.
+        /// </summary>
+        /// <param name="fraction">Fraction of the played animation's duration.</param>
+        /// <returns>A queue instruction set up a fraction before the played state is finished.</returns>
+        public static QueueInstruction FractionBeforeDone(float fraction)
         {
-            if (transitionData.type == TransitionType.Curve && transitionData.curve != null)
-                Debug.LogError("Trying to transition using a curve, but the curve is null!");
+            return new QueueInstruction
+            {
+                type = QueueStateType.BeforeCurrentDone_Relative,
+                timeParam = fraction
+            };
         }
+    }
 
-        [Conditional("UNITY_ASSERTIONS")]
-        private void AssertStateInBounds(int layer, int state, string action)
-        {
-            if (!(state >= 0 && state < layers[layer].states.Count))
-                Debug.LogError(
-                    $"Trying to {action} on an out of bounds state! (state {state} on layer {layer}, but there are {layers[layer].states.Count} " +
-                    $"states on that layer! GameObject {gameObject.name})", gameObject);
-        }
+    internal enum QueueStateType
+    {
+        WhenCurrentDone,
+        AfterSeconds,
+        BeforeCurrentDone_Seconds,
+        BeforeCurrentDone_Relative,
     }
 }

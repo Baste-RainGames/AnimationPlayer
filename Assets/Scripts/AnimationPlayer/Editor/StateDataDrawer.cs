@@ -9,8 +9,7 @@ namespace Animation_Player
         private static GUILayoutOption[] upDownButtonOptions;
         private static GUIStyle upDownButtonStyle;
 
-        public static void DrawStateData(AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedState,
-                                         AnimationPlayerEditor currentEditor)
+        public static void DrawStateData(AnimationPlayer animationPlayer, int selectedLayer, PersistedInt selectedState, AnimationPlayerEditor currentEditor)
         {
             if (reloadChecker == null)
             {

@@ -45,9 +45,23 @@ namespace Animation_Player
         }
     }
 
+    /// <summary>
+    /// Type of the transition
+    /// </summary>
     public enum TransitionType
     {
+        /// <summary>
+        /// Use the transition defined for the two states being moved between, or the AnimationPlayer's default transition if no such transition
+        /// is defined.
+        /// </summary>
+        UseDefined,
+        /// <summary>
+        /// Use a linear transition with a certain duration
+        /// </summary>
         Linear,
+        /// <summary>
+        /// Use an AnimationCurve for the transition.
+        /// </summary>
         Curve
     }
 
@@ -57,9 +71,11 @@ namespace Animation_Player
     [Serializable]
     public struct TransitionData
     {
-        public float duration;
         public TransitionType type;
+        public float duration;
         public AnimationCurve curve;
+
+        public static TransitionData UseDefined() => default; // default for TransitionType is UseDefined.
 
         public static TransitionData Linear(float duration)
         {
@@ -68,6 +84,16 @@ namespace Animation_Player
                 duration = Mathf.Max(0f, duration),
                 type = TransitionType.Linear,
                 curve = new AnimationCurve()
+            };
+        }
+
+        public static TransitionData FromCurve(AnimationCurve curve)
+        {
+            return new TransitionData
+            {
+                duration = curve.Duration(),
+                type = TransitionType.Curve,
+                curve = curve
             };
         }
 
@@ -88,7 +114,7 @@ namespace Animation_Player
             if (a.duration != b.duration)
                 return false;
             if (a.type == TransitionType.Linear)
-                return true;
+                return a.duration == b.duration;
 
             if (a.curve == null)
                 return b.curve == null;
@@ -111,7 +137,7 @@ namespace Animation_Player
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj)) return false;
-            return obj is TransitionData && Equals((TransitionData) obj);
+            return obj is TransitionData td && Equals(td);
         }
 
         public override int GetHashCode()

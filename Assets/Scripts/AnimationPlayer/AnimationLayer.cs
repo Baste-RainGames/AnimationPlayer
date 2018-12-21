@@ -15,6 +15,7 @@ namespace Animation_Player
         public List<AnimationState> states;
         public List<StateTransition> transitions;
 
+        public string name;
         public float startWeight;
         public AvatarMask mask;
         public AnimationLayerType type = AnimationLayerType.Override;
@@ -24,6 +25,7 @@ namespace Animation_Player
         private int currentPlayedState;
         private bool firstFrame = true;
         private bool anyStatesHasAnimationEvents;
+        private TransitionData defaultTransition;
 
         private AnimationLayerMixerPlayable layerMixer; //only use for re-initting!
         private int layerIndex; //only use for re-initting!
@@ -41,7 +43,7 @@ namespace Animation_Player
         private int[,] transitionLookup;
         private Playable[] runtimePlayables;
 
-        private readonly Dictionary<string, int> stateNameToIdx = new Dictionary<string, int>();
+        private readonly Dictionary<string, int> stateNameToIdx = new Dictionary<string, int>(StringComparer.InvariantCulture);
 
         //@TODO: string key is slow
         private readonly Dictionary<string, float> blendVars = new Dictionary<string, float>();
@@ -49,10 +51,13 @@ namespace Animation_Player
         private readonly Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers = new Dictionary<string, List<BlendTreeController2D>>();
         private readonly List<BlendTreeController2D> all2DControllers = new List<BlendTreeController2D>();
 
-        private PlayAtTimeInstructionQueue playInstructionQueue = new PlayAtTimeInstructionQueue();
+        private PlayAtTimeInstructionQueue playInstructionQueue;
 
-        public void InitializeSelf(PlayableGraph graph)
+        public void InitializeSelf(PlayableGraph graph, TransitionData defaultTransition)
         {
+            this.defaultTransition = defaultTransition;
+            playInstructionQueue = new PlayAtTimeInstructionQueue(this);
+
             containingGraph = graph;
             if (states.Count == 0)
             {
@@ -153,19 +158,24 @@ namespace Animation_Player
             return false;
         }
 
-        public void PlayUsingExternalTransition(int state, TransitionData transitionData)
-        {
-            Play(state, transitionData);
+        public void Play(int state, TransitionData transition) {
+            Play(state, FindCorrectTransition(state, transition), true);
         }
 
-        public void PlayUsingInternalTransition(int state, TransitionData defaultTransition)
-        {
-            var transitionToUse = transitionLookup[currentPlayedState, state];
-            var transition = transitionToUse == -1 ? defaultTransition : transitions[transitionToUse].transitionData;
-            Play(state, transition);
+        private TransitionData FindCorrectTransition(int stateToPlay, TransitionData transition) {
+            TransitionData transitionToUse;
+            if (transition.type == TransitionType.UseDefined) {
+                var transitionIndex = transitionLookup[currentPlayedState, stateToPlay];
+                transitionToUse = transitionIndex == -1 ? defaultTransition : transitions[transitionIndex].transitionData;
+            }
+            else {
+                transitionToUse = transition;
+            }
+
+            return transitionToUse;
         }
 
-        private void Play(int newState, TransitionData transitionData, bool clearQueuedPlayInstructions = true)
+        private void Play(int newState, TransitionData transitionData, bool clearQueuedPlayInstructions)
         {
             if (clearQueuedPlayInstructions)
                 playInstructionQueue.Clear();
@@ -244,9 +254,15 @@ namespace Animation_Player
             }
         }
 
-        public void PlayAfterSeconds(float seconds, int state, TransitionData transition)
+
+        public void QueuePlayCommand(int stateToPlay, QueueInstruction instruction, TransitionData transition)
         {
-            playInstructionQueue.Enqueue(new PlayAtTimeInstruction(Time.time + seconds, state, transition));
+            playInstructionQueue.Enqueue(new PlayAtTimeInstruction(instruction, stateToPlay, transition));
+        }
+
+        public void ClearQueuedPlayCommands()
+        {
+            playInstructionQueue.Clear();
         }
 
         public void JumpToRelativeTime(float time) 
@@ -366,11 +382,13 @@ namespace Animation_Player
 
         private void HandleQueuedInstructions()
         {
-            while (playInstructionQueue.Count > 0 && playInstructionQueue.Peek().playAtTime < Time.time)
+            if (playInstructionQueue.Count > 0)
             {
                 var instruction = playInstructionQueue.Peek();
-                Play(instruction.stateToPlay, instruction.transition, false);
-                playInstructionQueue.Pop();
+                if (instruction.ShouldPlay()) {
+                    Play(instruction.stateToPlay, FindCorrectTransition(instruction.stateToPlay, instruction.transition), false);
+                    playInstructionQueue.Dequeue();
+                }
             }
         }
 
@@ -387,8 +405,7 @@ namespace Animation_Player
 
         public int GetStateIdx(string stateName)
         {
-            int idx;
-            if (stateNameToIdx.TryGetValue(stateName, out idx))
+            if (stateNameToIdx.TryGetValue(stateName, out var idx))
                 return idx;
             return -1;
         }
@@ -443,6 +460,38 @@ namespace Animation_Player
                 if (stateMixer.GetInputWeight(i) > 0f)
                 {
                     results.Add(state);
+                }
+            }
+        }
+
+        public void AddAllPlayingStatesTo(List<int> results)
+        {
+            results.Add(currentPlayedState);
+
+            for (var i = 0; i < states.Count; i++)
+            {
+                if (i == currentPlayedState)
+                    return;
+                var state = states[i];
+                if (stateMixer.GetInputWeight(i) > 0f)
+                {
+                    results.Add(i);
+                }
+            }
+        }
+
+        public void AddAllPlayingStatesTo(List<string> results)
+        {
+            results.Add(states[currentPlayedState].Name);
+
+            for (var i = 0; i < states.Count; i++)
+            {
+                if (i == currentPlayedState)
+                    return;
+                var state = states[i];
+                if (stateMixer.GetInputWeight(i) > 0f)
+                {
+                    results.Add(state.Name);
                 }
             }
         }
@@ -570,7 +619,7 @@ namespace Animation_Player
 
             stateMixer.Destroy();
 
-            InitializeSelf(containingGraph);
+            InitializeSelf(containingGraph, defaultTransition);
 
             if(layerMixer.IsValid())
                 InitializeLayerBlending(containingGraph, layerIndex, layerMixer);
@@ -590,7 +639,6 @@ namespace Animation_Player
         private List<PlayRandomClip> serializedSelectRandomStates = new List<PlayRandomClip>();
         [SerializeField]
         private SerializedGUID[] serializedStateOrder;
-
         public void OnBeforeSerialize()
         {
             if (serializedSingleClipStates == null)
@@ -612,40 +660,27 @@ namespace Animation_Player
             else 
                 serializedSelectRandomStates.Clear();
 
-            //@TODO: Once Unity hits C# 7.0, this can be done through pattern matching. And oh how glorious it will be! 
             foreach (var state in states)
             {
-                var asSingleClip = state as SingleClip;
-                if (asSingleClip != null)
-                {
-                    serializedSingleClipStates.Add(asSingleClip);
-                    continue;
+                switch (state) {
+                    case SingleClip singleClip:
+                        serializedSingleClipStates.Add(singleClip);
+                        continue;
+                    case BlendTree1D blendTree1D:
+                        serializedBlendTree1Ds.Add(blendTree1D);
+                        continue;
+                    case BlendTree2D blendTree2D:
+                        serializedBlendTree2Ds.Add(blendTree2D);
+                        continue;
+                    case PlayRandomClip playRandomClip:
+                        serializedSelectRandomStates.Add(playRandomClip);
+                        continue;
+                    default:
+                        if (state != null)
+                            Debug.LogError($"Found state in AnimationLayer's states that's of an unknown type, " +
+                                           $"({state.GetType().Name})! Did you forget to implement the serialization?");
+                        continue;
                 }
-
-                var as1DBlendTree = state as BlendTree1D;
-                if (as1DBlendTree != null)
-                {
-                    serializedBlendTree1Ds.Add(as1DBlendTree);
-                    continue;
-                }
-
-                var as2DBlendTree = state as BlendTree2D;
-                if (as2DBlendTree != null)
-                {
-                    serializedBlendTree2Ds.Add(as2DBlendTree);
-                    continue;
-                }
-
-                var asRandom = state as PlayRandomClip;
-                if (asRandom != null)
-                {
-                    serializedSelectRandomStates.Add(asRandom);
-                    continue;
-                }
-
-                if (state != null)
-                    Debug.LogError($"Found state in AnimationLayer's states that's of an unknown type, " +
-                                   $"({state.GetType().Name})! Did you forget to implement the serialization?");
             }
 
             serializedStateOrder = new SerializedGUID[states.Count];
@@ -694,15 +729,38 @@ namespace Animation_Player
 
         private struct PlayAtTimeInstruction
         {
-            public float playAtTime;
-            public int stateToPlay;
-            public TransitionData transition;
+            internal int stateToPlay;
+            internal TransitionData transition;
 
-            public PlayAtTimeInstruction(float playAtTime, int stateToPlay, TransitionData transition)
+            internal float isDoneTime;
+            internal QueueStateType type;
+            private bool boolParam;
+            private float timeParam;
+
+            internal bool CountFromQueued => boolParam;
+            internal float Seconds => timeParam;
+            internal float RelativeDuration => timeParam;
+
+            public PlayAtTimeInstruction(QueueInstruction instruction, int stateToPlay, TransitionData transition)
             {
-                this.playAtTime = playAtTime;
+                type = instruction.type;
+                boolParam = instruction.boolParam;
+                timeParam = instruction.timeParam;
+
                 this.stateToPlay = stateToPlay;
                 this.transition = transition;
+
+                if (instruction.type == QueueStateType.AfterSeconds && instruction.CountFromQueued)
+                    isDoneTime = Time.time + instruction.timeParam;
+                else
+                    isDoneTime = -1; //gets set when moved to the top of the queue
+            }
+
+            public bool ShouldPlay() {
+                var shouldPlay = Time.time > isDoneTime;
+                if (shouldPlay)
+                    return true;
+                return shouldPlay;
             }
         }
 
@@ -714,6 +772,12 @@ namespace Animation_Player
             public int Count { get; private set; }
             private const int bufferSizeIncrement = 10;
             private PlayAtTimeInstruction[] instructions = new PlayAtTimeInstruction[bufferSizeIncrement];
+            private AnimationLayer animationLayer;
+
+            public PlayAtTimeInstructionQueue(AnimationLayer animationLayer)
+            {
+                this.animationLayer = animationLayer;
+            }
 
             public void Enqueue(PlayAtTimeInstruction instruction)
             {
@@ -722,18 +786,10 @@ namespace Animation_Player
                     Array.Resize(ref instructions, instructions.Length + bufferSizeIncrement);
                 }
 
-                var toInsert = instruction;
-                for (int i = 0; i < Count - 1; i++)
-                {
-                    if (instruction.playAtTime < instructions[i].playAtTime)
-                    {
-                        var temp = toInsert;
-                        toInsert = instructions[i];
-                        instructions[i] = temp;
-                    }
-                }
+                if(Count == 0)
+                    instruction = MovedToTopOfQueue(instruction, animationLayer.currentPlayedState, animationLayer.stateMixer, animationLayer.states);
 
-                instructions[Count] = toInsert;
+                instructions[Count] = instruction;
                 Count++;
             }
 
@@ -743,7 +799,7 @@ namespace Animation_Player
                 return instructions[0];
             }
 
-            public void Pop()
+            public void Dequeue()
             {
                 for (int i = 0; i < Count - 1; i++)
                 {
@@ -751,11 +807,56 @@ namespace Animation_Player
                 }
 
                 Count--;
+
+                if (Count > 0)
+                {
+                    instructions[Count - 1] = MovedToTopOfQueue(instructions[Count - 1], animationLayer.currentPlayedState, animationLayer.stateMixer,
+                                                                animationLayer.states);
+                }
             }
 
             public void Clear()
             {
                 Count = 0;
+            }
+
+            private PlayAtTimeInstruction MovedToTopOfQueue(PlayAtTimeInstruction playAtTime, int currentState, AnimationMixerPlayable stateMixer,
+                                                            List<AnimationState> states) {
+                switch (playAtTime.type) {
+                    case QueueStateType.WhenCurrentDone: {
+                        var duration = states[playAtTime.stateToPlay].Duration;
+                        var playedTime = (float) stateMixer.GetInput(currentState).GetTime();
+
+                        playAtTime.isDoneTime = Time.time + (duration - playedTime);
+                        break;
+                    }
+                    case QueueStateType.AfterSeconds:
+                        if (!playAtTime.CountFromQueued)
+                        {
+                            playAtTime.isDoneTime = Time.time + playAtTime.Seconds;
+                        }
+                        break;
+                    case QueueStateType.BeforeCurrentDone_Seconds: {
+                        var duration = states[playAtTime.stateToPlay].Duration;
+                        var playedTime = (float) stateMixer.GetInput(currentState).GetTime();
+
+                        var currentIsDoneTime = Time.time + (duration - playedTime);
+                        playAtTime.isDoneTime = currentIsDoneTime - playAtTime.Seconds;
+                        break;
+                    }
+                    case QueueStateType.BeforeCurrentDone_Relative: {
+                        var duration = states[playAtTime.stateToPlay].Duration;
+                        var playedTime = (float) stateMixer.GetInput(currentState).GetTime();
+
+                        var currentIsDoneTime = Time.time + (duration - playedTime);
+                        playAtTime.isDoneTime = currentIsDoneTime - (playAtTime.RelativeDuration * duration);
+                        break;
+                    }
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+
+                return playAtTime;
             }
         }
     }

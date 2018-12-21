@@ -25,6 +25,27 @@ namespace Animation_Player
         private PersistedInt selectedToState;
         private PersistedAnimationPlayerEditMode selectedEditMode;
 
+        private int SelectedLayer
+        {
+            get => selectedLayer;
+            set => selectedLayer.SetTo(value);
+        }
+        private int SelectedState
+        {
+            get => selectedState;
+            set => selectedState.SetTo(value);
+        }
+        private int SelectedToState
+        {
+            get => selectedToState;
+            set => selectedToState.SetTo(value);
+        }
+        private AnimationPlayerEditMode SelectedEditMode
+        {
+            get => selectedEditMode;
+            set => selectedEditMode.SetTo(value);
+        }
+
         private string[][] allStateNames;
 
         private static bool stylesCreated = false;
@@ -32,6 +53,7 @@ namespace Animation_Player
         private static GUIStyle editLayerButton_Background;
         private static GUIStyle editLayerButton_NotSelected;
         private static GUIStyle editLayerButton_Selected;
+        private static GUIStyle centeredLabel;
 
         private MetaDataDrawer metaDataDrawer;
 
@@ -66,10 +88,10 @@ namespace Animation_Player
 
             var instanceId = animationPlayer.GetInstanceID();
 
-            selectedLayer = new PersistedInt(persistedLayer + instanceId);
+            selectedLayer    = new PersistedInt(persistedLayer + instanceId);
+            selectedState    = new PersistedInt(persistedState + instanceId);
+            selectedToState  = new PersistedInt(persistedToState + instanceId);
             selectedEditMode = new PersistedAnimationPlayerEditMode(persistedEditMode + instanceId);
-            selectedState = new PersistedInt(persistedState + instanceId);
-            selectedToState = new PersistedInt(persistedToState + instanceId);
 
             stateNamesNeedsUpdate = true;
         }
@@ -95,6 +117,10 @@ namespace Animation_Player
             {
                 var backgroundTex = EditorUtilities.MakeTex(1, 1, new Color(1.0f, 1.0f, 1.0f, .1f));
                 editLayerStyle = new GUIStyle {normal = {background = backgroundTex}};
+
+                centeredLabel = new GUIStyle(GUI.skin.label) {
+                    alignment = TextAnchor.UpperCenter
+                };
 
                 var buttonBackgroundTex = EditorUtilities.MakeTex(1, 1, new Color(1.0f, 1.0f, 1.0f, 0.05f));
                 var buttonSelectedTex = EditorUtilities.MakeTex(1, 1, new Color(1.0f, 1.0f, 1.0f, 0.05f));
@@ -122,7 +148,7 @@ namespace Animation_Player
                 animationPlayer.layers = new AnimationLayer[1];
                 animationPlayer.layers[0] = AnimationLayer.CreateLayer();
 
-                if (animationPlayer.defaultTransition == default(TransitionData))
+                if (animationPlayer.defaultTransition == default)
                     animationPlayer.defaultTransition = TransitionData.Linear(.1f); //default shouldn't be snap
                 EditorUtilities.SetDirty(animationPlayer);
                 return;
@@ -171,8 +197,8 @@ namespace Animation_Player
             if (animationPlayer.layers.Length == 0)
                 return; //Deleted last layer in DrawLayerSelection
 
-            if (selectedState == -1 && animationPlayer.layers[selectedLayer].states.Count > 0)
-                selectedState.SetTo(0); //Handle adding a state for the first time.
+            if (SelectedState == -1 && animationPlayer.layers[SelectedLayer].states.Count > 0)
+                SelectedState = 0; //Handle adding a state for the first time.
 
             GUILayout.Space(10f);
 
@@ -181,9 +207,9 @@ namespace Animation_Player
             GUILayout.Space(10f);
             EditorUtilities.Splitter();
 
-            var numStatesBefore = animationPlayer.layers[selectedLayer].states.Count;
+            var numStatesBefore = animationPlayer.layers[SelectedLayer].states.Count;
             StateSelectionAndAdditionDrawer.Draw(animationPlayer, selectedLayer, selectedState, selectedEditMode, this, multiChoiceAnimationClips);
-            if (numStatesBefore != animationPlayer.layers[selectedLayer].states.Count)
+            if (numStatesBefore != animationPlayer.layers[SelectedLayer].states.Count)
             {
                 Repaint();
                 return;
@@ -200,21 +226,52 @@ namespace Animation_Player
         {
             var numLayers = animationPlayer.layers.Length;
 
-            selectedLayer.SetTo(Mathf.Clamp(selectedLayer, 0, numLayers));
+            SelectedLayer = Mathf.Clamp(SelectedLayer, 0, numLayers);
 
-            var twoLines = Screen.width < 420f;
+            var screenWidth = Screen.width;
+            var twoLines = screenWidth < 420f;
 
             EditorGUILayout.BeginHorizontal();
             {
-                GUILayout.FlexibleSpace();
+                var old = SelectedLayer;
+                SelectedLayer = EditorUtilities.DrawLeftButton(SelectedLayer);
 
-                selectedLayer.SetTo(EditorUtilities.DrawLeftButton(selectedLayer));
-                EditorGUILayout.LabelField("Selected layer: " + selectedLayer, GUILayout.Width(selectedLayerWidth));
-                selectedLayer.SetTo(EditorUtilities.DrawRightButton(selectedLayer, numLayers));
+                var layerName = animationPlayer.layers[SelectedLayer].name;
+                if (string.IsNullOrWhiteSpace(layerName))
+                    layerName = $"Layer {SelectedLayer} (no name)";
+
+                var layerLabel = new GUIContent(layerName);
+
+                float labelWidth;
+
+                if (twoLines) {
+                    const float otherElementsWidth = (2 * 24f) // left/right button width
+                                                   + (2 * 4f)  // default spacing between elements
+                                                   + 25f       // scroll bar, margin.
+                                                   + 5f;       // my maths is off slightly.
+                    labelWidth = screenWidth - otherElementsWidth;
+                }
+                else {
+                    const float otherElementsWidth = (2 * 24f)  // left/right button width
+                                                   + (2 * 100f) // Add layer/delete layer width
+                                                   + (6 * 4f)   // default spacing between elements
+                                                   + 25f        // scroll bar, margin.
+                                                   + 10f;       // spacing between right button and add layer button
+                    labelWidth = screenWidth - otherElementsWidth;
+                }
+
+                EditorGUILayout.LabelField(layerLabel, centeredLabel, GUILayout.Width(labelWidth));
+                SelectedLayer = EditorUtilities.DrawRightButton(SelectedLayer, numLayers);
+
+                if (SelectedLayer != old && Event.current.button == 1) {
+                    var swap = animationPlayer.layers[old];
+                    animationPlayer.layers[old] = animationPlayer.layers[SelectedLayer];
+                    animationPlayer.layers[SelectedLayer] = swap;
+                    MarkDirty();
+                }
 
                 if (twoLines)
                 {
-                    GUILayout.FlexibleSpace();
                     EditorGUILayout.EndHorizontal();
                     EditorGUILayout.BeginHorizontal();
                     GUILayout.FlexibleSpace();
@@ -233,17 +290,19 @@ namespace Animation_Player
 
                 EditorGUI.BeginDisabledGroup(numLayers < 2);
                 {
-                    if (EditorUtilities.AreYouSureButton("Delete layer", "Are you sure?", "DeleteLayer" + selectedLayer, 1f, GUILayout.Width(100f)))
+                    if (EditorUtilities.AreYouSureButton("Delete layer", "Are you sure?", "DeleteLayer" + SelectedLayer, 1f, GUILayout.Width(100f)))
                     {
                         EditorUtilities.RecordUndo(animationPlayer, "Delete layer from animation player");
-                        EditorUtilities.DeleteIndexFromArray(ref animationPlayer.layers, selectedLayer);
-                        selectedLayer.SetTo(Mathf.Max(0, selectedLayer - 1));
+                        EditorUtilities.DeleteIndexFromArray(ref animationPlayer.layers, SelectedLayer);
+                        SelectedLayer = Mathf.Max(0, SelectedLayer - 1);
                         MarkDirty();
                     }
                 }
                 EditorGUI.EndDisabledGroup();
 
-                GUILayout.FlexibleSpace();
+                if (twoLines) {
+                    GUILayout.FlexibleSpace();
+                }
             }
             animationPlayerSO.ApplyModifiedProperties();
             EditorGUILayout.EndHorizontal();
@@ -251,12 +310,13 @@ namespace Animation_Player
 
         private void DrawSelectedLayer()
         {
-            var layer = animationPlayer.layers[selectedLayer];
+            var layer = animationPlayer.layers[SelectedLayer];
 
-            layer.startWeight = EditorGUILayout.Slider($"Layer {selectedLayer} Weight", layer.startWeight, 0f, 1f);
-            layer.mask = EditorUtilities.ObjectField($"Layer {selectedLayer} Mask", layer.mask);
+            layer.name = EditorGUILayout.TextField($"Layer {SelectedLayer} Name", layer.name);
+            layer.startWeight = EditorGUILayout.Slider($"Layer {SelectedLayer} Weight", layer.startWeight, 0f, 1f);
+            layer.mask = EditorUtilities.ObjectField($"Layer {SelectedLayer} Mask", layer.mask);
 
-            if(selectedLayer > 0) //Doesn't make any sense for base layer to be additive!
+            if(SelectedLayer > 0) //Doesn't make any sense for base layer to be additive!
                 layer.type = (AnimationLayerType) EditorGUILayout.EnumPopup("Type", layer.type);
             else
                 EditorGUILayout.LabelField(string.Empty);
@@ -283,13 +343,13 @@ namespace Animation_Player
 
             GUILayout.Space(10f);
 
-            switch ((AnimationPlayerEditMode) selectedEditMode)
+            switch (SelectedEditMode)
             {
                 case AnimationPlayerEditMode.States:
-                    StateDataDrawer.DrawStateData(animationPlayer, selectedLayer, selectedState, this);
+                    StateDataDrawer.DrawStateData(animationPlayer, SelectedLayer, selectedState, this);
                     break;
                 case AnimationPlayerEditMode.Transitions:
-                    AnimationTransitionDrawer.DrawTransitions(animationPlayer, selectedLayer, selectedState, selectedToState, allStateNames[selectedLayer]);
+                    AnimationTransitionDrawer.DrawTransitions(animationPlayer, SelectedLayer, SelectedState, selectedToState, allStateNames[SelectedLayer]);
                     break;
                 case AnimationPlayerEditMode.Events:
                     DrawEvents();
@@ -321,21 +381,21 @@ namespace Animation_Player
                 rect.xMin -= 4;
             }
 
-            var isSelected = index == (int) selectedEditMode;
+            var isSelected = index == (int) SelectedEditMode;
             var style = isSelected ? editLayerButton_Selected : editLayerButton_NotSelected;
             if (GUI.Button(rect, label, style))
-                selectedEditMode.SetTo((AnimationPlayerEditMode) index);
+                SelectedEditMode = (AnimationPlayerEditMode) index;
         }
 
         private void DrawEvents()
         {
-            if (animationPlayer.layers[selectedLayer].states.Count == 0)
+            if (animationPlayer.layers[SelectedLayer].states.Count == 0)
             {
                 EditorGUILayout.LabelField("No states on layer, can't make events");
                 return;
             }
 
-            var state = animationPlayer.GetState(selectedState, selectedLayer);
+            var state = animationPlayer.GetState(SelectedState, SelectedLayer);
             int indexToDelete = -1;
             EditorGUILayout.LabelField($"Animation events for {state.Name}:");
             EditorUtilities.DrawIndented(() =>
@@ -449,10 +509,17 @@ namespace Animation_Player
                 return;
             }
 
-            EditorGUILayout.LabelField("Playing clip " + animationPlayer.GetPlayingState(selectedLayer));
-            for (int i = animationPlayer.GetStateCount(selectedLayer) - 1; i >= 0; i--)
+            EditorGUILayout.LabelField("Playing clip " + animationPlayer.GetPlayingState(SelectedLayer));
+            for (int i = 0; i < animationPlayer.GetStateCount(SelectedLayer); i++)
             {
-                EditorGUILayout.LabelField("Current weigth for state " + i + ": " + animationPlayer.GetStateWeight(i, selectedLayer));
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    EditorGUILayout.LabelField("Current weigth for state " + i + ": " + animationPlayer.GetStateWeight(i, SelectedLayer));
+                    if (GUILayout.Button("Play it!"))
+                    {
+                        animationPlayer.Play(i, SelectedLayer);
+                    }
+                }
             }
         }
 
@@ -462,14 +529,14 @@ namespace Animation_Player
             if (animationPlayer == null || animationPlayer.layers == null)
                 return;
 
-            selectedLayer.SetTo(Mathf.Clamp(selectedLayer, 0, animationPlayer.layers.Length - 1));
+            SelectedLayer = Mathf.Clamp(SelectedLayer, 0, animationPlayer.layers.Length - 1);
             if (animationPlayer.layers.Length == 0)
                 return;
-            var layer = animationPlayer.layers[selectedLayer];
-            selectedState.SetTo(Mathf.Clamp(selectedState, 0, layer.states.Count - 1));
+            var layer = animationPlayer.layers[SelectedLayer];
+            SelectedState = Mathf.Clamp(SelectedState, 0, layer.states.Count - 1);
         }
 
-        private const float selectedLayerWidth = 108f;
+        // private const float selectedLayerWidth = 108f;
 
         private const string persistedLayer = "APE_SelectedLayer_";
         private const string persistedState = "APE_SelectedState_";

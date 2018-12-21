@@ -88,6 +88,17 @@ public static class SerializedPropertyExtension
         }
     }
 
+    public static IEnumerable<(int, SerializedProperty)> IterateArrayWithIndex_Reverse(this SerializedProperty prop) {
+        if (!prop.isArray) {
+            Debug.LogError($"Trying to iterate the property {prop.displayName}, but it's not an array");
+            yield break;
+        }
+
+        for (int i = prop.arraySize - 1; i >= 0; i--) {
+            yield return (i, prop.GetArrayElementAtIndex(i));
+        }
+    }
+
     public static string ListProperties(this SerializedProperty property, bool includeInvisible = false) {
         StringBuilder sb = new StringBuilder();
 

@@ -4,6 +4,7 @@
 
 #IDE integration
 Assets/Plugins/Editor/JetBrains/
+AnimationPlayer.sln.Dotsettings.user
 
 #Unity temp folders
 /Library/

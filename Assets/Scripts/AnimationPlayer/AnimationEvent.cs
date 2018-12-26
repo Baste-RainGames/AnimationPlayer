@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Animation_Player {
+namespace Animation_Player
+{
     [Serializable]
     public class AnimationEvent
     {

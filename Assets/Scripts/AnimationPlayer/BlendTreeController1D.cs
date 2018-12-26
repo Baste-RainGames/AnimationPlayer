@@ -7,37 +7,38 @@ namespace Animation_Player
 {
     public class BlendTreeController1D
     {
-        private readonly Action<float> UpdateValueOnMainController;
+        private readonly Action<float>          UpdateValueOnMainController;
         private readonly AnimationMixerPlayable mixer;
-        private readonly BlendTreeData[] runtimeData;
-        private readonly bool compensateForDifferentDurations;
+        private readonly BlendTreeData[]        runtimeData;
+        private readonly bool                   compensateForDifferentDurations;
 
         private float lastValue;
-        public float CurrentValue => lastValue;
+        public  float CurrentValue => lastValue;
 
-        public BlendTreeController1D(AnimationMixerPlayable mixer, AnimationClipPlayable[] playables, float[] thresholds, bool compensateForDifferentDurations, 
-                                     Action<float> UpdateValueOnMainController)
+        public BlendTreeController1D(AnimationMixerPlayable mixer, AnimationClipPlayable[] playables, float[] thresholds, bool compensateForDifferentDurations,
+                                     Action<float>          UpdateValueOnMainController)
         {
-            if(thresholds.Length != playables.Length)
+            if (thresholds.Length != playables.Length)
                 throw new Exception("Thresholds and playables doesn't match!");
             for (int i = 0; i < thresholds.Length - 2; i++)
                 if (thresholds[i] >= thresholds[i + 1])
                     throw new Exception($"The thresholds on the blend tree should be be strictly increasing!");
 
-            this.UpdateValueOnMainController = UpdateValueOnMainController;
+            this.UpdateValueOnMainController     = UpdateValueOnMainController;
             this.compensateForDifferentDurations = compensateForDifferentDurations;
-            this.mixer = mixer;
-            runtimeData = new BlendTreeData[thresholds.Length];
+            this.mixer                           = mixer;
+            runtimeData                          = new BlendTreeData[thresholds.Length];
             for (int i = 0; i < runtimeData.Length; i++)
             {
                 runtimeData[i] = new BlendTreeData
                 {
                     threshold = thresholds[i],
-                    playable = playables[i],
-                    duration = playables[i].GetAnimationClip().length
+                    playable  = playables[i],
+                    duration  = playables[i].GetAnimationClip().length
                 };
             }
-            if(compensateForDifferentDurations)
+
+            if (compensateForDifferentDurations)
                 CompensateForDurations(0, 0);
         }
 
@@ -48,7 +49,7 @@ namespace Animation_Player
             UpdateValueOnMainController(value);
             lastValue = value;
 
-            int idxOfLastLowerThanVal = -1;
+            var idxOfLastLowerThanVal = -1;
             for (int i = 0; i < runtimeData.Length; i++)
             {
                 var threshold = runtimeData[i].threshold;
@@ -58,17 +59,18 @@ namespace Animation_Player
                     break;
             }
 
-            int idxBefore = Mathf.Max(idxOfLastLowerThanVal, 0);
-            int idxAfter  = Mathf.Min(idxOfLastLowerThanVal + 1, runtimeData.Length - 1);
+            var idxBefore = Mathf.Max(idxOfLastLowerThanVal, 0);
+            var idxAfter  = Mathf.Min(idxOfLastLowerThanVal + 1, runtimeData.Length - 1);
 
             float fractionTowardsAfter;
             if (idxBefore == idxAfter) //first or last clip
             {
                 fractionTowardsAfter = 0f;
             }
-            else {
-                var range = (runtimeData[idxAfter].threshold - runtimeData[idxBefore].threshold);
-                var distFromStart = (value - runtimeData[idxBefore].threshold);
+            else
+            {
+                var range         = (runtimeData[idxAfter].threshold - runtimeData[idxBefore].threshold);
+                var distFromStart = (value                           - runtimeData[idxBefore].threshold);
                 fractionTowardsAfter = distFromStart / range;
             }
 
@@ -86,7 +88,7 @@ namespace Animation_Player
                 mixer.SetInputWeight(i, inputWeight);
             }
 
-            if(compensateForDifferentDurations)
+            if (compensateForDifferentDurations)
                 CompensateForDurations(idxBefore, idxAfter);
         }
 
@@ -100,12 +102,12 @@ namespace Animation_Player
         private void CompensateForDurations(int idxBefore, int idxAfter)
         {
             float durationBefore = runtimeData[idxBefore].duration;
-            float durationAfter  = runtimeData[idxAfter ].duration;
-            float loopDuration = Mathf.Lerp(durationBefore, durationAfter, mixer.GetInputWeight(idxAfter));
+            float durationAfter  = runtimeData[idxAfter].duration;
+            float loopDuration   = Mathf.Lerp(durationBefore, durationAfter, mixer.GetInputWeight(idxAfter));
 
             for (int i = 0; i < runtimeData.Length; i++)
             {
-                var clipDuration = runtimeData[i].duration;
+                var clipDuration  = runtimeData[i].duration;
                 var requiredSpeed = clipDuration / loopDuration;
                 runtimeData[i].playable.SetSpeed(requiredSpeed);
             }
@@ -117,9 +119,8 @@ namespace Animation_Player
         private struct BlendTreeData
         {
             public AnimationClipPlayable playable;
-            public float duration;
-            public float threshold;
-//            public float defaultSpeed;
+            public float                 duration;
+            public float                 threshold;
         }
     }
 }

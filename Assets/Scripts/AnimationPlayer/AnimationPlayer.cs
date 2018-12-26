@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
-
 using Debug = UnityEngine.Debug;
 using UObject = UnityEngine.Object;
 
@@ -11,25 +10,25 @@ namespace Animation_Player
 {
     public class AnimationPlayer : MonoBehaviour
     {
-        // Serialized data:
         private const int lastVersion = 1;
+
+        // Serialized data:
         [SerializeField, HideInInspector]
         private int versionNumber;
 
-        public static StateID DefaultState => 0;
-
         public AnimationLayer[] layers;
-        public TransitionData defaultTransition;
+        public TransitionData   defaultTransition;
 
         //Runtime fields:
         private PlayableGraph graph;
-        private Playable rootPlayable;
-        private string visualizerClientName;
+        private Playable      rootPlayable;
+        private string        visualizerClientName;
 
         //IK
-        public Animator OutputAnimator { get; private set; }
-        private float currentIKLookAtWeight;
-        private Vector3 currentIKLookAtPosition;
+        public  Animator OutputAnimator { get; private set; }
+        private float    currentIKLookAtWeight;
+        private Vector3  currentIKLookAtPosition;
+
         //@TODO: It would be nice to figure out if IK is available at runtime, but currently that's not possible!
         // This is because we currently do IK through having an AnimatorController with an IK layer on it on the animator, which works, 
         // but it's not possible to check if IK is turned on on an AnimatorController at runtime:  
@@ -41,18 +40,21 @@ namespace Animation_Player
         //        public bool IKAvailable { get; private set; }
 
         private bool hasAwoken;
+
         private void Awake()
         {
-            if(hasAwoken)
+            if (hasAwoken)
                 return;
             hasAwoken = true;
             EnsureVersionUpgraded();
 
             if (layers.Length == 0)
                 return;
-            bool anyLayersWithStates = false;
-            for (int i = 0; i < layers.Length; i++) {
-                if (layers[i].states.Count > 0) {
+            var anyLayersWithStates = false;
+            foreach (var layer in layers)
+            {
+                if (layer.states.Count > 0)
+                {
                     anyLayersWithStates = true;
                     break;
                 }
@@ -67,10 +69,10 @@ namespace Animation_Player
             // The AnimationPlayableOutput links the graph with an animator that plays the graph.
             // I think we can ditch the animator, but the documentation is kinda sparse!
             OutputAnimator = gameObject.EnsureComponent<Animator>();
-            AnimationPlayableOutput animOutput = AnimationPlayableOutput.Create(graph, $"{name}_animation_player", OutputAnimator);
+            var animOutput = AnimationPlayableOutput.Create(graph, $"{name}_animation_player", OutputAnimator);
 
-            for (var i = 0; i < layers.Length; i++)
-                layers[i].InitializeSelf(graph, defaultTransition);
+            foreach (var layer in layers)
+                layer.InitializeSelf(graph, defaultTransition);
 
             if (layers.Length <= 1)
             {
@@ -112,9 +114,9 @@ namespace Animation_Player
         /// Ensures that the AnimationPlayer is ready - ie. has had Awake called. Use this if you're calling something before you can be sure that the
         /// AnimationPlayer's gotten around to calling Awake yet, like if you're calling into AnimationPlayer from Awake. 
         /// </summary>
-        public void EnsureReady() 
+        public void EnsureReady()
         {
-            if(!hasAwoken)
+            if (!hasAwoken)
                 Awake();
         }
 
@@ -155,11 +157,11 @@ namespace Animation_Player
             if (!foundIndices)
                 return;
 
-            if (transitionData.type == TransitionType.Curve && transitionData.curve != null) {
-                Debug.LogError(
-                    $"Trying to transition using a curve, but the curve is null! " +
-                    $"Error happened for AnimationPlayer on GameObject {gameObject.name})", gameObject
-                );
+            if (transitionData.type == TransitionType.Curve && transitionData.curve != null)
+            {
+                var errorMsg =
+                    $"Trying to transition using a curve, but the curve is null! Error happened for AnimationPlayer on GameObject {gameObject.name})";
+                Debug.LogError(errorMsg, gameObject);
                 return;
             }
 
@@ -193,13 +195,16 @@ namespace Animation_Player
             return layers[layerIndex].GetIndexOfPlayingState() == stateIndex;
         }
 
-        public void QueueStateChange(StateID state) => QueueStateChange(state, default, default, default);
-        public void QueueStateChange(StateID state, QueueInstruction instruction) => QueueStateChange(state, instruction, default, default);
-        public void QueueStateChange(StateID state, TransitionData transition) => QueueStateChange(state, default, transition, default);
-        public void QueueStateChange(StateID state, LayerID layer) => QueueStateChange(state, default, default, layer);
-        public void QueueStateChange(StateID state, QueueInstruction instruction, TransitionData transition) => QueueStateChange(state, instruction, transition, default);
-        public void QueueStateChange(StateID state, QueueInstruction instruction, LayerID layer) => QueueStateChange(state, instruction, default, layer);
-        public void QueueStateChange(StateID state, TransitionData transition, LayerID layer) => QueueStateChange(state, default, transition, layer);
+        public void QueueStateChange(StateID state)                               => QueueStateChange(state, default,     default,    default);
+        public void QueueStateChange(StateID state, QueueInstruction instruction) => QueueStateChange(state, instruction, default,    default);
+        public void QueueStateChange(StateID state, TransitionData   transition)  => QueueStateChange(state, default,     transition, default);
+        public void QueueStateChange(StateID state, LayerID          layer)       => QueueStateChange(state, default,     default,    layer);
+
+        public void QueueStateChange(StateID state, QueueInstruction instruction, TransitionData transition) =>
+            QueueStateChange(state, instruction, transition, default);
+
+        public void QueueStateChange(StateID state, QueueInstruction instruction, LayerID layer) => QueueStateChange(state, instruction, default,    layer);
+        public void QueueStateChange(StateID state, TransitionData   transition,  LayerID layer) => QueueStateChange(state, default,     transition, layer);
 
         public void QueueStateChange(StateID state, QueueInstruction instruction, TransitionData transition, LayerID layer)
         {
@@ -218,16 +223,6 @@ namespace Animation_Player
 
             layers[layerIndex].ClearQueuedPlayCommands();
         }
-
-        // /// <summary>
-        // /// As PlayAfterSeconds, but with the default state.
-        // /// </summary>
-        // /// <param name="seconds">How long to wait before playing the state.</param>
-        // /// <param name="layer">Layer to play the state on.</param>
-        // public void PlayDefaultStateAfterSeconds(float seconds, LayerID layer = default)
-        // {
-        //     PlayAfterSeconds(seconds, 0, layer);
-        // }
 
         /// <summary>
         /// Jumps the current played state to a certain time between 0 and 1.
@@ -288,7 +283,8 @@ namespace Animation_Player
             if (!foundLayer)
                 return 0;
 
-            if (layers.Length < 2) {
+            if (layers.Length < 2)
+            {
                 // The root playable is the layer's state mixer if there's only a single layer, so we need this special case
                 return 1;
             }
@@ -307,8 +303,9 @@ namespace Animation_Player
             if (!foundLayer)
                 return;
 
-            if (layers.Length < 2) {
-                Debug.LogWarning($"You're setting the weight of {layer} to {weight}, but there's only one layer!");
+            if (layers.Length < 2)
+            {
+                Debug.LogWarning($"You're setting the weight of the only layer to {weight}. That's probably not neccessary!");
             }
 
             rootPlayable.SetInputWeight(layerIndex, weight);
@@ -385,7 +382,7 @@ namespace Animation_Player
             if (!foundLayer)
                 return;
 
-            if(clearResultsList)
+            if (clearResultsList)
                 results.Clear();
 
             layers[layerIndex].AddAllPlayingStatesTo(results);
@@ -404,7 +401,7 @@ namespace Animation_Player
             if (!foundLayer)
                 return;
 
-            if(clearResultsList)
+            if (clearResultsList)
                 results.Clear();
 
             layers[layerIndex].AddAllPlayingStatesTo(results);
@@ -423,7 +420,7 @@ namespace Animation_Player
             if (!foundLayer)
                 return;
 
-            if(clearResultsList)
+            if (clearResultsList)
                 results.Clear();
 
             layers[layerIndex].AddAllPlayingStatesTo(results);
@@ -441,10 +438,11 @@ namespace Animation_Player
             if (!foundLayer)
                 return;
 
-            if(clearResultsList)
+            if (clearResultsList)
                 results.Clear();
 
-            for (int i = 0; i < layers[layerIndex].states.Count; i++) {
+            for (int i = 0; i < layers[layerIndex].states.Count; i++)
+            {
                 results.Add(layers[layerIndex].states[i]);
             }
         }
@@ -461,10 +459,11 @@ namespace Animation_Player
             if (!foundLayer)
                 return;
 
-            if(clearResultsList)
+            if (clearResultsList)
                 results.Clear();
 
-            for (int i = 0; i < layers[layerIndex].states.Count; i++) {
+            for (int i = 0; i < layers[layerIndex].states.Count; i++)
+            {
                 results.Add(layers[layerIndex].states[i].Name);
             }
         }
@@ -533,7 +532,7 @@ namespace Animation_Player
         /// <param name="clearResultsList">Should the results list be cleared before the blend variables are added?</param>
         private void GetBlendVariables(List<string> result, bool clearResultsList)
         {
-            if(clearResultsList)
+            if (clearResultsList)
                 result.Clear();
 
             foreach (var layer in layers)
@@ -566,7 +565,8 @@ namespace Animation_Player
             return foundIndex ? layerIndex : -1;
         }
 
-        private (int layerIndex, bool foundIndex) GetLayerIndex(LayerID layerID, string actionIDForErrors) {
+        private (int layerIndex, bool foundIndex) GetLayerIndex(LayerID layerID, string actionIDForErrors)
+        {
             try
             {
                 var layerIndex = GetLayerIndex_ThrowOnFailure(layerID, actionIDForErrors);
@@ -594,31 +594,38 @@ namespace Animation_Player
             }
         }
 
-        private int GetLayerIndex_ThrowOnFailure(LayerID layerID, string actionIDForErrors) {
+        private int GetLayerIndex_ThrowOnFailure(LayerID layerID, string actionIDForErrors)
+        {
             int layerIndex;
-            if (!layerID.isNameBased) {
+            if (!layerID.isNameBased)
+            {
                 layerIndex = layerID.index;
 
-                if (!(layerIndex >= 0 && layerIndex < layers.Length)) {
+                if (!(layerIndex >= 0 && layerIndex < layers.Length))
+                {
                     var errorMsg =
                         $"Trying to {actionIDForErrors} on an out of bounds layer! (layer {layerIndex}, but there are  {layers.Length} layers! " +
                         $"Error happened for AnimationPlayer on GameObject {gameObject.name})";
-                    throw new StateException (errorMsg, gameObject);
+                    throw new StateException(errorMsg, gameObject);
                 }
             }
-            else {
+            else
+            {
                 layerIndex = -1;
-                for (int i = 0; i < layers.Length; i++) {
-                    if (string.Equals(layerID.name, layers[i].name, StringComparison.InvariantCulture)) {
+                for (int i = 0; i < layers.Length; i++)
+                {
+                    if (string.Equals(layerID.name, layers[i].name, StringComparison.InvariantCulture))
+                    {
                         layerIndex = i;
                         break;
                     }
                 }
 
-                if (layerIndex == -1) {
+                if (layerIndex == -1)
+                {
                     var errorMsg =
                         $"Trying to {actionIDForErrors} on layer {layerID}, but that layer doesn't exist! Layers that exist are:\n" +
-                        $"{layers.PrettyPrint(true, l => l.name)}\n" +
+                        $"{layers.PrettyPrint(true, l => l.name)}\n"                                                                +
                         $"Error happened for AnimationPlayer on GameObject {gameObject.name})";
                     throw new StateException(errorMsg, gameObject);
                 }
@@ -628,22 +635,26 @@ namespace Animation_Player
 
         }
 
-        private int GetStateIndex_ThrowOnFailure(StateID stateID, LayerID layerID, int layerIndex, string actionIDForErrors) {
+        private int GetStateIndex_ThrowOnFailure(StateID stateID, LayerID layerID, int layerIndex, string actionIDForErrors)
+        {
             if (!stateID.isNameBased)
             {
-                if (!(stateID.index >= 0 && stateID.index < layers[layerIndex].states.Count)) {
-                    if (!hasAwoken) {
-                        throw new StateException (
-                            $"Trying to {actionIDForErrors} on an out of bounds state, due to the Animation player not having awoken yet! State {stateID.index} Layer {layerIndex}" +
-                            $"Error happened for AnimationPlayer on GameObject {gameObject.name})", gameObject
-                        );
+                if (!(stateID.index >= 0 && stateID.index < layers[layerIndex].states.Count))
+                {
+                    if (!hasAwoken)
+                    {
+                        throw new StateException(
+                                                 $"Trying to {actionIDForErrors} on an out of bounds state, due to the Animation player not having awoken yet! State {stateID.index} Layer {layerIndex}" +
+                                                 $"Error happened for AnimationPlayer on GameObject {gameObject.name})", gameObject
+                                                );
                     }
-                    else {
-                        throw new StateException (
-                            $"Trying to {actionIDForErrors} on an out of bounds state! (state {stateID.index} on layer {layerIndex}, but there are {layers[layerIndex].states.Count} " +
-                            $"states on that layer! " +
-                            $"Error happened for AnimationPlayer on GameObject {gameObject.name})", gameObject
-                        );
+                    else
+                    {
+                        throw new StateException(
+                                                 $"Trying to {actionIDForErrors} on an out of bounds state! (state {stateID.index} on layer {layerIndex}, but there are {layers[layerIndex].states.Count} " +
+                                                 $"states on that layer! "                                                                                                                                  +
+                                                 $"Error happened for AnimationPlayer on GameObject {gameObject.name})", gameObject
+                                                );
                     }
                 }
 
@@ -656,11 +667,10 @@ namespace Animation_Player
                 var errorMsg =
                     !hasAwoken ?
                         $"Trying to {actionIDForErrors} \"{stateID}\" on layer {layerID} before AnimationPlayer has had the time to Awake yet! " +
-                        $"Please call {nameof(EnsureReady)}, or wait until Start with whatever you're doing! " +
-                        $"Error happened for AnimationPlayer on GameObject {gameObject.name})"
-                        :
+                        $"Please call {nameof(EnsureReady)}, or wait until Start with whatever you're doing! "                                   +
+                        $"Error happened for AnimationPlayer on GameObject {gameObject.name})" :
                         $"Trying to {actionIDForErrors} \"{stateID}\" on layer {layerID}, but that doesn't exist! States that exist are:" +
-                        $"\n{layers[layerIndex].states.PrettyPrint(true, s => s.Name)} " +
+                        $"\n{layers[layerIndex].states.PrettyPrint(true, s => s.Name)} "                                                  +
                         $"Error happened for AnimationPlayer on GameObject {gameObject.name})";
 
                 throw new StateException(errorMsg, gameObject);
@@ -674,7 +684,7 @@ namespace Animation_Player
         /// </summary>
         /// <param name="targetEvent">Event to listen to.</param>
         /// <param name="listener">Action to be called when targetEvent fires.</param>
-        public void RegisterAnimationEventListener(string targetEvent, Action listener) 
+        public void RegisterAnimationEventListener(string targetEvent, Action listener)
         {
             bool registeredAny = false;
             foreach (var layer in layers)
@@ -771,7 +781,8 @@ namespace Animation_Player
         /// Sets the look at position.
         /// </summary>
         /// <param name="position">The position to lookAt.</param>
-        public void SetIKLookAtPosition(Vector3 position) {
+        public void SetIKLookAtPosition(Vector3 position)
+        {
             currentIKLookAtPosition = position;
             OutputAnimator.SetLookAtPosition(position);
         }
@@ -803,11 +814,14 @@ namespace Animation_Player
         /// </summary>
         /// <param name="blendVar">blendVar to check for.</param>
         /// <returns>true if the blendvar is used in any blend tree in any layer.</returns>
-        public bool HasBlendVarInAnyLayer(string blendVar) {
-            foreach (var layer in layers) {
+        public bool HasBlendVarInAnyLayer(string blendVar)
+        {
+            foreach (var layer in layers)
+            {
                 if (layer.HasBlendTreeUsingBlendVar(blendVar))
                     return true;
             }
+
             return false;
         }
 
@@ -883,20 +897,22 @@ namespace Animation_Player
             return true;
         }
 
-        private class StateException : Exception {
+        private class StateException : Exception
+        {
             public readonly UObject context;
-            public StateException(string message, UObject context) : base(message) {
+
+            public StateException(string message, UObject context) : base(message)
+            {
                 this.context = context;
             }
         }
     }
 
-
     public struct QueueInstruction
     {
         internal QueueStateType type;
-        internal float timeParam;
-        internal bool boolParam;
+        internal float          timeParam;
+        internal bool           boolParam;
 
         public bool CountFromQueued => boolParam;
 
@@ -922,7 +938,7 @@ namespace Animation_Player
         {
             return new QueueInstruction
             {
-                type = QueueStateType.BeforeCurrentDone_Seconds,
+                type      = QueueStateType.BeforeCurrentDone_Seconds,
                 timeParam = seconds
             };
         }
@@ -944,7 +960,7 @@ namespace Animation_Player
         {
             return new QueueInstruction
             {
-                type = QueueStateType.BeforeCurrentDone_Relative,
+                type      = QueueStateType.BeforeCurrentDone_Relative,
                 timeParam = fraction
             };
         }

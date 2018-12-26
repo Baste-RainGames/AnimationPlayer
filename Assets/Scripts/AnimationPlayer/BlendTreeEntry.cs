@@ -6,7 +6,7 @@ namespace Animation_Player
     public abstract class BlendTreeEntry
     {
         public AnimationClip clip;
-        public float Duration => clip != null ? clip.length : 0f;
+        public float         Duration => clip != null ? clip.length : 0f;
     }
 
     [Serializable]

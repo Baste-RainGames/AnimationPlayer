@@ -7,56 +7,55 @@ using UnityEngine.Playables;
 
 namespace Animation_Player
 {
-
     [Serializable]
     public class AnimationLayer : ISerializationCallbackReceiver
     {
         //Serialized through ISerializationCallbackReceiver
-        public List<AnimationState> states;
+        public List<AnimationState>  states;
         public List<StateTransition> transitions;
 
-        public string name;
-        public float startWeight;
-        public AvatarMask mask;
+        public string             name;
+        public float              startWeight;
+        public AvatarMask         mask;
         public AnimationLayerType type = AnimationLayerType.Override;
 
-        private PlayableGraph containingGraph;
-        public AnimationMixerPlayable stateMixer { get; private set; }
-        private int currentPlayedState;
-        private bool firstFrame = true;
-        private bool anyStatesHasAnimationEvents;
-        private TransitionData defaultTransition;
+        private PlayableGraph          containingGraph;
+        public  AnimationMixerPlayable stateMixer { get; private set; }
+        private int                    currentPlayedState;
+        private bool                   firstFrame = true;
+        private bool                   anyStatesHasAnimationEvents;
+        private TransitionData         defaultTransition;
 
         private AnimationLayerMixerPlayable layerMixer; //only use for re-initting!
-        private int layerIndex; //only use for re-initting!
+        private int                         layerIndex; //only use for re-initting!
 
         //blend info:
-        private bool transitioning;
+        private bool           transitioning;
         private TransitionData currentTransitionData;
-        private float transitionStartTime;
-        private List<bool> activeWhenBlendStarted;
-        private List<float> valueWhenBlendStarted;
-        private List<double> timeLastFrame;
+        private float          transitionStartTime;
+        private List<bool>     activeWhenBlendStarted;
+        private List<float>    valueWhenBlendStarted;
+        private List<double>   timeLastFrame;
 
         // transitionLookup[a, b] contains the index of the transition from a to b in transitions
         // transitionLookup[x, y] == -1 means that there is no transition defined between the states.
-        private int[,] transitionLookup;
+        private int[,]     transitionLookup;
         private Playable[] runtimePlayables;
 
         private readonly Dictionary<string, int> stateNameToIdx = new Dictionary<string, int>(StringComparer.InvariantCulture);
 
         //@TODO: string key is slow
-        private readonly Dictionary<string, float> blendVars = new Dictionary<string, float>();
+        private readonly Dictionary<string, float>                       blendVars               = new Dictionary<string, float>();
         private readonly Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers = new Dictionary<string, List<BlendTreeController1D>>();
         private readonly Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers = new Dictionary<string, List<BlendTreeController2D>>();
-        private readonly List<BlendTreeController2D> all2DControllers = new List<BlendTreeController2D>();
+        private readonly List<BlendTreeController2D>                     all2DControllers        = new List<BlendTreeController2D>();
 
         private PlayAtTimeInstructionQueue playInstructionQueue;
 
         public void InitializeSelf(PlayableGraph graph, TransitionData defaultTransition)
         {
             this.defaultTransition = defaultTransition;
-            playInstructionQueue = new PlayAtTimeInstructionQueue(this);
+            playInstructionQueue   = new PlayAtTimeInstructionQueue(this);
 
             containingGraph = graph;
             if (states.Count == 0)
@@ -91,8 +90,8 @@ namespace Animation_Player
             }
 
             activeWhenBlendStarted = new List<bool>(states.Count);
-            valueWhenBlendStarted = new List<float>(states.Count);
-            timeLastFrame = new List<double>();
+            valueWhenBlendStarted  = new List<float>(states.Count);
+            timeLastFrame          = new List<double>();
             for (int i = 0; i < states.Count; i++)
             {
                 activeWhenBlendStarted.Add(false);
@@ -108,16 +107,20 @@ namespace Animation_Player
             for (var i = 0; i < transitions.Count; i++)
             {
                 var transition = transitions[i];
-                var fromState = states.IndexOf(transition.FromState);
-                var toState = states.IndexOf(transition.ToState);
-                if (fromState == -1 || toState == -1)
+                var fromState  = states.IndexOf(transition.FromState);
+                var toState    = states.IndexOf(transition.ToState);
+                if (fromState == -1)
                 {
-                    //TODO: fixme
+                    Debug.LogError("Found a transition from an invalid state!");
+                }
+                else if (toState == -1)
+                {
+                    Debug.LogError("Found a transition to an invalid state!");
                 }
                 else
                 {
                     if (transitionLookup[fromState, toState] != -1)
-                        Debug.LogWarning("Found two transitions from " + states[fromState] + " to " + states[toState]);
+                        Debug.LogWarning($"Found two transitions from {states[fromState]} to {states[toState]}! Not implemented yet.");
 
                     transitionLookup[fromState, toState] = i;
                 }
@@ -158,17 +161,21 @@ namespace Animation_Player
             return false;
         }
 
-        public void Play(int state, TransitionData transition) {
+        public void Play(int state, TransitionData transition)
+        {
             Play(state, FindCorrectTransition(state, transition), true);
         }
 
-        private TransitionData FindCorrectTransition(int stateToPlay, TransitionData transition) {
+        private TransitionData FindCorrectTransition(int stateToPlay, TransitionData transition)
+        {
             TransitionData transitionToUse;
-            if (transition.type == TransitionType.UseDefined) {
+            if (transition.type == TransitionType.UseDefined)
+            {
                 var transitionIndex = transitionLookup[currentPlayedState, stateToPlay];
                 transitionToUse = transitionIndex == -1 ? defaultTransition : transitions[transitionIndex].transitionData;
             }
-            else {
+            else
+            {
                 transitionToUse = transition;
             }
 
@@ -193,7 +200,7 @@ namespace Animation_Player
             }
 
             var currentWeightOfState = stateMixer.GetInputWeight(newState);
-            var isCurrentlyPlaying = currentWeightOfState > 0f;
+            var isCurrentlyPlaying   = currentWeightOfState > 0f;
 
             if (!isCurrentlyPlaying)
             {
@@ -203,15 +210,18 @@ namespace Animation_Player
             }
             else if (!states[newState].Loops)
             {
-                // We need to blend to a state currently playing, but since it's not looping, blending to a time different than 0 would look bad. 
-                // So we do this:
-                // Move the old version of the state to a new spot in the mixer, copy over the time and weight to that new spot.
-                // Create a new version of the state at the old spot
-                // Blend to the new state
-                // Later, when the copy's weight hits zero, we discard it.
+                /*
+                 * We need to blend to a state currently playing, but since it's not looping, blending to a time different than 0 would look bad. 
+                 * So we do this:
+                 * Move the old version of the state to a new spot in the mixer, copy over the time and weight to that new spot.
+                 * Create a new version of the state at the old spot
+                 * Blend to the new state
+                 * Later, when the copy's weight hits zero, we discard it.
+                 */
 
                 var original = runtimePlayables[newState];
-                var copy = states[newState].GeneratePlayable(containingGraph, varTo1DBlendControllers, varTo2DBlendControllers, all2DControllers, blendVars);
+                var copy = states[newState]
+                    .GeneratePlayable(containingGraph, varTo1DBlendControllers, varTo2DBlendControllers, all2DControllers, blendVars);
                 var copyIndex = stateMixer.GetInputCount();
                 stateMixer.SetInputCount(copyIndex + 1);
 
@@ -223,7 +233,7 @@ namespace Animation_Player
                 copy.SetTime(original.GetTime());
 
                 stateMixer.SetInputWeight(copyIndex, currentWeightOfState);
-                stateMixer.SetInputWeight(newState, 0);
+                stateMixer.SetInputWeight(newState,  0);
             }
 
             states[newState].OnWillStartPlaying(containingGraph, stateMixer, newState, ref runtimePlayables[newState]);
@@ -236,7 +246,7 @@ namespace Animation_Player
                 }
 
                 currentPlayedState = newState;
-                transitioning = false;
+                transitioning      = false;
             }
             else
             {
@@ -244,16 +254,15 @@ namespace Animation_Player
                 {
                     var currentMixVal = stateMixer.GetInputWeight(i);
                     activeWhenBlendStarted[i] = currentMixVal > 0f;
-                    valueWhenBlendStarted[i] = currentMixVal;
+                    valueWhenBlendStarted[i]  = currentMixVal;
                 }
 
-                transitioning = true;
-                currentPlayedState = newState;
+                transitioning         = true;
+                currentPlayedState    = newState;
                 currentTransitionData = transitionData;
-                transitionStartTime = Time.time;
+                transitionStartTime   = Time.time;
             }
         }
-
 
         public void QueuePlayCommand(int stateToPlay, QueueInstruction instruction, TransitionData transition)
         {
@@ -265,18 +274,18 @@ namespace Animation_Player
             playInstructionQueue.Clear();
         }
 
-        public void JumpToRelativeTime(float time) 
+        public void JumpToRelativeTime(float time)
         {
-            if (time > 1f) 
+            if (time > 1f)
             {
                 time = time % 1f;
             }
-            else if (time < 0f) 
+            else if (time < 0f)
             {
                 time = 1 - ((-time) % 1f);
             }
 
-            for (int i = 0; i < stateMixer.GetInputCount(); i++) 
+            for (int i = 0; i < stateMixer.GetInputCount(); i++)
             {
                 stateMixer.SetInputWeight(i, i == currentPlayedState ? 1f : 0f);
             }
@@ -290,74 +299,94 @@ namespace Animation_Player
         {
             if (states.Count == 0)
                 return;
-            if(anyStatesHasAnimationEvents)
-                HandleAnimationEvents();
+
+            HandleAnimationEvents();
+
             HandleTransitions();
+
             HandleQueuedInstructions();
-            for (int i = 0; i < all2DControllers.Count; i++) {
-                all2DControllers[i].Update();
-            }
+
+            foreach (var controller in all2DControllers)
+                controller.Update();
+
             firstFrame = false;
-        }
 
-        private void HandleAnimationEvents()
-        {
-            for (int i = 0; i < states.Count; i++)
+            void HandleAnimationEvents()
             {
-                var time = stateMixer.GetInput(i).GetTime();
-                if (currentPlayedState == i || stateMixer.GetInputWeight(i) > 0f)
+                if (!anyStatesHasAnimationEvents)
+                    return;
+
+                for (int i = 0; i < states.Count; i++)
                 {
-                    var currentTime = stateMixer.GetInput(i).GetTime();
-                    states[i].HandleAnimationEvents(timeLastFrame[i], currentTime, stateMixer.GetInputWeight(i), firstFrame, currentPlayedState == i);
-                }
+                    var time = stateMixer.GetInput(i).GetTime();
+                    if (currentPlayedState == i || stateMixer.GetInputWeight(i) > 0f)
+                    {
+                        var currentTime = stateMixer.GetInput(i).GetTime();
+                        states[i].HandleAnimationEvents(timeLastFrame[i], currentTime, stateMixer.GetInputWeight(i), firstFrame, currentPlayedState == i);
+                    }
 
-                timeLastFrame[i] = time;
-            }
-        }
-
-        private void HandleTransitions()
-        {
-            if (!transitioning)
-                return;
-
-            var lerpVal = (Time.time - transitionStartTime) / currentTransitionData.duration;
-            if (currentTransitionData.type == TransitionType.Curve)
-            {
-                lerpVal = currentTransitionData.curve.Evaluate(lerpVal);
-            }
-
-            for (int i = 0; i < stateMixer.GetInputCount(); i++)
-            {
-                var isTargetClip = i == currentPlayedState;
-                if (isTargetClip || activeWhenBlendStarted[i])
-                {
-                    var target = isTargetClip ? 1f : 0f;
-                    stateMixer.SetInputWeight(i, Mathf.Lerp(valueWhenBlendStarted[i], target, lerpVal));
+                    timeLastFrame[i] = time;
                 }
             }
 
-            var currentInputCount = stateMixer.GetInputCount();
-            if (currentInputCount > states.Count) {
-                ClearFinishedTransitionStates();
+            void HandleTransitions()
+            {
+                if (!transitioning)
+                    return;
+
+                var lerpVal = (Time.time - transitionStartTime) / currentTransitionData.duration;
+                if (currentTransitionData.type == TransitionType.Curve)
+                {
+                    lerpVal = currentTransitionData.curve.Evaluate(lerpVal);
+                }
+
+                for (int i = 0; i < stateMixer.GetInputCount(); i++)
+                {
+                    var isTargetClip = i == currentPlayedState;
+                    if (isTargetClip || activeWhenBlendStarted[i])
+                    {
+                        var target = isTargetClip ? 1f : 0f;
+                        stateMixer.SetInputWeight(i, Mathf.Lerp(valueWhenBlendStarted[i], target, lerpVal));
+                    }
+                }
+
+                var currentInputCount = stateMixer.GetInputCount();
+                if (currentInputCount > states.Count)
+                {
+                    ClearFinishedTransitionStates();
+                }
+
+                if (lerpVal >= 1)
+                {
+                    transitioning = false;
+                    if (states.Count != stateMixer.GetInputCount())
+                        throw new Exception($"{states.Count} != {stateMixer.GetInputCount()}");
+                }
             }
 
-            if (lerpVal >= 1)
+            void HandleQueuedInstructions()
             {
-                transitioning = false;
-                if (states.Count != stateMixer.GetInputCount())
-                    throw new Exception($"{states.Count} != {stateMixer.GetInputCount()}");
+                if (playInstructionQueue.Count > 0)
+                {
+                    var instruction = playInstructionQueue.Peek();
+                    if (Time.time > instruction.isDoneTime)
+                    {
+                        Play(instruction.stateToPlay, FindCorrectTransition(instruction.stateToPlay, instruction.transition), false);
+                        playInstructionQueue.Dequeue();
+                    }
+                }
             }
         }
 
         /// <summary>
         /// We generate some extra states at times to handle blending properly. This cleans out the ones of those that are done blending out.
         /// </summary>
-        private void ClearFinishedTransitionStates() 
+        private void ClearFinishedTransitionStates()
         {
             var currentInputCount = stateMixer.GetInputCount();
-            for (int i = currentInputCount - 1; i >= states.Count; i--) 
+            for (int i = currentInputCount - 1; i >= states.Count; i--)
             {
-                if (stateMixer.GetInputWeight(i) < 0.01f) 
+                if (stateMixer.GetInputWeight(i) < 0.01f)
                 {
                     activeWhenBlendStarted.RemoveAt(i);
                     valueWhenBlendStarted.RemoveAt(i);
@@ -366,30 +395,19 @@ namespace Animation_Player
                     removedPlayable.Destroy();
 
                     //Shift all excess playables one index down.
-                    for (int j = i + 1; j < stateMixer.GetInputCount(); j++) 
+                    for (int j = i + 1; j < stateMixer.GetInputCount(); j++)
                     {
                         var playable = stateMixer.GetInput(j);
-                        var weight = stateMixer.GetInputWeight(j);
+                        var weight   = stateMixer.GetInputWeight(j);
                         containingGraph.Disconnect(stateMixer, j);
                         containingGraph.Connect(playable, 0, stateMixer, j - 1);
-                        stateMixer.SetInputWeight(j - 1, weight);
+                        stateMixer.SetInputWeight(j                        - 1, weight);
                     }
 
                     stateMixer.SetInputCount(stateMixer.GetInputCount() - 1);
                 }
             }
-        }
 
-        private void HandleQueuedInstructions()
-        {
-            if (playInstructionQueue.Count > 0)
-            {
-                var instruction = playInstructionQueue.Peek();
-                if (instruction.ShouldPlay()) {
-                    Play(instruction.stateToPlay, FindCorrectTransition(instruction.stateToPlay, instruction.transition), false);
-                    playInstructionQueue.Dequeue();
-                }
-            }
         }
 
         public float GetStateWeight(int state)
@@ -419,7 +437,7 @@ namespace Animation_Player
         {
             var layer = new AnimationLayer
             {
-                states = new List<AnimationState>(),
+                states      = new List<AnimationState>(),
                 transitions = new List<StateTransition>(),
                 startWeight = 1f
             };
@@ -430,21 +448,18 @@ namespace Animation_Player
         {
             blendVars[var] = value;
 
-            List<BlendTreeController1D> blendControllers1D;
-            if (varTo1DBlendControllers.TryGetValue(var, out blendControllers1D))
-                foreach (var controller in blendControllers1D)
+            if (varTo1DBlendControllers.TryGetValue(var, out var controllers1D))
+                foreach (var controller in controllers1D)
                     controller.SetValue(value);
 
-            List<BlendTreeController2D> blendControllers2D;
-            if (varTo2DBlendControllers.TryGetValue(var, out blendControllers2D))
-                foreach (var controller in blendControllers2D)
+            if (varTo2DBlendControllers.TryGetValue(var, out var controllers2D))
+                foreach (var controller in controllers2D)
                     controller.SetValue(var, value);
         }
 
         public float GetBlendVar(string var)
         {
-            float result = 0f;
-            blendVars.TryGetValue(var, out result);
+            blendVars.TryGetValue(var, out var result);
             return result;
         }
 
@@ -472,7 +487,6 @@ namespace Animation_Player
             {
                 if (i == currentPlayedState)
                     return;
-                var state = states[i];
                 if (stateMixer.GetInputWeight(i) > 0f)
                 {
                     results.Add(i);
@@ -498,13 +512,11 @@ namespace Animation_Player
 
         public void AddTreesMatchingBlendVar(BlendVarController aggregateController, string blendVar)
         {
-            List<BlendTreeController1D> blendControllers1D;
-            if (varTo1DBlendControllers.TryGetValue(blendVar, out blendControllers1D))
-                aggregateController.AddControllers(blendControllers1D);
+            if (varTo1DBlendControllers.TryGetValue(blendVar, out var controllers1D))
+                aggregateController.AddControllers(controllers1D);
 
-            List<BlendTreeController2D> blendControllers2D;
-            if (varTo2DBlendControllers.TryGetValue(blendVar, out blendControllers2D))
-                aggregateController.AddControllers(blendControllers2D);
+            if (varTo2DBlendControllers.TryGetValue(blendVar, out var controllers2D))
+                aggregateController.AddControllers(controllers2D);
         }
 
         public AnimationState GetCurrentPlayingState()
@@ -514,7 +526,8 @@ namespace Animation_Player
             return states[currentPlayedState];
         }
 
-        public int GetIndexOfPlayingState() {
+        public int GetIndexOfPlayingState()
+        {
             if (states.Count == 0)
                 return -1;
             return currentPlayedState;
@@ -533,16 +546,18 @@ namespace Animation_Player
             return blendVars.Keys.Contains(blendVar);
         }
 
-        public void SwapClipOnState(int state, AnimationClip clip, PlayableGraph graph) {
+        public void SwapClipOnState(int state, AnimationClip clip, PlayableGraph graph)
+        {
             var animationState = states[state];
-            if (!(animationState is SingleClip)) {
+            if (!(animationState is SingleClip))
+            {
                 Debug.LogError($"Trying to swap the clip on the state {animationState.Name}, " +
                                $"but it is a {animationState.GetType().Name}! Only SingleClipState is supported");
             }
 
             var singleClipState = (SingleClip) animationState;
             singleClipState.clip = clip;
-            var newPlayable = singleClipState.GeneratePlayable(graph, varTo1DBlendControllers, varTo2DBlendControllers, all2DControllers, blendVars);
+            var newPlayable     = singleClipState.GeneratePlayable(graph, varTo1DBlendControllers, varTo2DBlendControllers, all2DControllers, blendVars);
             var currentPlayable = (AnimationClipPlayable) stateMixer.GetInput(state);
 
             var oldWeight = stateMixer.GetInputWeight(state);
@@ -554,7 +569,8 @@ namespace Animation_Player
 
         public int AddState(AnimationState state)
         {
-            if (states.Count == 0) {
+            if (states.Count == 0)
+            {
                 HandleAddedFirstStateAfterStartup(state);
                 return 0;
             }
@@ -588,13 +604,13 @@ namespace Animation_Player
             }
 
             transitionLookup = newLookup;
-            
+
             stateMixer.SetInputCount(stateMixer.GetInputCount() + 1);
 
             //Shift all excess playables (ie blend helpers) one index up. Since their order doesn't count, could just swap the first one to the last index?
             for (int i = stateMixer.GetInputCount() - 1; i > states.Count; i--)
             {
-                var p = stateMixer.GetInput(i);
+                var p      = stateMixer.GetInput(i);
                 var weight = stateMixer.GetInputWeight(i);
                 containingGraph.Disconnect(stateMixer, i - 1);
                 containingGraph.Connect(p, 0, stateMixer, i);
@@ -614,18 +630,19 @@ namespace Animation_Player
             states.Add(state);
 
             // layerMixer.IsValid => there's more than 1 layer.
-            if(layerMixer.IsValid())
+            if (layerMixer.IsValid())
                 containingGraph.Disconnect(layerMixer, layerIndex);
 
             stateMixer.Destroy();
 
             InitializeSelf(containingGraph, defaultTransition);
 
-            if(layerMixer.IsValid())
+            if (layerMixer.IsValid())
                 InitializeLayerBlending(containingGraph, layerIndex, layerMixer);
         }
 
 #if UNITY_EDITOR
+        //@TODO: why the fuck is this here?
         public GUIContent[] layersForEditor;
 #endif
 
@@ -639,6 +656,7 @@ namespace Animation_Player
         private List<PlayRandomClip> serializedSelectRandomStates = new List<PlayRandomClip>();
         [SerializeField]
         private SerializedGUID[] serializedStateOrder;
+
         public void OnBeforeSerialize()
         {
             if (serializedSingleClipStates == null)
@@ -655,14 +673,15 @@ namespace Animation_Player
                 serializedBlendTree2Ds = new List<BlendTree2D>();
             else
                 serializedBlendTree2Ds.Clear();
-            if(serializedSelectRandomStates == null)
+            if (serializedSelectRandomStates == null)
                 serializedSelectRandomStates = new List<PlayRandomClip>();
-            else 
+            else
                 serializedSelectRandomStates.Clear();
 
             foreach (var state in states)
             {
-                switch (state) {
+                switch (state)
+                {
                     case SingleClip singleClip:
                         serializedSingleClipStates.Add(singleClip);
                         continue;
@@ -729,38 +748,31 @@ namespace Animation_Player
 
         private struct PlayAtTimeInstruction
         {
-            internal int stateToPlay;
-            internal TransitionData transition;
+            internal readonly int            stateToPlay;
+            internal readonly TransitionData transition;
+            internal readonly QueueStateType type;
+            private readonly  bool           boolParam;
+            private readonly  float          timeParam;
 
             internal float isDoneTime;
-            internal QueueStateType type;
-            private bool boolParam;
-            private float timeParam;
 
-            internal bool CountFromQueued => boolParam;
-            internal float Seconds => timeParam;
+            internal bool  CountFromQueued  => boolParam;
+            internal float Seconds          => timeParam;
             internal float RelativeDuration => timeParam;
 
             public PlayAtTimeInstruction(QueueInstruction instruction, int stateToPlay, TransitionData transition)
             {
-                type = instruction.type;
+                type      = instruction.type;
                 boolParam = instruction.boolParam;
                 timeParam = instruction.timeParam;
 
                 this.stateToPlay = stateToPlay;
-                this.transition = transition;
+                this.transition  = transition;
 
                 if (instruction.type == QueueStateType.AfterSeconds && instruction.CountFromQueued)
                     isDoneTime = Time.time + instruction.timeParam;
                 else
                     isDoneTime = -1; //gets set when moved to the top of the queue
-            }
-
-            public bool ShouldPlay() {
-                var shouldPlay = Time.time > isDoneTime;
-                if (shouldPlay)
-                    return true;
-                return shouldPlay;
             }
         }
 
@@ -769,10 +781,11 @@ namespace Animation_Player
         /// </summary>
         private class PlayAtTimeInstructionQueue
         {
-            public int Count { get; private set; }
-            private const int bufferSizeIncrement = 10;
+            private const    int            bufferSizeIncrement = 8;
+            private readonly AnimationLayer animationLayer;
+
+            public  int                     Count { get; private set; }
             private PlayAtTimeInstruction[] instructions = new PlayAtTimeInstruction[bufferSizeIncrement];
-            private AnimationLayer animationLayer;
 
             public PlayAtTimeInstructionQueue(AnimationLayer animationLayer)
             {
@@ -786,7 +799,7 @@ namespace Animation_Player
                     Array.Resize(ref instructions, instructions.Length + bufferSizeIncrement);
                 }
 
-                if(Count == 0)
+                if (Count == 0)
                     instruction = MovedToTopOfQueue(instruction, animationLayer.currentPlayedState, animationLayer.stateMixer, animationLayer.states);
 
                 instructions[Count] = instruction;
@@ -821,10 +834,13 @@ namespace Animation_Player
             }
 
             private PlayAtTimeInstruction MovedToTopOfQueue(PlayAtTimeInstruction playAtTime, int currentState, AnimationMixerPlayable stateMixer,
-                                                            List<AnimationState> states) {
-                switch (playAtTime.type) {
-                    case QueueStateType.WhenCurrentDone: {
-                        var duration = states[playAtTime.stateToPlay].Duration;
+                                                            List<AnimationState>  states)
+            {
+                switch (playAtTime.type)
+                {
+                    case QueueStateType.WhenCurrentDone:
+                    {
+                        var duration   = states[playAtTime.stateToPlay].Duration;
                         var playedTime = (float) stateMixer.GetInput(currentState).GetTime();
 
                         playAtTime.isDoneTime = Time.time + (duration - playedTime);
@@ -835,17 +851,20 @@ namespace Animation_Player
                         {
                             playAtTime.isDoneTime = Time.time + playAtTime.Seconds;
                         }
+
                         break;
-                    case QueueStateType.BeforeCurrentDone_Seconds: {
-                        var duration = states[playAtTime.stateToPlay].Duration;
+                    case QueueStateType.BeforeCurrentDone_Seconds:
+                    {
+                        var duration   = states[playAtTime.stateToPlay].Duration;
                         var playedTime = (float) stateMixer.GetInput(currentState).GetTime();
 
                         var currentIsDoneTime = Time.time + (duration - playedTime);
                         playAtTime.isDoneTime = currentIsDoneTime - playAtTime.Seconds;
                         break;
                     }
-                    case QueueStateType.BeforeCurrentDone_Relative: {
-                        var duration = states[playAtTime.stateToPlay].Duration;
+                    case QueueStateType.BeforeCurrentDone_Relative:
+                    {
+                        var duration   = states[playAtTime.stateToPlay].Duration;
                         var playedTime = (float) stateMixer.GetInput(currentState).GetTime();
 
                         var currentIsDoneTime = Time.time + (duration - playedTime);

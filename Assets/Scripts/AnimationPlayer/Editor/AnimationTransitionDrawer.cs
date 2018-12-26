@@ -7,7 +7,7 @@ namespace Animation_Player
     public static class AnimationTransitionDrawer
     {
         public static void DrawTransitions(AnimationPlayer animationPlayer, int selectedLayer, int selectedStateIdx, PersistedInt selectedToStateIdx,
-                                           string[] stateNamesInLayer)
+                                           string[]        stateNamesInLayer)
         {
             var layer = animationPlayer.layers[selectedLayer];
             if (layer.states.Count == 0)
@@ -16,11 +16,11 @@ namespace Animation_Player
                 return;
             }
 
-            var selectedState = layer.states[selectedStateIdx];
-            var selectedToState = layer.states[selectedToStateIdx];
+            var selectedState      = layer.states[selectedStateIdx];
+            var selectedToState    = layer.states[selectedToStateIdx];
             var selectedTransition = layer.transitions.Find(t => t.FromState == selectedState && t.ToState == selectedToState);
-            var fromStateName = selectedState.Name;
-            var toStateName = selectedToState.Name;
+            var fromStateName      = selectedState.Name;
+            var toStateName        = selectedToState.Name;
 
             if (selectedTransition != null)
             {
@@ -91,8 +91,8 @@ namespace Animation_Player
                             EditorUtilities.RecordUndo(animationPlayer, $"Adding transition from {fromStateName} to {toStateName}");
                             var newState = new StateTransition
                             {
-                                FromState = selectedState,
-                                ToState = layer.states.Find(s => s.Name == state),
+                                FromState      = selectedState,
+                                ToState        = layer.states.Find(s => s.Name == state),
                                 transitionData = TransitionData.Linear(.2f)
                             };
                             layer.transitions.Add(newState);
@@ -103,8 +103,7 @@ namespace Animation_Player
                     menu.ShowAsContext();
                 }
             });
-            
-            
+
             EditorUtilities.Splitter();
             EditorGUILayout.LabelField("Default transition");
             EditorUtilities.RecordUndo(animationPlayer, "Change default transition", () =>
@@ -115,7 +114,7 @@ namespace Animation_Player
 
         private static TransitionData DrawTransitionData(TransitionData transitionData)
         {
-            transitionData.type = (TransitionType) EditorGUILayout.EnumPopup("Type", transitionData.type);
+            transitionData.type     = (TransitionType) EditorGUILayout.EnumPopup("Type", transitionData.type);
             transitionData.duration = EditorGUILayout.FloatField("Duration", transitionData.duration);
 
             if (transitionData.type == TransitionType.Curve)

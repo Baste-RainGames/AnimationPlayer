@@ -1,209 +1,205 @@
-using UnityEngine;
-using UnityEditor;
 using System.Collections.Generic;
-using GraphVisualizer;
+using System.Linq;
+using UnityEngine;
 using UnityEngine.Playables;
+using UnityEditor;
 
-public class PlayableGraphVisualizerWindow : EditorWindow, IHasCustomMenu
+namespace GraphVisualizer
 {
-    private struct PlayableGraphInfo
+    public class PlayableGraphVisualizerWindow : EditorWindow, IHasCustomMenu
     {
-        public PlayableGraph graph;
-        public string name;
-    }
+        private IGraphRenderer m_Renderer;
+        private IGraphLayout m_Layout;
 
-    private IGraphRenderer m_Renderer;
-    private IGraphLayout m_Layout;
+        private List<PlayableGraph> m_Graphs;
+        private PlayableGraph m_CurrentGraph;
+        private GraphSettings m_GraphSettings;
 
-    private PlayableGraphInfo m_CurrentGraphInfo;
-    private GraphSettings m_GraphSettings;
-    private bool m_AutoScanScene = true;
+#region Configuration
 
-    #region Configuration
+        private static readonly float s_ToolbarHeight = 17f;
+        private static readonly float s_DefaultMaximumNormalizedNodeSize = 0.8f;
+        private static readonly float s_DefaultMaximumNodeSizeInPixels = 100.0f;
+        private static readonly float s_DefaultAspectRatio = 1.5f;
 
-    private static readonly float s_ToolbarHeight = 17f;
-    private static readonly float s_DefaultMaximumNormalizedNodeSize = 0.8f;
-    private static readonly float s_DefaultMaximumNodeSizeInPixels = 100.0f;
-    private static readonly float s_DefaultAspectRatio = 1.5f;
+#endregion
 
-    #endregion
-    private PlayableGraphVisualizerWindow()
-    {
-        m_GraphSettings.maximumNormalizedNodeSize = s_DefaultMaximumNormalizedNodeSize;
-        m_GraphSettings.maximumNodeSizeInPixels = s_DefaultMaximumNodeSizeInPixels;
-        m_GraphSettings.aspectRatio = s_DefaultAspectRatio;
-        m_GraphSettings.showLegend = true;
-        m_AutoScanScene = true;
-    }
-
-    [MenuItem("Window/PlayableGraph Visualizer")]
-    public static void ShowWindow()
-    {
-        GetWindow<PlayableGraphVisualizerWindow>("Playable Graph Visualizer");
-    }
-
-    private PlayableGraphInfo GetSelectedGraphInToolBar(IList<PlayableGraphInfo> graphs, PlayableGraphInfo currentGraph)
-    {
-        EditorGUILayout.BeginHorizontal(EditorStyles.toolbar, GUILayout.Width(position.width));
-
-        List<string> options = new List<string>(graphs.Count);// = graphs.Select(d => d.ToString()).ToArray();
-        foreach (var g in graphs)
+        private PlayableGraphVisualizerWindow()
         {
-            options.Add(g.name);
+            m_GraphSettings.maximumNormalizedNodeSize = s_DefaultMaximumNormalizedNodeSize;
+            m_GraphSettings.maximumNodeSizeInPixels = s_DefaultMaximumNodeSizeInPixels;
+            m_GraphSettings.aspectRatio = s_DefaultAspectRatio;
+            m_GraphSettings.showInspector = true;
+            m_GraphSettings.showLegend = true;
         }
 
-        int currentSelection = graphs.IndexOf(currentGraph);
-        int newSelection = EditorGUILayout.Popup(currentSelection != -1 ? currentSelection : 0, options.ToArray(), GUILayout.Width(200));
-
-        PlayableGraphInfo selectedDirector = new PlayableGraphInfo();
-        if (newSelection != -1)
-            selectedDirector = graphs[newSelection];
-
-        GUILayout.FlexibleSpace();
-        EditorGUILayout.EndHorizontal();
-
-        return selectedDirector;
-    }
-
-    private static void ShowMessage(string msg)
-    {
-        GUILayout.BeginVertical();
-        GUILayout.FlexibleSpace();
-
-        GUILayout.BeginHorizontal();
-        GUILayout.FlexibleSpace();
-
-        GUILayout.Label(msg);
-
-        GUILayout.FlexibleSpace();
-        GUILayout.EndHorizontal();
-
-        GUILayout.FlexibleSpace();
-        GUILayout.EndVertical();
-    }
-
-    void Update()
-    {
-        // If in Play mode, refresh the graph each update.
-        if (EditorApplication.isPlaying)
-            Repaint();
-    }
-
-    void OnInspectorUpdate()
-    {
-        // If not in Play mode, refresh the graph less frequently.
-        if (!EditorApplication.isPlaying)
-            Repaint();
-    }
-
-    void OnGUI()
-    {
-        // Create a list of all the playable graphs extracted.
-        IList<PlayableGraphInfo> graphInfos = new List<PlayableGraphInfo>();
-
-        PlayableGraphInfo info;
-
-        // If we requested, we extract automatically the PlayableGraphs from all the components
-        // that are in the current scene.
-        if (m_AutoScanScene)
+        [MenuItem("Window/Analysis/PlayableGraph Visualizer")]
+        public static void ShowWindow()
         {
-            // This code could be generalized, maybe if we added a IHasPlayableGraph Interface.
-            IList<PlayableDirector> directors = FindObjectsOfType<PlayableDirector>();
-            if (directors != null)
-            {
-                foreach (var director in directors)
-                {
-                    if (director.playableGraph.IsValid())
-                    {
-                        info.name = director.name;
-                        info.graph = director.playableGraph;
-                        graphInfos.Add(info);
-                    }
-                }
-            }
-
-            IList<Animator> animators = FindObjectsOfType<Animator>();
-            if (animators != null)
-            {
-                foreach (var animator in animators)
-                {
-                    if (animator.playableGraph.IsValid())
-                    {
-                        info.name = animator.name;
-                        info.graph = animator.playableGraph;
-                        graphInfos.Add(info);
-                    }
-                }
-            }
+            GetWindow<PlayableGraphVisualizerWindow>("PlayableGraph Visualizer");
         }
 
-        if (GraphVisualizerClient.GetGraphs() != null)
+        private PlayableGraph GetSelectedGraphInToolBar(List<PlayableGraph> graphs, PlayableGraph currentGraph)
         {
+            EditorGUILayout.BeginHorizontal(EditorStyles.toolbar, GUILayout.Width(position.width));
+
+            List<string> options = new List<string>(graphs.Count);
+            foreach (var graph in graphs)
+            {
+                string name = GraphVisualizerClient.GetName(graph);
+                if (name == null)
+                {
+                    name = graph.GetEditorName();
+                }
+                options.Add(name.Length != 0 ? name : "[Unnamed]");
+            }
+
+            options.Sort();
+
+            int currentSelection = graphs.IndexOf(currentGraph);
+            int newSelection = EditorGUILayout.Popup(currentSelection != -1 ? currentSelection : 0, options.ToArray(), GUILayout.Width(200));
+
+            PlayableGraph selectedGraph = new PlayableGraph();
+            if (newSelection != -1)
+                selectedGraph = graphs[newSelection];
+
+            GUILayout.FlexibleSpace();
+            EditorGUILayout.EndHorizontal();
+
+            return selectedGraph;
+        }
+
+        private static void ShowMessage(string msg)
+        {
+            GUILayout.BeginVertical();
+            GUILayout.FlexibleSpace();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+
+            GUILayout.Label(msg);
+
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
+
+            GUILayout.FlexibleSpace();
+            GUILayout.EndVertical();
+        }
+
+        void Update()
+        {
+            // If in Play mode, refresh the graph each update.
+            if (EditorApplication.isPlaying)
+                Repaint();
+        }
+
+        void OnInspectorUpdate()
+        {
+            // If not in Play mode, refresh the graph less frequently.
+            if (!EditorApplication.isPlaying)
+                Repaint();
+        }
+
+        void OnEnable()
+        {
+            m_Graphs = new List<PlayableGraph>(UnityEditor.Playables.Utility.GetAllGraphs());
+
+            UnityEditor.Playables.Utility.graphCreated += OnGraphCreated;
+            UnityEditor.Playables.Utility.destroyingGraph += OnDestroyingGraph;
+        }
+
+        void OnGraphCreated(PlayableGraph graph)
+        {
+            if (!m_Graphs.Contains(graph))
+                m_Graphs.Add(graph);
+        }
+
+        void OnDestroyingGraph(PlayableGraph graph)
+        {
+            m_Graphs.Remove(graph);
+        }
+
+        void OnDisable()
+        {
+            UnityEditor.Playables.Utility.graphCreated -= OnGraphCreated;
+            UnityEditor.Playables.Utility.destroyingGraph -= OnDestroyingGraph;
+        }
+
+        void OnGUI()
+        {
+            // Early out if there is no graphs.
+            var selectedGraphs = GetGraphList();
+            if (selectedGraphs.Count == 0)
+            {
+                ShowMessage("No PlayableGraph in the scene");
+                return;
+            }
+
+            GUILayout.BeginVertical();
+            m_CurrentGraph = GetSelectedGraphInToolBar(selectedGraphs, m_CurrentGraph);
+            GUILayout.EndVertical();
+
+            if (!m_CurrentGraph.IsValid())
+            {
+                ShowMessage("Selected PlayableGraph is invalid");
+                return;
+            }
+
+            var graph = new PlayableGraphVisualizer(m_CurrentGraph);
+            graph.Refresh();
+
+            if (graph.IsEmpty())
+            {
+                ShowMessage("Selected PlayableGraph is empty");
+                return;
+            }
+
+            if (m_Layout == null)
+                m_Layout = new ReingoldTilford();
+
+            m_Layout.CalculateLayout(graph);
+
+            var graphRect = new Rect(0, s_ToolbarHeight, position.width, position.height - s_ToolbarHeight);
+
+            if (m_Renderer == null)
+                m_Renderer = new DefaultGraphRenderer();
+
+            m_Renderer.Draw(m_Layout, graphRect, m_GraphSettings);
+        }
+
+        private List<PlayableGraph> GetGraphList()
+        {
+            var selectedGraphs = new List<PlayableGraph>();
             foreach (var clientGraph in GraphVisualizerClient.GetGraphs())
             {
-                if (clientGraph.Key.IsValid())
-                {
-                    info.name = clientGraph.Value;
-                    info.graph = clientGraph.Key;
-                    graphInfos.Add(info);
-                }
+                if (clientGraph.IsValid())
+                    selectedGraphs.Add(clientGraph);
             }
+
+            if (selectedGraphs.Count == 0)
+                selectedGraphs = m_Graphs.ToList();
+
+            return selectedGraphs;
         }
-
-        // Early out if there is no graphs.
-        if (graphInfos.Count == 0)
-        {
-            ShowMessage("No PlayableGraph in the scene");
-            return;
-        }
-
-        GUILayout.BeginVertical();
-        m_CurrentGraphInfo = GetSelectedGraphInToolBar(graphInfos, m_CurrentGraphInfo);
-        GUILayout.EndVertical();
-
-        if (!m_CurrentGraphInfo.graph.IsValid())
-        {
-            ShowMessage("Selected PlayableGraph is invalid");
-            return;
-        }
-
-        var graph = new PlayableGraphVisualizer(m_CurrentGraphInfo.graph);
-        graph.Refresh();
-
-        if (graph.IsEmpty())
-        {
-            ShowMessage("Selected PlayableGraph is empty");
-            return;
-        }
-
-        if (m_Layout == null)
-            m_Layout = new ReingoldTilford();
-
-        m_Layout.CalculateLayout(graph);
-
-        var graphRect = new Rect(0, s_ToolbarHeight, position.width, position.height - s_ToolbarHeight);
-
-        if (m_Renderer == null)
-            m_Renderer = new DefaultGraphRenderer();
-
-        m_Renderer.Draw(m_Layout, graphRect, m_GraphSettings);
-    }
 
 #region Custom_Menu
 
-    public virtual void AddItemsToMenu(GenericMenu menu)
-    {
-        menu.AddItem(new GUIContent("Legend"), m_GraphSettings.showLegend, ToggleLegend);
-        menu.AddItem(new GUIContent("Auto Scan Scene"), m_AutoScanScene, ToggleAutoScanScene);
-    }
-    void ToggleLegend()
-    {
-        m_GraphSettings.showLegend = !m_GraphSettings.showLegend;
-    }
-    void ToggleAutoScanScene()
-    {
-        m_AutoScanScene = !m_AutoScanScene;
-    }
+        public virtual void AddItemsToMenu(GenericMenu menu)
+        {
+            menu.AddItem(new GUIContent("Inspector"), m_GraphSettings.showInspector, ToggleInspector);
+            menu.AddItem(new GUIContent("Legend"), m_GraphSettings.showLegend, ToggleLegend);
+        }
+
+        void ToggleInspector()
+        {
+            m_GraphSettings.showInspector = !m_GraphSettings.showInspector;
+        }
+
+        void ToggleLegend()
+        {
+            m_GraphSettings.showLegend = !m_GraphSettings.showLegend;
+        }
 
 #endregion
+    }
 }

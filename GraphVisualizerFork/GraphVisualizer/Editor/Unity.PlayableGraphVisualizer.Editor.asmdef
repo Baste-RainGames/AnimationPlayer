@@ -1,7 +1,7 @@
 {
-    "name": "GraphVisualizerEditor",
+    "name": "Unity.PlayableGraphVisualizer.Editor",
     "references": [
-        "GraphVisualizer"
+      "Unity.PlayableGraphVisualizer"
     ],
     "includePlatforms": [
         "Editor"

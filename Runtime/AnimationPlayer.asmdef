@@ -1,7 +1,7 @@
 {
     "name": "AnimationPlayer",
     "references": [
-        "GraphVisualizer"
+        "Unity.PlayableGraphVisualizer"
     ],
     "optionalUnityReferences": [],
     "includePlatforms": [],

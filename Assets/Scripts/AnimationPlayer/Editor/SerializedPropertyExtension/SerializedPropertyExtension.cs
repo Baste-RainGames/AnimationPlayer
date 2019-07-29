@@ -6,7 +6,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
-public static class SerializedPropertyExtension
+internal static class SerializedPropertyExtension
 {
     /// <summary>
     /// Use to set the underlying object of a serialized property dirty, if you have
@@ -15,7 +15,7 @@ public static class SerializedPropertyExtension
     /// Using property.serializedObject.ApplyModifiedProperties() will apply the changes done through
     /// the property, and discard any changes done directly to the object
     /// </summary>
-    public static void SetUnderlyingObjectDirty(this SerializedProperty property)
+    internal static void SetUnderlyingObjectDirty(this SerializedProperty property)
     {
         var targetObject = property.serializedObject.targetObject;
         EditorUtility.SetDirty(targetObject);
@@ -26,7 +26,7 @@ public static class SerializedPropertyExtension
         }
     }
 
-    public static SerializedProperty FindSiblingAttribute(this SerializedProperty prop, string siblingName) {
+    internal static SerializedProperty FindSiblingAttribute(this SerializedProperty prop, string siblingName) {
         var oldPath = prop.propertyPath;
 
         var pathSplit = oldPath.Split('.');
@@ -47,7 +47,7 @@ public static class SerializedPropertyExtension
         return prop;
     }
 
-    public static SerializedProperty ExpandArrayByOne(this SerializedProperty prop) {
+    internal static SerializedProperty ExpandArrayByOne(this SerializedProperty prop) {
         if (!prop.isArray) {
             Debug.LogError($"Trying to expand the array size of the property {prop.displayName}, but it's not an array");
             return null;
@@ -56,7 +56,7 @@ public static class SerializedPropertyExtension
         return ExpandArrayByOne(prop, prop.arraySize);
     }
 
-    public static SerializedProperty ExpandArrayByOne(this SerializedProperty prop, int atIndex) {
+    internal static SerializedProperty ExpandArrayByOne(this SerializedProperty prop, int atIndex) {
         if (!prop.isArray) {
             Debug.LogError($"Trying to expand the array size of the property {prop.displayName}, but it's not an array");
             return null;
@@ -66,7 +66,7 @@ public static class SerializedPropertyExtension
         return prop.GetArrayElementAtIndex(atIndex);
     }
 
-    public static IEnumerable<SerializedProperty> IterateArray(this SerializedProperty prop) {
+    internal static IEnumerable<SerializedProperty> IterateArray(this SerializedProperty prop) {
         if (!prop.isArray) {
             Debug.LogError($"Trying to iterate the property {prop.displayName}, but it's not an array");
             yield break;
@@ -77,7 +77,7 @@ public static class SerializedPropertyExtension
         }
     }
 
-    public static IEnumerable<(int, SerializedProperty)> IterateArrayWithIndex(this SerializedProperty prop) {
+    internal static IEnumerable<(int, SerializedProperty)> IterateArrayWithIndex(this SerializedProperty prop) {
         if (!prop.isArray) {
             Debug.LogError($"Trying to iterate the property {prop.displayName}, but it's not an array");
             yield break;
@@ -88,7 +88,7 @@ public static class SerializedPropertyExtension
         }
     }
 
-    public static IEnumerable<(int, SerializedProperty)> IterateArrayWithIndex_Reverse(this SerializedProperty prop) {
+    internal static IEnumerable<(int, SerializedProperty)> IterateArrayWithIndex_Reverse(this SerializedProperty prop) {
         if (!prop.isArray) {
             Debug.LogError($"Trying to iterate the property {prop.displayName}, but it's not an array");
             yield break;
@@ -99,7 +99,7 @@ public static class SerializedPropertyExtension
         }
     }
 
-    public static string ListProperties(this SerializedProperty property, bool includeInvisible = false) {
+    internal static string ListProperties(this SerializedProperty property, bool includeInvisible = false) {
         StringBuilder sb = new StringBuilder();
 
         var start = property.Copy();
@@ -147,7 +147,7 @@ public static class SerializedPropertyExtension
         } while (cont && currentProp.propertyPath != endProp.propertyPath);
     }
 
-    public static string PrintValue(this SerializedProperty prop) {
+    internal static string PrintValue(this SerializedProperty prop) {
         switch (prop.propertyType) {
             case SerializedPropertyType.Generic:
                 return prop.type ?? "Generic?";

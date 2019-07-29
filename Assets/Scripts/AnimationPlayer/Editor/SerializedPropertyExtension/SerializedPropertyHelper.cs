@@ -6,9 +6,9 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
-public static class SerializedPropertyHelper
+internal static class SerializedPropertyHelper
 {
-    public static object GetTargetObjectOfProperty(SerializedProperty prop)
+    internal static object GetTargetObjectOfProperty(SerializedProperty prop)
     {
         var path = prop.propertyPath.Replace(".Array.data[", "[");
         object obj = prop.serializedObject.targetObject;
@@ -68,15 +68,14 @@ public static class SerializedPropertyHelper
         return enm.Current;
     }
 
-    public static void SetValue<T>(SerializedProperty target, T data, bool applyModifiedProperties = true)
+    internal static void SetValue<T>(SerializedProperty target, T data, bool applyModifiedProperties = true)
     {
-        Type containerType;
-        if (!ValueContainerRegistry.TryGetContainerType(typeof(T), out containerType))
+        if (!ValueContainerRegistry.TryGetContainerType(typeof(T), out var containerType))
         {
             var typeName = typeof(T).Name;
             Debug.LogError(
                 $"Trying to set a value of type {typeName}, but it's not got a registered container type!\n" +
-                $"Please ensure that this type exists: public class {typeName}Container : ValueContainer<{typeName}> {{}}");
+                $"Please ensure that this type exists: internal class {typeName}Container : ValueContainer<{typeName}> {{}}");
             return;
         }
 
@@ -171,11 +170,11 @@ public static class SerializedPropertyHelper
     }
 }
 
-public static class ValueContainerRegistry
+internal static class ValueContainerRegistry
 {
     private static Dictionary<Type, Type> typeToContainer;
 
-    public static bool TryGetContainerType(Type type, out Type containerType)
+    internal static bool TryGetContainerType(Type type, out Type containerType)
     {
         if (typeToContainer == null)
         {
@@ -200,17 +199,17 @@ public static class ValueContainerRegistry
     }
 }
 
-public class ValueContainer<T> : ScriptableObject
+internal class ValueContainer<T> : ScriptableObject
 {
-    public T t;
+    internal T t;
 }
 
-public class IntContainer : ValueContainer<int> { }
+internal class IntContainer : ValueContainer<int> { }
 
-public class FloatContainer : ValueContainer<float> { }
+internal class FloatContainer : ValueContainer<float> { }
 
-public class StringContainer : ValueContainer<string> { }
+internal class StringContainer : ValueContainer<string> { }
 
-public class DoubleContainer : ValueContainer<double> { }
+internal class DoubleContainer : ValueContainer<double> { }
 
-public class ByteContainer : ValueContainer<byte> { }
+internal class ByteContainer : ValueContainer<byte> { }

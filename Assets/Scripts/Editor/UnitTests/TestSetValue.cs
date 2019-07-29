@@ -10,9 +10,9 @@ namespace AnimationPlayer.Internal
         private DataContainer container;
         private SerializedObject containerSO;
 
-        public class Data1Container : ValueContainer<Data1> { }
-        public class Data2Container : ValueContainer<Data2> { }
-        public class Data3Container : ValueContainer<Data3> { }
+        private class Data1Container : ValueContainer<Data1> { }
+        private class Data2Container : ValueContainer<Data2> { }
+        private class Data3Container : ValueContainer<Data3> { }
 
         [Serializable]
         public class Data1
@@ -47,7 +47,7 @@ namespace AnimationPlayer.Internal
         public void SetUp() {
             container = ScriptableObject.CreateInstance<DataContainer>();
             containerSO = new SerializedObject(container);
-            
+
         }
 
         [Test]
@@ -98,7 +98,7 @@ namespace AnimationPlayer.Internal
             };
             var dataProp = containerSO.FindProperty(nameof(DataContainer.data2));
             SerializedPropertyHelper.SetValue(dataProp, data2);
-            
+
             Assert.AreEqual(data2.i, container.data2.i);
             Assert.AreEqual(data2.s, container.data2.s);
             Assert.AreEqual(data2.f, container.data2.f);
@@ -120,7 +120,7 @@ namespace AnimationPlayer.Internal
             };
             var dataProp = containerSO.FindProperty(nameof(DataContainer.data3));
             SerializedPropertyHelper.SetValue(dataProp, data3);
-            
+
             Assert.AreEqual(data3.data1.i, container.data3.data1.i);
             Assert.AreEqual(data3.f, container.data3.f);
             Assert.AreEqual(data3.data2.f, container.data3.data2.f);

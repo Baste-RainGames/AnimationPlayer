@@ -18,27 +18,27 @@ namespace Animation_Player
         public SerializedGUID GUID => guid;
 
         public List<AnimationEvent> animationEvents = new List<AnimationEvent>();
-        public double speed;
+        public double               speed;
 
         //pseudo-constructor
         protected void Initialize(string name, string defaultName)
         {
-            this.name = name;
-            speed = 1d;
+            this.name      = name;
+            speed          = 1d;
             hasUpdatedName = !name.StartsWith(defaultName);
-            guid = SerializedGUID.Create();
+            guid           = SerializedGUID.Create();
         }
 
         public string Name
         {
-            get { return name; }
+            get => name;
             set
             {
                 if (name == value)
                     return;
 
                 hasUpdatedName = true;
-                name = value;
+                name           = value;
             }
         }
 
@@ -84,14 +84,15 @@ namespace Animation_Player
                     timeLastFrame = timeCurrentFrame - delta;
                 }
             }
+
             foreach (var animationEvent in animationEvents)
             {
-                if(currentWeight < animationEvent.minWeight)
+                if (currentWeight < animationEvent.minWeight)
                     continue;
-                if(animationEvent.mustBeActiveState && !isActiveState)
+                if (animationEvent.mustBeActiveState && !isActiveState)
                     continue;
 
-                var lastFrameBefore = timeLastFrame < animationEvent.time;
+                var lastFrameBefore   = timeLastFrame    < animationEvent.time;
                 var currentFrameAfter = timeCurrentFrame >= animationEvent.time;
                 if (lastFrameBefore && currentFrameAfter)
                 {
@@ -109,9 +110,10 @@ namespace Animation_Player
             return $"{name} ({GetType().Name})";
         }
 
-        public abstract Playable GeneratePlayable(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
+        public abstract Playable GeneratePlayable(PlayableGraph                                   graph,
+                                                  Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
                                                   Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers,
-                                                  List<BlendTreeController2D> all2DControllers, Dictionary<string, float> blendVars);
+                                                  List<BlendTreeController2D>                     all2DControllers, Dictionary<string, float> blendVars);
 
         public virtual void OnWillStartPlaying(PlayableGraph graph, AnimationMixerPlayable stateMixer, int ownIndex, ref Playable ownPlayable) { }
     }

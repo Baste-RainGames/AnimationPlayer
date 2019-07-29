@@ -11,11 +11,11 @@ namespace Animation_Player
     public abstract class PersistedVal<T>
     {
         private readonly string key;
-        private T cachedVal;
+        private          T      cachedVal;
 
         protected PersistedVal(string key)
         {
-            this.key = key;
+            this.key  = key;
             cachedVal = Get();
         }
 

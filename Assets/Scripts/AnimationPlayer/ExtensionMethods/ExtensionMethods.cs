@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using UnityEngine;
 
 namespace Animation_Player
 {
-    public static class ArrayExtensions
+    //@TODO: internal+internalsVisibleTo?
+    public static class ExtensionMethods
     {
         ///  <summary>
         ///  Returns a pretty string representation of an Array. Or anything else that's IEnumerable. Like a list or whatever.
@@ -62,8 +65,8 @@ namespace Animation_Player
             return PrettyPrint(array, false, printFunc);
         }
 
-        public static string PrettyPrint<T>(this IEnumerable<T> array, bool newLines = false,
-                                            Func<T, string> printFunc = null, bool surroundWithBrackets = true)
+        public static string PrettyPrint<T>(this IEnumerable<T> array,            bool newLines             = false,
+                                            Func<T, string>     printFunc = null, bool surroundWithBrackets = true)
         {
             var elementDivider = newLines ? "\n " : ", ";
             return PrettyPrint(array, printFunc, elementDivider, false);
@@ -80,7 +83,7 @@ namespace Animation_Player
         {
             if (list == null)
                 throw new ArgumentNullException(nameof(list), "Can't get random idx from null list!");
-            if(list.Count == 0)
+            if (list.Count == 0)
                 throw new ArgumentException("Can't get random idx from empty list!", nameof(list));
             return UnityEngine.Random.Range(0, list.Count);
         }
@@ -89,9 +92,58 @@ namespace Animation_Player
         {
             if (list == null)
                 throw new ArgumentNullException(nameof(list), "Can't get random from null list!");
-            if(list.Count == 0)
+            if (list.Count == 0)
                 throw new ArgumentException("Can't get random from empty list!", nameof(list));
             return list[UnityEngine.Random.Range(0, list.Count)];
+        }
+
+        public static IEnumerable<T> FilterByType<T>(this IEnumerable collection) where T : class
+        {
+            foreach (var element in collection)
+            {
+                if (element is T asT)
+                    yield return asT;
+            }
+        }
+
+        public static T EnsureComponent<T>(this GameObject obj) where T : Component
+        {
+            var t = obj.GetComponent<T>();
+            if (t == null)
+                t = obj.AddComponent<T>();
+            return t;
+        }
+
+        public static bool IsInBounds<T>(this List<T> arr, int index)
+        {
+            if (arr == null)
+                return false;
+            if (arr.Count == 0)
+                return false;
+            return index >= 0 && index < arr.Count;
+        }
+
+        public static V GetOrAdd<K, V>(this Dictionary<K, V> dict, K key) where V : new()
+        {
+            if (dict.TryGetValue(key, out var value))
+                return value;
+
+            return dict[key] = new V();
+        }
+
+        public static float Duration(this AnimationCurve curve)
+        {
+            if (curve == null)
+            {
+                throw new ArgumentNullException(nameof(curve));
+            }
+
+            if (curve.keys.Length == 0)
+            {
+                return 0;
+            }
+
+            return curve[curve.length - 1].time - curve[0].time;
         }
     }
 }

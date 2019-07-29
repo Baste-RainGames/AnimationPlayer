@@ -20,20 +20,20 @@ namespace Animation_Player
         private AnimationState fromState, toState;
         public AnimationState FromState
         {
-            get { return fromState; }
+            get => fromState;
             set
             {
-                fromState = value;
+                fromState     = value;
                 fromStateGUID = fromState.GUID;
             }
         }
 
         public AnimationState ToState
         {
-            get { return toState; }
+            get => toState;
             set
             {
-                toState = value;
+                toState     = value;
                 toStateGUID = toState?.GUID ?? SerializedGUID.Empty;
             }
         }
@@ -41,7 +41,7 @@ namespace Animation_Player
         public void FetchStates(List<AnimationState> allStates)
         {
             fromState = allStates.Find(state => state.GUID == fromStateGUID);
-            toState = allStates.Find(state => state.GUID == toStateGUID);
+            toState   = allStates.Find(state => state.GUID == toStateGUID);
         }
     }
 
@@ -72,7 +72,7 @@ namespace Animation_Player
     public struct TransitionData
     {
         public TransitionType type;
-        public float duration;
+        public float          duration;
         public AnimationCurve curve;
 
         public static TransitionData UseDefined() => default; // default for TransitionType is UseDefined.
@@ -82,8 +82,8 @@ namespace Animation_Player
             return new TransitionData
             {
                 duration = Mathf.Max(0f, duration),
-                type = TransitionType.Linear,
-                curve = new AnimationCurve()
+                type     = TransitionType.Linear,
+                curve    = new AnimationCurve()
             };
         }
 
@@ -92,8 +92,8 @@ namespace Animation_Player
             return new TransitionData
             {
                 duration = curve.Duration(),
-                type = TransitionType.Curve,
-                curve = curve
+                type     = TransitionType.Curve,
+                curve    = curve
             };
         }
 
@@ -102,8 +102,8 @@ namespace Animation_Player
             return new TransitionData
             {
                 duration = 0f,
-                type = TransitionType.Linear,
-                curve = new AnimationCurve()
+                type     = TransitionType.Linear,
+                curve    = new AnimationCurve()
             };
         }
 

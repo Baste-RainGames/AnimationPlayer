@@ -120,5 +120,7 @@ namespace Animation_Player
         public abstract void AddAllClipsTo(List<AnimationClip> list);
 
         public abstract IEnumerable<AnimationClip> GetClips();
+
+        public abstract void JumpToRelativeTime(float time);
     }
 }

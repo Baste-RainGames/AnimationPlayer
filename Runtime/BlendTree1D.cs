@@ -15,6 +15,7 @@ namespace Animation_Player
         public string blendVariable;
         public List<BlendTreeEntry1D> blendTree;
         public bool compensateForDifferentDurations = true;
+        private AnimationMixerPlayable treeMixer;
 
         private BlendTree1D() { }
 
@@ -32,7 +33,7 @@ namespace Animation_Player
                                                   Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers,
                                                   List<BlendTreeController2D> all2DControllers, Dictionary<string, float> blendVars)
         {
-            var treeMixer = AnimationMixerPlayable.Create(graph, blendTree.Count, true);
+            treeMixer = AnimationMixerPlayable.Create(graph, blendTree.Count, true);
             if (blendTree.Count == 0)
                 return treeMixer;
 
@@ -98,6 +99,16 @@ namespace Animation_Player
                         return true;
                 }
                 return false;
+            }
+        }
+
+        public override void JumpToRelativeTime(float time)
+        {
+            float unNormalizedTime = time * Duration;
+            treeMixer.SetTime(unNormalizedTime);
+            for (int i = 0; i < treeMixer.GetInputCount(); i++)
+            {
+                treeMixer.GetInput(i).SetTime(unNormalizedTime);
             }
         }
     }

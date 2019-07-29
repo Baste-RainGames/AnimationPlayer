@@ -12,6 +12,7 @@ namespace Animation_Player
         public const string DefaultName = "New Random State";
         public List<AnimationClip> clips = new List<AnimationClip>();
         private int playedClip;
+        private Playable playable;
 
         private PlayRandomClip() { }
 
@@ -31,7 +32,8 @@ namespace Animation_Player
                                                   List<BlendTreeController2D> all2DControllers, Dictionary<string, float> blendVars)
         {
             playedClip = clips.GetRandomIdx();
-            return GeneratePlayableFor(graph, playedClip);
+            playable = GeneratePlayableFor(graph, playedClip);
+            return playable;
         }
 
         private Playable GeneratePlayableFor(PlayableGraph graph, int clipIdx)
@@ -68,6 +70,7 @@ namespace Animation_Player
 
             oldPlayable.Destroy();
             ownPlayable = newPlayable;
+            playable = ownPlayable;
         }
 
         public override void AddAllClipsTo(List<AnimationClip> list)
@@ -81,6 +84,11 @@ namespace Animation_Player
 
         public override IEnumerable<AnimationClip> GetClips() {
             return clips;
+        }
+
+        public override void JumpToRelativeTime(float time)
+        {
+            playable.SetTime(time * Duration);
         }
     }
 }

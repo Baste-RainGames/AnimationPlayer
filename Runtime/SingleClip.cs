@@ -11,6 +11,7 @@ namespace Animation_Player
     {
         public const string DefaultName = "New State";
         public AnimationClip clip;
+        private AnimationClipPlayable clipPlayable;
 
         private SingleClip() { }
 
@@ -28,7 +29,7 @@ namespace Animation_Player
         {
             if(clip == null)
                 clip = new AnimationClip();
-            var clipPlayable = AnimationClipPlayable.Create(graph, clip);
+            clipPlayable = AnimationClipPlayable.Create(graph, clip);
             clipPlayable.SetApplyFootIK(true);
             clipPlayable.SetSpeed(speed);
             return clipPlayable;
@@ -45,5 +46,10 @@ namespace Animation_Player
 
         public override float Duration => clip != null ? clip.length : 0f;
         public override bool Loops => clip != null && clip.isLooping;
+
+        public override void JumpToRelativeTime(float time)
+        {
+            clipPlayable.SetTime(time * Duration);
+        }
     }
 }

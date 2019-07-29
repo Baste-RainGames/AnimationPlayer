@@ -204,7 +204,7 @@ namespace Animation_Player
             }
             else if (!states[newState].Loops)
             {
-                // We need to blend to a state currently playing, but since it's not looping, blending to a time different than 0 would look bad. 
+                // We need to blend to a state currently playing, but since it's not looping, blending to a time different than 0 would look bad.
                 // So we do this:
                 // Move the old version of the state to a new spot in the mixer, copy over the time and weight to that new spot.
                 // Create a new version of the state at the old spot
@@ -268,25 +268,25 @@ namespace Animation_Player
             playInstructionQueue.Clear();
         }
 
-        public void JumpToRelativeTime(float time) 
+        public void JumpToRelativeTime(float time)
         {
-            if (time > 1f) 
+            if (time > 1f)
             {
                 time = time % 1f;
             }
-            else if (time < 0f) 
+            else if (time < 0f)
             {
                 time = 1 - ((-time) % 1f);
             }
 
-            for (int i = 0; i < stateMixer.GetInputCount(); i++) 
+            for (int i = 0; i < stateMixer.GetInputCount(); i++)
             {
                 stateMixer.SetInputWeight(i, i == currentPlayedState ? 1f : 0f);
             }
 
             ClearFinishedTransitionStates();
 
-            stateMixer.GetInput(currentPlayedState).SetTime(time * states[currentPlayedState].Duration);
+            states[currentPlayedState].JumpToRelativeTime(time);
         }
 
         public void Update()
@@ -355,12 +355,12 @@ namespace Animation_Player
         /// <summary>
         /// We generate some extra states at times to handle blending properly. This cleans out the ones of those that are done blending out.
         /// </summary>
-        private void ClearFinishedTransitionStates() 
+        private void ClearFinishedTransitionStates()
         {
             var currentInputCount = stateMixer.GetInputCount();
-            for (int i = currentInputCount - 1; i >= states.Count; i--) 
+            for (int i = currentInputCount - 1; i >= states.Count; i--)
             {
-                if (stateMixer.GetInputWeight(i) < 0.01f) 
+                if (stateMixer.GetInputWeight(i) < 0.01f)
                 {
                     activeWhenBlendStarted.RemoveAt(i);
                     valueWhenBlendStarted.RemoveAt(i);
@@ -369,7 +369,7 @@ namespace Animation_Player
                     removedPlayable.Destroy();
 
                     //Shift all excess playables one index down.
-                    for (int j = i + 1; j < stateMixer.GetInputCount(); j++) 
+                    for (int j = i + 1; j < stateMixer.GetInputCount(); j++)
                     {
                         var playable = stateMixer.GetInput(j);
                         var weight = stateMixer.GetInputWeight(j);
@@ -593,7 +593,7 @@ namespace Animation_Player
             }
 
             transitionLookup = newLookup;
-            
+
             stateMixer.SetInputCount(stateMixer.GetInputCount() + 1);
 
             //Shift all excess playables (ie blend helpers) one index up. Since their order doesn't count, could just swap the first one to the last index?
@@ -662,7 +662,7 @@ namespace Animation_Player
                 serializedBlendTree2Ds.Clear();
             if(serializedSelectRandomStates == null)
                 serializedSelectRandomStates = new List<PlayRandomClip>();
-            else 
+            else
                 serializedSelectRandomStates.Clear();
 
             foreach (var state in states)

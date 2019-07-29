@@ -8,6 +8,7 @@ This means that this isn't in any way stable! Use at your own caution, don't exp
 ## Installation
 
 Minimum required Unity version is 2018.4
+
 Add this line to Packages/manifest.json:
 "com.baste.animationplayer": "https://github.com/Baste-RainGames/AnimationPlayer.git"
 

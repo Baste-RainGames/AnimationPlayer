@@ -1,7 +1,7 @@
 {
     "name": "AnimationPlayer.Editor.Tests",
     "references": [
-        "AnimationPlayerEditor"
+        "AnimationPlayer.Editor"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"

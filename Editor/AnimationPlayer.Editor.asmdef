@@ -1,5 +1,5 @@
 {
-    "name": "AnimationPlayerEditor",
+    "name": "AnimationPlayer.Editor",
     "references": [
         "AnimationPlayer"
     ],

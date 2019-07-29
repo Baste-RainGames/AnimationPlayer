@@ -9,9 +9,6 @@
     "email": "baste@rain-games.com",
     "url": "https://github.com/Baste-RainGames/AnimationPlayer"
   },
-  "dependencies": {
-    "com.unity.playablegraph-visualizer": "0.2.1-preview.3"
-  },
   "samples": [
     {
 

@@ -1,6 +1,8 @@
 {
     "name": "AnimationPlayer",
-    "references": [],
+    "references": [
+        "GraphVisualizer"
+    ],
     "optionalUnityReferences": [],
     "includePlatforms": [],
     "excludePlatforms": [],

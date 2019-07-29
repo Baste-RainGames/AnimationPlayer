@@ -86,14 +86,23 @@ namespace Animation_Player
                 rootPlayable = layerMixer;
             }
 
-            animOutput.SetSourcePlayable(rootPlayable);
+            var ikConnection = GetComponent<IKAnimationPlayerConnection>();
+            if (ikConnection != null) {
+                var ikPlayable = ikConnection.GeneratePlayable(OutputAnimator, graph);
+                ikPlayable.AddInput(rootPlayable, 0, 1f);
+                animOutput.SetSourcePlayable(ikPlayable);
+
+            }
+            else {
+                animOutput.SetSourcePlayable(rootPlayable);
+            }
 
             //fun fact: default is DSPClock!
             graph.SetTimeUpdateMode(DirectorUpdateMode.GameTime);
             graph.Play();
 
             visualizerClientName = name + " AnimationPlayer";
-            //GraphVisualizerClient.Show(graph, visualizerClientName);
+            GraphVisualizerClient.Show(graph, visualizerClientName);
         }
 
         private void Update()

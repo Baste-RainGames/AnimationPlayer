@@ -1,0 +1,6 @@
+{
+    "name": "AnimationPlayer.Tests",
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ]
+}

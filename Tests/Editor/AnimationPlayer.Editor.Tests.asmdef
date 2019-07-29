@@ -1,0 +1,16 @@
+{
+    "name": "AnimationPlayer.Editor.Tests",
+    "references": [
+        "AnimationPlayerEditor"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": []
+}

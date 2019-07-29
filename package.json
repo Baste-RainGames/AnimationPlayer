@@ -1,0 +1,24 @@
+{
+  "name": "com.baste.animationplayer",
+  "version": "0.1.0",
+  "displayName": "AnimationPlayer",
+  "description": "Tool for playing animations in Unity",
+  "unity" : "2018.4",
+  "author": {
+    "name": "Baste Nesse Buanes",
+    "email": "baste@rain-games.com",
+    "url": "https://github.com/Baste-RainGames/AnimationPlayer"
+  },
+  "samples": [
+    {
+
+      "displayName": "Development Samples",
+
+      "description": "Code used for testing during development. Not really a 'sample', but this was the cleanest way I figured out to put them in the git repo without dumping the code into all user repos that grab the project.",
+
+      "path": "Samples~/DevelopmentSamples"
+
+    }
+  ]
+
+}

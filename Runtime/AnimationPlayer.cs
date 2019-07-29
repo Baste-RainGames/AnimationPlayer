@@ -101,8 +101,13 @@ namespace Animation_Player
             graph.SetTimeUpdateMode(DirectorUpdateMode.GameTime);
             graph.Play();
 
-            visualizerClientName = name + " AnimationPlayer";
-            GraphVisualizerClient.Show(graph, visualizerClientName);
+            SetVizualizerName(name + " AnimationPlayer");
+        }
+
+        public void SetVizualizerName(string newName)
+        {
+            GraphVisualizerClient.Hide(graph);
+            GraphVisualizerClient.Show(graph, newName);
         }
 
         private void Update()

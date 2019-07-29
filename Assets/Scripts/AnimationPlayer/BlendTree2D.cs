@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
 
@@ -10,8 +12,8 @@ namespace Animation_Player
     {
         public const string DefaultName = "New 2D Blend Tree";
 
-        public string                 blendVariable;
-        public string                 blendVariable2;
+        public string blendVariable;
+        public string blendVariable2;
         public List<BlendTreeEntry2D> blendTree;
 
         private BlendTree2D() { }
@@ -20,34 +22,34 @@ namespace Animation_Player
         {
             var blendTree = new BlendTree2D();
             blendTree.Initialize(name, DefaultName);
-            blendTree.blendVariable  = "blend1";
+            blendTree.blendVariable = "blend1";
             blendTree.blendVariable2 = "blend2";
-            blendTree.blendTree      = new List<BlendTreeEntry2D>();
+            blendTree.blendTree = new List<BlendTreeEntry2D>();
             return blendTree;
         }
 
-        public override Playable GeneratePlayable(PlayableGraph                                   graph,
-                                                  Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
+        public override Playable GeneratePlayable(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
                                                   Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers,
-                                                  List<BlendTreeController2D>                     all2DControllers, Dictionary<string, float> blendVars)
+                                                  List<BlendTreeController2D> all2DControllers, Dictionary<string, float> blendVars)
         {
             var treeMixer = AnimationMixerPlayable.Create(graph, blendTree.Count, true);
             if (blendTree.Count == 0)
                 return treeMixer;
 
-            void SetVar1(float val) => blendVars[blendVariable] = val;
-            void SetVar2(float val) => blendVars[blendVariable2] = val;
-            var controller = new BlendTreeController2D(blendVariable, blendVariable2, treeMixer, blendTree.Count, SetVar1, SetVar2);
+            Action<float> setVar1 = val => blendVars[blendVariable] = val;
+            Action<float> setVar2 = val => blendVars[blendVariable2] = val;
+            var controller = new BlendTreeController2D(blendVariable, blendVariable2, treeMixer, blendTree.Count, setVar1, setVar2);
             all2DControllers.Add(controller);
             varTo2DBlendControllers.GetOrAdd(blendVariable).Add(controller);
             varTo2DBlendControllers.GetOrAdd(blendVariable2).Add(controller);
-            blendVars[blendVariable]  = 0;
+            blendVars[blendVariable] = 0;
             blendVars[blendVariable2] = 0;
 
             for (int j = 0; j < blendTree.Count; j++)
             {
                 var blendTreeEntry = blendTree[j];
-                var clipPlayable   = AnimationClipPlayable.Create(graph, blendTreeEntry.clip);
+                var clipPlayable = AnimationClipPlayable.Create(graph, blendTreeEntry.clip);
+                clipPlayable.SetApplyFootIK(true);
                 clipPlayable.SetSpeed(speed);
                 graph.Connect(clipPlayable, 0, treeMixer, j);
 
@@ -60,6 +62,17 @@ namespace Animation_Player
             return treeMixer;
         }
 
+        public override void AddAllClipsTo(List<AnimationClip> list) {
+            foreach (var entry in blendTree) {
+                if(entry.clip != null && !list.Contains(entry.clip))
+                    list.Add(entry.clip);
+            }
+        }
+
+        public override IEnumerable<AnimationClip> GetClips() {
+            return blendTree.Select(entry => entry.clip);
+        }
+
         public override float Duration
         {
             get
@@ -67,11 +80,10 @@ namespace Animation_Player
                 var longest = 0f;
                 foreach (var blendTreeEntry in blendTree)
                 {
-                    var clipLength = blendTreeEntry.clip == null ? 0f : blendTreeEntry.clip.length;
+                    var clipLength = blendTreeEntry.clip?.length ?? 0f;
                     if (clipLength > longest)
                         longest = clipLength;
                 }
-
                 return longest;
             }
         }
@@ -82,10 +94,9 @@ namespace Animation_Player
             {
                 foreach (var entry in blendTree)
                 {
-                    if (entry.clip != null && entry.clip.isLooping)
+                    if (entry.clip?.isLooping ?? false)
                         return true;
                 }
-
                 return false;
             }
         }

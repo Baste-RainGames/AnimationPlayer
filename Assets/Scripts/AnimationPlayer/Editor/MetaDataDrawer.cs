@@ -7,18 +7,20 @@ namespace Animation_Player
 {
     public class MetaDataDrawer
     {
-        private readonly PersistedBool       usedClipsFoldout;
-        private readonly PersistedBool       usedModelsFoldout;
-        private readonly AnimationPlayer     animationPlayer;
-        private          List<AnimationClip> animationClipsUsed;
-        private          List<Object>        modelsUsed;
-        public           bool                usedClipsNeedsUpdate;
+        private PersistedBool usedClipsFoldout;
+        private PersistedBool usedModelsFoldout;
+        private List<AnimationClip> animationClipsUsed;
+        private Dictionary<AnimationClip, bool> clipUsagesFoldedOut;
+        private Dictionary<AnimationClip, List<AnimationState>> clipsUsedInStates;
+        private List<Object> modelsUsed;
+        private AnimationPlayer animationPlayer;
+        public bool usedClipsNeedsUpdate;
 
         public MetaDataDrawer(AnimationPlayer animationPlayer)
         {
             this.animationPlayer = animationPlayer;
-            usedClipsFoldout     = new PersistedBool(persistedFoldoutUsedClips  + animationPlayer.GetInstanceID());
-            usedModelsFoldout    = new PersistedBool(persistedFoldoutUsedModels + animationPlayer.GetInstanceID());
+            usedClipsFoldout = new PersistedBool(persistedFoldoutUsedClips + animationPlayer.GetInstanceID());
+            usedModelsFoldout = new PersistedBool(persistedFoldoutUsedModels + animationPlayer.GetInstanceID());
         }
 
         public void DrawMetaData()
@@ -39,7 +41,25 @@ namespace Animation_Player
 
             EditorGUI.indentLevel++;
             foreach (var clip in animationClipsUsed)
-                EditorUtilities.ObjectField(clip);
+            {
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    EditorUtilities.ObjectField(clip);
+                    clipUsagesFoldedOut[clip] = EditorGUILayout.Foldout(clipUsagesFoldedOut[clip], "");
+                }
+
+                if (clipUsagesFoldedOut[clip])
+                {
+                    using (new EditorGUI.IndentLevelScope())
+                    {
+                        foreach (var state in clipsUsedInStates[clip])
+                        {
+                            EditorGUILayout.LabelField("Used in state " + state.Name);
+                        }
+                    }
+                }
+            }
+
             EditorGUI.indentLevel--;
         }
 
@@ -57,7 +77,7 @@ namespace Animation_Player
 
         private void EnsureUsedClipsCached()
         {
-            if (!usedClipsNeedsUpdate)
+            if (!usedClipsNeedsUpdate && animationClipsUsed != null)
                 return;
             usedClipsNeedsUpdate = false;
 
@@ -71,35 +91,30 @@ namespace Animation_Player
             else
                 modelsUsed = new List<Object>();
 
+            if (clipsUsedInStates != null)
+                clipsUsedInStates.Clear();
+            else
+                clipsUsedInStates = new Dictionary<AnimationClip, List<AnimationState>>();
+
             foreach (var state in animationPlayer.layers.SelectMany(layer => layer.states))
             {
-                var type = state.GetType();
-                if (type == typeof(SingleClip))
+                foreach (var clip in state.GetClips().Where(c => c != null))
                 {
-                    var singleClipState = (SingleClip) state;
-                    if (singleClipState.clip != null && !animationClipsUsed.Contains(singleClipState.clip))
-                        animationClipsUsed.Add(singleClipState.clip);
-                }
-                else if (type == typeof(BlendTree1D))
-                {
-                    foreach (var clip in ((BlendTree1D) state).blendTree.Select(bte => bte.clip).Where(c => c != null))
-                        if (!animationClipsUsed.Contains(clip))
-                            animationClipsUsed.Add(clip);
-                }
-                else if (type == typeof(BlendTree2D))
-                {
-                    foreach (var clip in ((BlendTree2D) state).blendTree.Select(bte => bte.clip).Where(c => c != null))
-                        if (!animationClipsUsed.Contains(clip))
-                            animationClipsUsed.Add(clip);
-                    break;
-                }
-                else
-                {
-                    Debug.LogError($"Unknown state type {type.Name}");
+                        animationClipsUsed.EnsureContains(clip);
+                        if (!clipsUsedInStates.ContainsKey(clip))
+                            clipsUsedInStates[clip] = new List<AnimationState>();
+                        clipsUsedInStates[clip].Add(state);
                 }
             }
 
-            var usedAssetPaths = new List<string>();
+            if (clipUsagesFoldedOut == null)
+                clipUsagesFoldedOut = new Dictionary<AnimationClip, bool>();
+
+            foreach (var clip in animationClipsUsed)
+                if (!clipUsagesFoldedOut.ContainsKey(clip))
+                    clipUsagesFoldedOut[clip] = false;
+
+            List<string> usedAssetPaths = new List<string>();
             foreach (var animationClip in animationClipsUsed)
             {
                 if (AssetDatabase.IsMainAsset(animationClip))
@@ -117,7 +132,8 @@ namespace Animation_Player
             }
         }
 
-        private const string persistedFoldoutUsedClips  = "APE_FO_UsedClips_";
+        private const string persistedFoldoutUsedClips = "APE_FO_UsedClips_";
         private const string persistedFoldoutUsedModels = "APE_FO_UsedModels_";
     }
+
 }

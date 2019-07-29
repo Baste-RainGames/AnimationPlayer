@@ -10,20 +10,22 @@ namespace Animation_Player
     [Serializable]
     public struct SerializedGUID : ISerializationCallbackReceiver, IFormattable, IComparable, IComparable<SerializedGUID>, IEquatable<SerializedGUID>
     {
-        public static SerializedGUID Empty => new SerializedGUID { guid = Guid.Empty };
+        public static SerializedGUID Empty => new SerializedGUID {guid = Guid.Empty};
 
         public static SerializedGUID Create()
         {
-            var newGuid = new SerializedGUID { guid = Guid.NewGuid() };
+            var newGuid = new SerializedGUID {guid = Guid.NewGuid()};
             newGuid.guidSerialized = newGuid.guid.ToString();
             return newGuid;
         }
 
         private Guid guid;
-        public  Guid GUID => guid;
+        public Guid GUID => guid;
 
+#pragma warning disable 0649
         [SerializeField]
         private string guidSerialized;
+#pragma warning restore 0649
 
         public void OnBeforeSerialize()
         {
@@ -86,7 +88,7 @@ namespace Animation_Player
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj)) return false;
-            return obj is SerializedGUID serializedGuid && Equals(serializedGuid);
+            return obj is SerializedGUID && Equals((SerializedGUID) obj);
         }
 
         public override int GetHashCode()

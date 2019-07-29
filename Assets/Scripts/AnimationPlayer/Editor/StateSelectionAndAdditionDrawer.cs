@@ -2,8 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
-
-using EditMode          = Animation_Player.AnimationPlayerEditor.AnimationPlayerEditMode;
+using EditMode = Animation_Player.AnimationPlayerEditor.AnimationPlayerEditMode;
 using PersistedEditMode = Animation_Player.AnimationPlayerEditor.PersistedAnimationPlayerEditMode;
 
 namespace Animation_Player
@@ -11,32 +10,31 @@ namespace Animation_Player
     public static class StateSelectionAndAdditionDrawer
     {
         private static GUILayoutOption buttonWidth;
-        private static GUIContent      selectedStateLabel;
-        private static GUIStyle        popupStyle;
-        private static GUIStyle        dragAndDropBoxStyle;
+        private static GUIContent selectedStateLabel;
+        private static GUIStyle popupStyle;
+        private static GUIStyle dragAndDropBoxStyle;
 
-        public static void Draw(AnimationPlayer       animationPlayer, PersistedInt selectedLayer, PersistedInt selectedState,
-                                PersistedEditMode     selectedEditMode,
+        public static void Draw(AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedState, PersistedEditMode selectedEditMode,
                                 AnimationPlayerEditor editor, List<AnimationClip> multiSelectClips)
         {
             if (popupStyle == null)
             {
-                buttonWidth        = GUILayout.Width(200f);
+                buttonWidth = GUILayout.Width(200f);
                 selectedStateLabel = new GUIContent("Selected state: ");
 
                 popupStyle = new GUIStyle(EditorStyles.popup)
                 {
-                    fontSize    = GUI.skin.button.fontSize,
-                    font        = GUI.skin.button.font,
-                    fontStyle   = GUI.skin.button.fontStyle,
+                    fontSize = GUI.skin.button.fontSize,
+                    font = GUI.skin.button.font,
+                    fontStyle = GUI.skin.button.fontStyle,
                     fixedHeight = 20f,
-                    alignment   = TextAnchor.MiddleCenter
+                    alignment = TextAnchor.MiddleCenter
                 };
                 dragAndDropBoxStyle = new GUIStyle(EditorStyles.helpBox)
                 {
                     alignment = TextAnchor.MiddleCenter,
                     fontStyle = FontStyle.Bold,
-                    fontSize  = 12,
+                    fontSize = 12,
                 };
             }
 
@@ -85,9 +83,8 @@ namespace Animation_Player
             EditorGUILayout.EndVertical();
         }
 
-        private static void DrawAddition(AnimationPlayer       animationPlayer, PersistedInt selectedLayer, PersistedInt selectedState,
-                                         AnimationPlayerEditor editor,
-                                         AnimationLayer        layer, List<AnimationClip> multiSelectClips)
+        private static void DrawAddition(AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedState, AnimationPlayerEditor editor,
+                                         AnimationLayer layer, List<AnimationClip> multiSelectClips)
         {
             if (multiSelectClips != null && multiSelectClips.Count > 0)
             {
@@ -98,7 +95,6 @@ namespace Animation_Player
                 EditorGUILayout.EndVertical();
                 return;
             }
-
             EditorGUILayout.BeginVertical(buttonWidth);
             {
                 EditorGUILayout.LabelField("Add new state:");
@@ -112,8 +108,8 @@ namespace Animation_Player
 
         private static void DoDragAndDrop(AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedState, AnimationPlayerEditor editor)
         {
-            var   dragAndDropRect = EditorUtilities.ReserveRect(GUILayout.Height(83f));
-            Event evt             = Event.current;
+            var dragAndDropRect = EditorUtilities.ReserveRect(GUILayout.Height(83f));
+            Event evt = Event.current;
 
             GUI.Box(dragAndDropRect, "Drag clips here to add\nthem to the player!", dragAndDropBoxStyle);
 
@@ -137,8 +133,8 @@ namespace Animation_Player
                             if (!(AssetImporter.GetAtPath(assetPath) is ModelImporter))
                                 return;
 
-                            animationClips.AddRange(AssetDatabase.LoadAllAssetsAtPath(assetPath).FilterByType<AnimationClip>()
-                                                                 .Where(clip => (clip.hideFlags & HideFlags.HideInHierarchy) == 0));
+                            animationClips.AddRange(AssetDatabase.LoadAllAssetsAtPath(assetPath).FilterByType<AnimationClip>().
+                                                                  Where(clip => (clip.hideFlags & HideFlags.HideInHierarchy) == 0));
                         }
 
                         if (animationClips.Count == 1)
@@ -155,7 +151,7 @@ namespace Animation_Player
             }
         }
 
-        private static void DrawMultiSelectChoice(AnimationPlayer     animationPlayer,  PersistedInt          selectedLayer, PersistedInt selectedState,
+        private static void DrawMultiSelectChoice(AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedState,
                                                   List<AnimationClip> multiSelectClips, AnimationPlayerEditor editor)
         {
 
@@ -178,17 +174,17 @@ namespace Animation_Player
             }
         }
 
-        private static void AddClipsAsSeperateStates(AnimationPlayer       animationPlayer, PersistedInt        selectedLayer, PersistedInt selectedState,
-                                                     AnimationPlayerEditor editor,          List<AnimationClip> animationClips)
+        private static void AddClipsAsSeperateStates(AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedState,
+                                                     AnimationPlayerEditor editor, List<AnimationClip> animationClips)
         {
             EditorUtilities.RecordUndo(animationPlayer, "Added clip to Animation Player");
-            var layer          = animationPlayer.layers[selectedLayer];
+            var layer = animationPlayer.layers[selectedLayer];
             int numClipsBefore = layer.states.Count;
 
             foreach (var clip in animationClips)
             {
                 var newStateName = GetUniqueStateName(clip.name, layer.states);
-                var newState     = SingleClip.Create(newStateName, clip);
+                var newState = SingleClip.Create(newStateName, clip);
                 layer.states.Add(newState);
             }
 
@@ -197,15 +193,15 @@ namespace Animation_Player
             editor.MarkDirty();
         }
 
-        private static void AddClipsAsBlendTree(AnimationPlayer       animationPlayer, PersistedInt        selectedLayer, PersistedInt selectedState,
-                                                AnimationPlayerEditor editor,          List<AnimationClip> animationClips)
+        private static void AddClipsAsBlendTree(AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedState,
+                                                AnimationPlayerEditor editor, List<AnimationClip> animationClips)
         {
             EditorUtilities.RecordUndo(animationPlayer, "Added clip to Animation Player");
-            var layer          = animationPlayer.layers[selectedLayer];
+            var layer = animationPlayer.layers[selectedLayer];
             int numClipsBefore = layer.states.Count;
 
             var newStateName = GetUniqueStateName(BlendTree1D.DefaultName, layer.states);
-            var newState     = BlendTree1D.Create(newStateName);
+            var newState = BlendTree1D.Create(newStateName);
 
             foreach (var clip in animationClips)
             {
@@ -265,10 +261,11 @@ namespace Animation_Player
 
             var allNamesSorted = otherStates.Select(layer => layer.Name).Where(name => name != wantedName && name.StartsWith(wantedName));
 
-            var greatestIndex = 0;
+            int greatestIndex = 0;
             foreach (var name in allNamesSorted)
             {
-                if (int.TryParse(name.Substring(wantedName.Length + 1), out var numericPostFix))
+                int numericPostFix;
+                if (int.TryParse(name.Substring(wantedName.Length + 1), out numericPostFix))
                 {
                     if (numericPostFix > greatestIndex)
                         greatestIndex = numericPostFix;

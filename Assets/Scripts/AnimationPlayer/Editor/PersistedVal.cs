@@ -4,18 +4,18 @@ namespace Animation_Player
 {
     /// <summary>
     /// Persisted (to EditorPrefs) int value for edit mode that survives assembly reloads.
-    /// Use for making editors not reset when you recompile scripts. 
-    /// 
+    /// Use for making editors not reset when you recompile scripts.
+    ///
     /// Uses the edited element's instanceID (or any int, but you know) to match value with object.
     /// </summary>
     public abstract class PersistedVal<T>
     {
         private readonly string key;
-        private          T      cachedVal;
+        private T cachedVal;
 
         protected PersistedVal(string key)
         {
-            this.key  = key;
+            this.key = key;
             cachedVal = Get();
         }
 

@@ -19,7 +19,7 @@ namespace Animation_Player
          * The currently blend vector is the value actually used, and is only updated when the current set value has moved more than 1% of the
          * total range of the blend var threshold.
          */
-        private float   currentSetValue1, currentSetValue2;
+        private float currentSetValue1, currentSetValue2;
         private Vector2 currentBlendVector;
 
         public float CurrentValue1 => currentSetValue1;
@@ -28,26 +28,26 @@ namespace Animation_Player
         private readonly AnimationMixerPlayable treeMixer;
 
         private readonly Vector2[] thresholds;
-        private readonly float[]   motionInfluences;
+        private readonly float[] motionInfluences;
 
-        private readonly float[,]   squareDistanceBetweenThresholds;
-        private readonly Vector2[,] vectorsBetweenThresholds;
+        private float[,] squareDistanceBetweenThresholds;
+        private Vector2[,] vectorsBetweenThresholds;
 
-        private readonly Action<float> UpdateValue1OnMainController;
-        private readonly Action<float> UpdateValue2OnMainController;
+        private Action<float> UpdateValue1OnMainController;
+        private Action<float> UpdateValue2OnMainController;
 
         private bool shouldRecalculate;
 
-        public BlendTreeController2D(string        blendVar1,                    string        blendVar2, AnimationMixerPlayable treeMixer, int numClips,
+        public BlendTreeController2D(string blendVar1, string blendVar2, AnimationMixerPlayable treeMixer, int numClips,
                                      Action<float> UpdateValue1OnMainController, Action<float> UpdateValue2OnMainController)
         {
-            this.blendVar1                    = blendVar1;
-            this.blendVar2                    = blendVar2;
-            this.treeMixer                    = treeMixer;
-            thresholds                        = new Vector2[numClips];
-            motionInfluences                  = new float[numClips];
-            squareDistanceBetweenThresholds   = new float[numClips, numClips];
-            vectorsBetweenThresholds          = new Vector2[numClips, numClips];
+            this.blendVar1 = blendVar1;
+            this.blendVar2 = blendVar2;
+            this.treeMixer = treeMixer;
+            thresholds = new Vector2[numClips];
+            motionInfluences = new float[numClips];
+            squareDistanceBetweenThresholds = new float[numClips, numClips];
+            vectorsBetweenThresholds = new Vector2[numClips, numClips];
             this.UpdateValue1OnMainController = UpdateValue1OnMainController;
             this.UpdateValue2OnMainController = UpdateValue2OnMainController;
         }
@@ -56,9 +56,9 @@ namespace Animation_Player
         {
             thresholds[clipIdx] = new Vector2(threshold, threshold2);
 
-            minVal1 = Mathf.Min(threshold,  minVal1);
+            minVal1 = Mathf.Min(threshold, minVal1);
             minVal2 = Mathf.Min(threshold2, minVal2);
-            maxVal1 = Mathf.Max(threshold,  maxVal1);
+            maxVal1 = Mathf.Max(threshold, maxVal1);
             maxVal2 = Mathf.Max(threshold2, maxVal2);
 
             const float thresholdForChange = .01f;
@@ -71,14 +71,13 @@ namespace Animation_Player
         public void OnAllThresholdsAdded()
         {
             for (int i = 0; i < thresholds.Length; i++)
-            for (int j = i + 1; j < thresholds.Length; j++)
-            {
+            for (int j = i + 1; j < thresholds.Length; j++) {
                 var fromJToI = thresholds[i] - thresholds[j];
                 var fromIToJ = -fromJToI;
                 vectorsBetweenThresholds[i, j] = fromIToJ;
                 vectorsBetweenThresholds[j, i] = fromJToI;
 
-                var squareDist                                                                = Mathf.Pow(fromJToI.magnitude, 2);
+                var squareDist = Mathf.Pow(fromJToI.magnitude, 2);
                 squareDistanceBetweenThresholds[i, j] = squareDistanceBetweenThresholds[j, i] = squareDist;
             }
         }
@@ -129,8 +128,8 @@ namespace Animation_Player
             for (int i = 0; i < thresholds.Length; i++)
             {
                 var influence = GetInfluenceForPoint(currentBlendVector, i);
-                motionInfluences[i] =  influence;
-                influenceSum        += influence;
+                motionInfluences[i] = influence;
+                influenceSum += influence;
             }
 
             for (int i = 0; i < thresholds.Length; i++)
@@ -167,8 +166,8 @@ namespace Animation_Player
         private float WeightFunc(int idx, Vector2 inputPoint, int referencePointIdx)
         {
             var toPointAtIdx = vectorsBetweenThresholds[referencePointIdx, idx];
-            var dotProd      = Vector2.Dot(inputPoint - thresholds[referencePointIdx], toPointAtIdx);
-            var magSqr       = squareDistanceBetweenThresholds[referencePointIdx, idx];
+            var dotProd = Vector2.Dot(inputPoint - thresholds[referencePointIdx], toPointAtIdx);
+            var magSqr = squareDistanceBetweenThresholds[referencePointIdx, idx];
 
             var val = dotProd / magSqr;
             return 1f - val;

@@ -5,26 +5,31 @@ namespace Animation_Player
 {
     public static class StateDataDrawer
     {
-        private static object            reloadChecker;
+        private static object reloadChecker;
         private static GUILayoutOption[] upDownButtonOptions;
-        private static GUIStyle          upDownButtonStyle;
+        private static GUIStyle upDownButtonStyle;
 
-        public static void DrawStateData(AnimationPlayer animationPlayer, int selectedLayer, PersistedInt selectedState, AnimationPlayerEditor currentEditor)
+        public static void ReloadCheck()
         {
             if (reloadChecker == null)
             {
-                reloadChecker       = new object();
+                reloadChecker = new object();
                 upDownButtonOptions = new[] { GUILayout.Width(25f), GUILayout.Height(15f) };
 
                 upDownButtonStyle = new GUIStyle(GUI.skin.button)
                 {
                     alignment = TextAnchor.UpperCenter,
-                    clipping  = TextClipping.Overflow
+                    clipping = TextClipping.Overflow
                 };
             }
+        }
+
+        public static void DrawStateData(AnimationPlayer animationPlayer, int selectedLayer, PersistedInt selectedState, AnimationPlayerEditor currentEditor)
+        {
+            ReloadCheck();
 
             var markDirty = false;
-            var layer     = animationPlayer.layers[selectedLayer];
+            var layer = animationPlayer.layers[selectedLayer];
 
             if (layer.states.Count == 0)
             {
@@ -58,7 +63,6 @@ namespace Animation_Player
                 selectedState.SetTo(0);
                 markDirty = true;
             }
-
             GUILayout.FlexibleSpace();
             var deleteThisState = EditorUtilities.AreYouSureButton($"Delete {stateName}", "Are you sure", $"DeleteState_{selectedState}_{selectedLayer}", 1f);
             EditorGUILayout.EndHorizontal();
@@ -74,11 +78,12 @@ namespace Animation_Player
                 markDirty = true;
             }
 
-            if (markDirty)
+            if (markDirty) {
                 currentEditor.MarkDirty();
+            }
         }
 
-        private static void DrawStateData(AnimationState state, ref bool markDirty)
+        public static void DrawStateData(AnimationState state, ref bool markDirty)
         {
             const float labelWidth = 55f;
 
@@ -91,8 +96,8 @@ namespace Animation_Player
 
             switch (state)
             {
-                case SingleClip slingleClip:
-                    DrawSingleClipState(slingleClip, ref markDirty, labelWidth);
+                case SingleClip singleClipState:
+                    DrawSingleClipState(singleClipState, ref markDirty, labelWidth);
                     break;
                 case BlendTree1D blendTree1D:
                     Draw1DBlendTree(blendTree1D, ref markDirty);
@@ -100,11 +105,11 @@ namespace Animation_Player
                 case BlendTree2D blendTree2D:
                     Draw2DBlendTree(blendTree2D, ref markDirty);
                     break;
-                case PlayRandomClip playRandomClip:
-                    DrawPlayRandomClipState(playRandomClip, ref markDirty);
+                case PlayRandomClip playRandom:
+                    DrawSelectRandomState(playRandom, ref markDirty);
                     break;
                 default:
-                    EditorGUILayout.LabelField($"Unknown animation state type: {state.GetType().Name}");
+                    EditorGUILayout.LabelField($"Unknown animation state type: {(state == null ? "null" : state.GetType().Name)}");
                     break;
             }
         }
@@ -125,8 +130,12 @@ namespace Animation_Player
             state.blendVariable = EditorUtilities.TextField("Blend with variable", state.blendVariable, 130f);
             EditorGUI.indentLevel++;
 
-            var swapIndex = -1;
-            for (int i = 0; i < state.blendTree.Count; i++)
+            int swapIndex = -1;
+            if (state.blendTree == null)
+            {
+                state.blendTree = new System.Collections.Generic.List<BlendTreeEntry1D>();
+            }
+            for (var i = 0; i < state.blendTree.Count; i++)
             {
                 var blendTreeEntry = state.blendTree[i];
 
@@ -134,8 +143,11 @@ namespace Animation_Player
                 {
                     var oldClip = blendTreeEntry.clip;
                     blendTreeEntry.clip = EditorUtilities.ObjectField("Clip", blendTreeEntry.clip, 150f, 200f);
-                    if (blendTreeEntry.clip != oldClip && blendTreeEntry.clip != null)
-                        markDirty |= state.OnClipAssigned(blendTreeEntry.clip);
+                    if (blendTreeEntry.clip != oldClip) {
+                        if(blendTreeEntry.clip != null)
+                            state.OnClipAssigned(blendTreeEntry.clip);
+                        markDirty = true;
+                    }
 
                     EditorGUI.BeginDisabledGroup(i == 0);
                     if (GUILayout.Button("\u2191", upDownButtonStyle, upDownButtonOptions))
@@ -187,12 +199,17 @@ namespace Animation_Player
 
         private static void Draw2DBlendTree(BlendTree2D state, ref bool markDirty)
         {
-            state.blendVariable  = EditorUtilities.TextField("First blend variable",  state.blendVariable,  120f);
+            state.blendVariable = EditorUtilities.TextField("First blend variable", state.blendVariable, 120f);
             state.blendVariable2 = EditorUtilities.TextField("Second blend variable", state.blendVariable2, 120f);
             EditorGUI.indentLevel++;
 
-            var swapIndex = -1;
-            for (int i = 0; i < state.blendTree.Count; i++)
+            if (state.blendTree == null)
+            {
+                state.blendTree = new System.Collections.Generic.List<BlendTreeEntry2D>();
+            }
+
+            int swapIndex = -1;
+            for (var i = 0; i < state.blendTree.Count; i++)
             {
                 var blendTreeEntry = state.blendTree[i];
 
@@ -228,7 +245,7 @@ namespace Animation_Player
 
                 if (i != state.blendTree.Count - 1)
                 {
-                    EditorUtilities.Splitter(width: 350f);
+                    EditorUtilities.Splitter(width:350f);
                 }
             }
 
@@ -252,7 +269,7 @@ namespace Animation_Player
             EditorGUILayout.EndHorizontal();
         }
 
-        private static void DrawPlayRandomClipState(PlayRandomClip state, ref bool markDirty)
+        private static void DrawSelectRandomState(PlayRandomClip state, ref bool markDirty)
         {
             EditorGUILayout.LabelField("Select randomly from:");
             EditorGUI.indentLevel++;
@@ -267,7 +284,6 @@ namespace Animation_Player
                     markDirty = true;
                 }
             }
-
             EditorGUI.indentLevel--;
 
             GUILayout.Space(10f);
@@ -286,7 +302,7 @@ namespace Animation_Player
         {
             EditorUtilities.RecordUndo(animationPlayer, "Deleting state " + layer.states[selectedState].Name);
             layer.transitions.RemoveAll(transition => transition.FromState == layer.states[selectedState] ||
-                                                      transition.ToState   == layer.states[selectedState]);
+                                                      transition.ToState == layer.states[selectedState]);
             layer.states.RemoveAt(selectedState);
 
             if (selectedState == layer.states.Count) //was last state

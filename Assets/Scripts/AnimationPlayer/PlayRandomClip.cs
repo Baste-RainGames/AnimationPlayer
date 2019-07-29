@@ -9,9 +9,9 @@ namespace Animation_Player
     [Serializable]
     public class PlayRandomClip : AnimationState
     {
-        public const string              DefaultName = "New Random State";
-        public       List<AnimationClip> clips       = new List<AnimationClip>();
-        private      int                 playedClip;
+        public const string DefaultName = "New Random State";
+        public List<AnimationClip> clips = new List<AnimationClip>();
+        private int playedClip;
 
         private PlayRandomClip() { }
 
@@ -22,32 +22,13 @@ namespace Animation_Player
             return state;
         }
 
-        public override float Duration
-        {
-            get
-            {
-                if (clips == null || clips.Count == 0)
-                    return 0;
+        // Maybe I should be less of a dick and not write code like this?
+        public override float Duration => (clips?.Count ?? 0) == 0 ? 0f : (clips[0]?.length ?? 0f);
+        public override bool Loops => (clips?.Count ?? 0) == 0 ? false : (clips[0]?.isLooping ?? false);
 
-                return clips[playedClip].length;
-            }
-        }
-
-        public override bool Loops
-        {
-            get
-            {
-                if (clips == null || clips.Count == 0)
-                    return false;
-
-                return clips[playedClip].isLooping;
-            }
-        }
-
-        public override Playable GeneratePlayable(PlayableGraph                                   graph,
-                                                  Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
+        public override Playable GeneratePlayable(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
                                                   Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers,
-                                                  List<BlendTreeController2D>                     all2DControllers, Dictionary<string, float> blendVars)
+                                                  List<BlendTreeController2D> all2DControllers, Dictionary<string, float> blendVars)
         {
             playedClip = clips.GetRandomIdx();
             return GeneratePlayableFor(graph, playedClip);
@@ -56,15 +37,16 @@ namespace Animation_Player
         private Playable GeneratePlayableFor(PlayableGraph graph, int clipIdx)
         {
             playedClip = clipIdx;
-            var clip         = clips[playedClip];
-            var clipPlayable = AnimationClipPlayable.Create(graph, clip);
+            var clip = clips[playedClip];
+            AnimationClipPlayable clipPlayable = AnimationClipPlayable.Create(graph, clip);
+            clipPlayable.SetApplyFootIK(true);
             clipPlayable.SetSpeed(speed);
             return clipPlayable;
         }
 
         public override void OnWillStartPlaying(PlayableGraph graph, AnimationMixerPlayable stateMixer, int ownIndex, ref Playable ownPlayable)
         {
-            //this happens if we're looping, and were already partially playing when the state were started. In that case, don't snap to a different random choice. 
+            //this happens if we're looping, and were already partially playing when the state were started. In that case, don't snap to a different random choice.
             if (ownPlayable.GetTime() > 0f)
                 return;
 
@@ -75,7 +57,7 @@ namespace Animation_Player
             playedClip = wantedClip;
             var newPlayable = GeneratePlayableFor(graph, playedClip);
             var oldPlayable = ownPlayable;
-            var oldWeight   = stateMixer.GetInputWeight(ownIndex);
+            var oldWeight = stateMixer.GetInputWeight(ownIndex);
 
             var asClipPlayable = (AnimationClipPlayable) oldPlayable;
             asClipPlayable.SetAnimatedProperties(clips[wantedClip]);
@@ -86,6 +68,19 @@ namespace Animation_Player
 
             oldPlayable.Destroy();
             ownPlayable = newPlayable;
+        }
+
+        public override void AddAllClipsTo(List<AnimationClip> list)
+        {
+            foreach (var clip in clips)
+            {
+                if (clip != null && !list.Contains(clip))
+                    list.Add(clip);
+            }
+        }
+
+        public override IEnumerable<AnimationClip> GetClips() {
+            return clips;
         }
     }
 }

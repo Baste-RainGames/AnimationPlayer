@@ -69,12 +69,13 @@ namespace Animation_Player
                     background = EditorGUIUtility.whiteTexture
                 },
                 stretchWidth = true,
-                margin       = new RectOffset(0, 0, 7, 7)
+                margin = new RectOffset(0, 0, 7, 7)
             };
         }
 
         private static readonly GUIStyle splitter;
-        private static readonly Color    splitterColor = EditorGUIUtility.isProSkin ? new Color(0.157f, 0.157f, 0.157f) : new Color(0.5f, 0.5f, 0.5f);
+        private static readonly Color splitterColor = EditorGUIUtility.isProSkin ? new Color(0.157f, 0.157f, 0.157f) : new Color(0.5f, 0.5f, 0.5f);
+
 
         // GUILayout Style
         public static void Splitter(float thickness = 1, float width = -1f, bool respectIndentLevel = true)
@@ -90,7 +91,7 @@ namespace Animation_Player
             else
                 position = GUILayoutUtility.GetRect(GUIContent.none, splitterStyle, GUILayout.Height(thickness));
 
-            if (respectIndentLevel)
+            if(respectIndentLevel)
                 position.x += EditorGUI.indentLevel * 18f;
 
             if (Event.current.type == EventType.Repaint)
@@ -142,8 +143,8 @@ namespace Animation_Player
         }
 
         private static readonly Dictionary<string, float> buttonClickTime = new Dictionary<string, float>();
-        private static          object                    areYouSureStyleNullGuard;
-        private static          GUIStyle                  areYouSureStyle;
+        private static object areYouSureStyleNullGuard;
+        private static GUIStyle areYouSureStyle;
 
         public static bool AreYouSureButton(string text, string areYouSureText, string uniqueID, float timeout, params GUILayoutOption[] options)
         {
@@ -154,7 +155,7 @@ namespace Animation_Player
                  */
                 areYouSureStyleNullGuard = new object();
                 var buttonTexture = GetReadableCopyOf(GUI.skin.button.normal.background);
-                var pixels        = buttonTexture.GetPixels();
+                var pixels = buttonTexture.GetPixels();
                 for (var i = 0; i < pixels.Length; i++)
                     pixels[i] *= new Color(1f, 0f, 0f, 1f);
                 var areYouSureTexture = new Texture2D(buttonTexture.width, buttonTexture.height);
@@ -162,7 +163,7 @@ namespace Animation_Player
 
                 areYouSureStyle = new GUIStyle(GUI.skin.button)
                 {
-                    normal = { background = areYouSureTexture }
+                    normal = {background = areYouSureTexture}
                 };
             }
 
@@ -193,11 +194,11 @@ namespace Animation_Player
         {
             // Create a temporary RenderTexture of the same size as the texture
             RenderTexture tmp = RenderTexture.GetTemporary(
-                                                           texture.width,
-                                                           texture.height,
-                                                           0,
-                                                           RenderTextureFormat.Default,
-                                                           RenderTextureReadWrite.Linear);
+                texture.width,
+                texture.height,
+                0,
+                RenderTextureFormat.Default,
+                RenderTextureReadWrite.Linear);
 
             // Blit the pixels on texture to the RenderTexture
             Graphics.Blit(texture, tmp);
@@ -331,8 +332,8 @@ namespace Animation_Player
         /// EditorUtilities.RecordUndo and Undo.RegisterCompleteObjectUndo both fails to properly store prefab modifications if the modification is an addition
         /// of an element in a list. They both store the change to Array.size, but fail to store data about the array element, causing it to be a blank item.
         /// (bug 956330 reported, accepted, then postponed)
-        /// 
-        /// This means that SetDirty is neccessary to actually change the scene. But in order to ensure that Undo works, RegisterCompleteObjectUndo is 
+        ///
+        /// This means that SetDirty is neccessary to actually change the scene. But in order to ensure that Undo works, RegisterCompleteObjectUndo is
         /// neccessary. Using EditorUtilities.RecordUndo and then SetDirty causes Undo to undo the increase to Array.size, but not to undo the added element itself.
         /// </summary>
         public static void RecordUndo(Component comp, string message)
@@ -353,7 +354,7 @@ namespace Animation_Player
             Undo.RegisterCompleteObjectUndo(comp, message);
             EditorGUI.BeginChangeCheck();
             drawAction();
-            if (EditorGUI.EndChangeCheck())
+            if(EditorGUI.EndChangeCheck())
                 SetDirty(comp);
         }
     }

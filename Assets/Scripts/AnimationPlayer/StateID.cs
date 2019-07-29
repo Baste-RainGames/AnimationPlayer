@@ -1,5 +1,4 @@
-namespace Animation_Player
-{
+namespace Animation_Player {
     /// <summary>
     /// Helper struct for identifying an AnimationPlayer state.
     ///
@@ -7,35 +6,30 @@ namespace Animation_Player
     ///
     /// Name comparisons are made with StringComparison.InvariantCulture.
     /// </summary>
-    public struct StateID
-    {
-        public int    index;
+    public struct StateID {
+        public int index;
         public string name;
-        public bool   isNameBased;
+        public bool isNameBased;
 
-        public static implicit operator StateID(string name)
-        {
-            return new StateID
-            {
+        public static implicit operator StateID(string name) {
+            return new StateID {
                 isNameBased = true,
-                name        = name,
-                index       = -1
+                name = name,
+                index = -1
             };
         }
 
-        public static implicit operator StateID(int index)
-        {
-            return new StateID
-            {
+        public static implicit operator StateID(int index) {
+            return new StateID {
                 isNameBased = false,
-                index       = index,
-                name        = null,
+                index = index,
+                name = null,
             };
         }
 
-        public override string ToString()
-        {
+        public override string ToString() {
             return isNameBased ? $"State {name}" : $"State {index}";
         }
     }
+
 }

@@ -9,8 +9,8 @@ namespace Animation_Player
     [Serializable]
     public class SingleClip : AnimationState
     {
-        public const string        DefaultName = "New State";
-        public       AnimationClip clip;
+        public const string DefaultName = "New State";
+        public AnimationClip clip;
 
         private SingleClip() { }
 
@@ -22,19 +22,28 @@ namespace Animation_Player
             return state;
         }
 
-        public override Playable GeneratePlayable(PlayableGraph                                   graph,
-                                                  Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
+        public override Playable GeneratePlayable(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
                                                   Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers,
-                                                  List<BlendTreeController2D>                     all2DControllers, Dictionary<string, float> blendVars)
+                                                  List<BlendTreeController2D> all2DControllers, Dictionary<string, float> blendVars)
         {
-            if (clip == null)
+            if(clip == null)
                 clip = new AnimationClip();
             var clipPlayable = AnimationClipPlayable.Create(graph, clip);
+            clipPlayable.SetApplyFootIK(true);
             clipPlayable.SetSpeed(speed);
             return clipPlayable;
         }
 
+        public override void AddAllClipsTo(List<AnimationClip> list) {
+            if(clip != null && !list.Contains(clip))
+                list.Add(clip);
+        }
+
+        public override IEnumerable<AnimationClip> GetClips() {
+            yield return clip;
+        }
+
         public override float Duration => clip != null ? clip.length : 0f;
-        public override bool  Loops    => clip != null && clip.isLooping;
+        public override bool Loops => clip != null && clip.isLooping;
     }
 }

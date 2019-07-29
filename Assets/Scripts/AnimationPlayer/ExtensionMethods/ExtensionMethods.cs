@@ -145,5 +145,11 @@ namespace Animation_Player
 
             return curve[curve.length - 1].time - curve[0].time;
         }
+
+        public static void EnsureContains<T>(this List<T> list, T element)
+        {
+            if (!list.Contains(element))
+                list.Add(element);
+        }
     }
 }

@@ -8,8 +8,8 @@ namespace Animation_Player
     [CustomEditor(typeof(AnimationPlayer))]
     public class AnimationPlayerEditor : Editor
     {
-        private AnimationPlayer    animationPlayer;
-        private SerializedObject   animationPlayerSO;
+        private AnimationPlayer animationPlayer;
+        private SerializedObject animationPlayerSO;
         private SerializedProperty layersSP;
 
         public enum AnimationPlayerEditMode
@@ -20,9 +20,9 @@ namespace Animation_Player
             MetaData
         }
 
-        private PersistedInt                     selectedLayer;
-        private PersistedInt                     selectedState;
-        private PersistedInt                     selectedToState;
+        private PersistedInt selectedLayer;
+        private PersistedInt selectedState;
+        private PersistedInt selectedToState;
         private PersistedAnimationPlayerEditMode selectedEditMode;
 
         private int SelectedLayer
@@ -48,7 +48,7 @@ namespace Animation_Player
 
         private string[][] allStateNames;
 
-        private static bool     stylesCreated = false;
+        private static bool stylesCreated = false;
         private static GUIStyle editLayerStyle;
         private static GUIStyle editLayerButton_Background;
         private static GUIStyle editLayerButton_NotSelected;
@@ -57,19 +57,20 @@ namespace Animation_Player
 
         private MetaDataDrawer metaDataDrawer;
 
-        public  AnimationStatePreviewer previewer;
-        private List<AnimationClip>     multiChoiceAnimationClips;
+        public AnimationStatePreviewer previewer;
+        private List<AnimationClip> multiChoiceAnimationClips;
 
         private object scriptReloadChecker;
 
-        private bool stateNamesNeedsUpdate  = true;
+        private bool stateNamesNeedsUpdate = true;
         private bool transitionsNeedsUpdate = true;
 
         public void MarkDirty()
         {
-            stateNamesNeedsUpdate               = true;
+            stateNamesNeedsUpdate = true;
             metaDataDrawer.usedClipsNeedsUpdate = true;
             EditorUtilities.SetDirty(animationPlayer);
+            EditorSceneManager.MarkSceneDirty(animationPlayer.gameObject.scene);
         }
 
         private void OnEnable()
@@ -88,9 +89,9 @@ namespace Animation_Player
 
             var instanceId = animationPlayer.GetInstanceID();
 
-            selectedLayer    = new PersistedInt(persistedLayer                        + instanceId);
-            selectedState    = new PersistedInt(persistedState                        + instanceId);
-            selectedToState  = new PersistedInt(persistedToState                      + instanceId);
+            selectedLayer    = new PersistedInt(persistedLayer + instanceId);
+            selectedState    = new PersistedInt(persistedState + instanceId);
+            selectedToState  = new PersistedInt(persistedToState + instanceId);
             selectedEditMode = new PersistedAnimationPlayerEditMode(persistedEditMode + instanceId);
 
             stateNamesNeedsUpdate = true;
@@ -104,40 +105,39 @@ namespace Animation_Player
                 // something needs to be re-cached. This solves that - we know that Unity can't persist a raw object, so if it's null, a reload is neccessary.
                 scriptReloadChecker = new object();
 
-                animationPlayer   = (AnimationPlayer) target;
+                animationPlayer = (AnimationPlayer) target;
                 animationPlayerSO = serializedObject;
-                layersSP          = animationPlayerSO.FindProperty(nameof(AnimationPlayer.layers));
+                layersSP = animationPlayerSO.FindProperty(nameof(AnimationPlayer.layers));
 
-                metaDataDrawer         = new MetaDataDrawer(animationPlayer);
-                stylesCreated          = false;
+                metaDataDrawer = new MetaDataDrawer(animationPlayer);
+                stylesCreated = false;
                 transitionsNeedsUpdate = true;
             }
 
             if (isGUICall && !stylesCreated)
             {
                 var backgroundTex = EditorUtilities.MakeTex(1, 1, new Color(1.0f, 1.0f, 1.0f, .1f));
-                editLayerStyle = new GUIStyle { normal = { background = backgroundTex } };
+                editLayerStyle = new GUIStyle {normal = {background = backgroundTex}};
 
-                centeredLabel = new GUIStyle(GUI.skin.label)
-                {
+                centeredLabel = new GUIStyle(GUI.skin.label) {
                     alignment = TextAnchor.UpperCenter
                 };
 
-                var buttonBackgroundTex   = EditorUtilities.MakeTex(1, 1, new Color(1.0f, 1.0f, 1.0f, 0.05f));
-                var buttonSelectedTex     = EditorUtilities.MakeTex(1, 1, new Color(1.0f, 1.0f, 1.0f, 0.05f));
+                var buttonBackgroundTex = EditorUtilities.MakeTex(1, 1, new Color(1.0f, 1.0f, 1.0f, 0.05f));
+                var buttonSelectedTex = EditorUtilities.MakeTex(1, 1, new Color(1.0f, 1.0f, 1.0f, 0.05f));
                 var buttonNotSelectedText = EditorUtilities.MakeTex(1, 1, new Color(1.0f, 1.0f, 1.0f, 0.2f));
 
-                editLayerButton_Background = new GUIStyle { normal = { background = buttonBackgroundTex } };
+                editLayerButton_Background = new GUIStyle {normal = {background = buttonBackgroundTex}};
 
                 editLayerButton_NotSelected = new GUIStyle(GUI.skin.label)
                 {
-                    normal    = { background = buttonNotSelectedText },
+                    normal = {background = buttonNotSelectedText},
                     alignment = TextAnchor.MiddleCenter
                 };
 
                 editLayerButton_Selected = new GUIStyle(GUI.skin.label)
                 {
-                    normal    = { background = buttonSelectedTex },
+                    normal = {background = buttonSelectedTex},
                     alignment = TextAnchor.MiddleCenter
                 };
 
@@ -146,7 +146,7 @@ namespace Animation_Player
 
             if (animationPlayer.layers == null || animationPlayer.layers.Length == 0)
             {
-                animationPlayer.layers    = new AnimationLayer[1];
+                animationPlayer.layers = new AnimationLayer[1];
                 animationPlayer.layers[0] = AnimationLayer.CreateLayer();
 
                 if (animationPlayer.defaultTransition == default)
@@ -158,7 +158,7 @@ namespace Animation_Player
             if (stateNamesNeedsUpdate)
             {
                 stateNamesNeedsUpdate = false;
-                allStateNames         = new string[animationPlayer.layers.Length][];
+                allStateNames = new string[animationPlayer.layers.Length][];
                 for (int i = 0; i < animationPlayer.layers.Length; i++)
                 {
                     var states = animationPlayer.layers[i].states;
@@ -230,7 +230,7 @@ namespace Animation_Player
             SelectedLayer = Mathf.Clamp(SelectedLayer, 0, numLayers);
 
             var screenWidth = Screen.width;
-            var twoLines    = screenWidth < 420f;
+            var twoLines = screenWidth < 420f;
 
             EditorGUILayout.BeginHorizontal();
             {
@@ -245,31 +245,28 @@ namespace Animation_Player
 
                 float labelWidth;
 
-                if (twoLines)
-                {
-                    const float otherElementsWidth = (2   * 24f) // left/right button width
-                                                     + (2 * 4f)  // default spacing between elements
-                                                     + 25f       // scroll bar, margin.
-                                                     + 5f;       // my maths is off slightly.
+                if (twoLines) {
+                    const float otherElementsWidth = (2 * 24f) // left/right button width
+                                                   + (2 * 4f)  // default spacing between elements
+                                                   + 25f       // scroll bar, margin.
+                                                   + 5f;       // my maths is off slightly.
                     labelWidth = screenWidth - otherElementsWidth;
                 }
-                else
-                {
-                    const float otherElementsWidth = (2   * 24f)  // left/right button width
-                                                     + (2 * 100f) // Add layer/delete layer width
-                                                     + (6 * 4f)   // default spacing between elements
-                                                     + 25f        // scroll bar, margin.
-                                                     + 10f;       // spacing between right button and add layer button
+                else {
+                    const float otherElementsWidth = (2 * 24f)  // left/right button width
+                                                   + (2 * 100f) // Add layer/delete layer width
+                                                   + (6 * 4f)   // default spacing between elements
+                                                   + 25f        // scroll bar, margin.
+                                                   + 10f;       // spacing between right button and add layer button
                     labelWidth = screenWidth - otherElementsWidth;
                 }
 
                 EditorGUILayout.LabelField(layerLabel, centeredLabel, GUILayout.Width(labelWidth));
                 SelectedLayer = EditorUtilities.DrawRightButton(SelectedLayer, numLayers);
 
-                if (SelectedLayer != old && Event.current.button == 1)
-                {
+                if (SelectedLayer != old && Event.current.button == 1) {
                     var swap = animationPlayer.layers[old];
-                    animationPlayer.layers[old]           = animationPlayer.layers[SelectedLayer];
+                    animationPlayer.layers[old] = animationPlayer.layers[SelectedLayer];
                     animationPlayer.layers[SelectedLayer] = swap;
                     MarkDirty();
                 }
@@ -304,8 +301,7 @@ namespace Animation_Player
                 }
                 EditorGUI.EndDisabledGroup();
 
-                if (twoLines)
-                {
+                if (twoLines) {
                     GUILayout.FlexibleSpace();
                 }
             }
@@ -317,11 +313,11 @@ namespace Animation_Player
         {
             var layer = animationPlayer.layers[SelectedLayer];
 
-            layer.name        = EditorGUILayout.TextField($"Layer {SelectedLayer} Name", layer.name);
+            layer.name = EditorGUILayout.TextField($"Layer {SelectedLayer} Name", layer.name);
             layer.startWeight = EditorGUILayout.Slider($"Layer {SelectedLayer} Weight", layer.startWeight, 0f, 1f);
-            layer.mask        = EditorUtilities.ObjectField($"Layer {SelectedLayer} Mask", layer.mask);
+            layer.mask = EditorUtilities.ObjectField($"Layer {SelectedLayer} Mask", layer.mask);
 
-            if (SelectedLayer > 0) //Doesn't make any sense for base layer to be additive!
+            if(SelectedLayer > 0) //Doesn't make any sense for base layer to be additive!
                 layer.type = (AnimationLayerType) EditorGUILayout.EnumPopup("Type", layer.type);
             else
                 EditorGUILayout.LabelField(string.Empty);
@@ -332,17 +328,17 @@ namespace Animation_Player
             EditorGUILayout.BeginHorizontal(editLayerButton_Background);
 
             //Making tabbed views are hard!
-            var editStatesRect      = EditorUtilities.ReserveRect();
+            var editStatesRect = EditorUtilities.ReserveRect();
             var editTransitionsRect = EditorUtilities.ReserveRect();
-            var eventsRect          = EditorUtilities.ReserveRect();
-            var metaDataRect        = EditorUtilities.ReserveRect();
+            var eventsRect = EditorUtilities.ReserveRect();
+            var metaDataRect = EditorUtilities.ReserveRect();
 
             EditorGUILayout.EndHorizontal();
 
-            DrawTabHeader(editStatesRect,      "Clips",       0);
+            DrawTabHeader(editStatesRect, "Clips", 0);
             DrawTabHeader(editTransitionsRect, "Transitions", 1);
-            DrawTabHeader(eventsRect,          "Events",      2);
-            DrawTabHeader(metaDataRect,        "Metadata",    3);
+            DrawTabHeader(eventsRect, "Events", 2);
+            DrawTabHeader(metaDataRect, "Metadata", 3);
 
             EditorGUILayout.BeginVertical(editLayerStyle);
 
@@ -377,17 +373,17 @@ namespace Animation_Player
             //Expand the first and last rects so they are aligned with the box below
             if (index == 0)
             {
-                rect.x    -= 4;
+                rect.x -= 4;
                 rect.xMax += 4;
             }
             else if (index == 3)
             {
-                rect.x    += 4;
+                rect.x += 4;
                 rect.xMin -= 4;
             }
 
             var isSelected = index == (int) SelectedEditMode;
-            var style      = isSelected ? editLayerButton_Selected : editLayerButton_NotSelected;
+            var style = isSelected ? editLayerButton_Selected : editLayerButton_NotSelected;
             if (GUI.Button(rect, label, style))
                 SelectedEditMode = (AnimationPlayerEditMode) index;
         }
@@ -400,80 +396,81 @@ namespace Animation_Player
                 return;
             }
 
-            var state         = animationPlayer.GetState(SelectedState, SelectedLayer);
+            var state = animationPlayer.GetState(SelectedState, SelectedLayer);
             int indexToDelete = -1;
             EditorGUILayout.LabelField($"Animation events for {state.Name}:");
             EditorUtilities.DrawIndented(() =>
-                                         {
-                                             for (var i = 0; i < state.animationEvents.Count; i++)
-                                             {
-                                                 if (DrawEvent(state.animationEvents[i], state))
-                                                     indexToDelete = i;
-                                                 EditorUtilities.Splitter();
-                                             }
-                                         });
+            {
+                for (var i = 0; i < state.animationEvents.Count; i++)
+                {
+                    if (DrawEvent(state.animationEvents[i], state))
+                        indexToDelete = i;
+                    EditorUtilities.Splitter();
+                }
+            });
 
             if (indexToDelete != -1)
                 state.animationEvents.RemoveAt(indexToDelete);
 
             EditorUtilities.DrawHorizontal(() =>
-                                           {
-                                               if (GUILayout.Button("Create new Animation Event"))
-                                               {
-                                                   EditorUtilities.RecordUndo(animationPlayer, $"Added animation event to {state.Name}");
-                                                   state.animationEvents.Add(new AnimationEvent { name = "New Event" });
-                                                   MarkDirty();
-                                               }
-
-                                               GUILayout.FlexibleSpace();
-                                           });
+            {
+                if (GUILayout.Button("Create new Animation Event"))
+                {
+                    EditorUtilities.RecordUndo(animationPlayer, $"Added animation event to {state.Name}");
+                    state.animationEvents.Add(new AnimationEvent {name = "New Event"});
+                    MarkDirty();
+                }
+                GUILayout.FlexibleSpace();
+            });
         }
+
 
         private bool DrawEvent(AnimationEvent animationEvent, AnimationState containingState)
         {
-            const float  eventLabelWidth     = 100f;
-            const string nameTooltip         = "The name of the event, used when subscribing.";
-            const string timeTooltip         = "When the event should fire, in real seconds.";
+            const float  eventLabelWidth = 100f;
+            const string nameTooltip = "The name of the event, used when subscribing.";
+            const string timeTooltip = "When the event should fire, in real seconds.";
             const string mustBeActiveTooltip = "Does the state have to be the active state for the event to fire?";
-            const string minWeightTooltip    = "The minimum required weight for the state to fire.";
+            const string minWeightTooltip = "The minimum required weight for the state to fire.";
 
             bool shouldDelete = false;
             EditorGUI.BeginChangeCheck();
             EditorUtilities.DrawHorizontal(() =>
-                                           {
-                                               GUIContent nameContent = new GUIContent("Name", nameTooltip);
-                                               EditorGUILayout.LabelField(nameContent, GUILayout.Width(eventLabelWidth));
-                                               animationEvent.name = EditorGUILayout.TextField(animationEvent.name);
-                                           });
+            {
+                GUIContent nameContent = new GUIContent("Name", nameTooltip);
+                EditorGUILayout.LabelField(nameContent, GUILayout.Width(eventLabelWidth));
+                animationEvent.name = EditorGUILayout.TextField(animationEvent.name);
+            });
             EditorUtilities.DrawHorizontal(() =>
-                                           {
-                                               var timeContent = new GUIContent("Time", timeTooltip);
-                                               EditorGUILayout.LabelField(timeContent, GUILayout.Width(eventLabelWidth));
-                                               animationEvent.time = EditorGUILayout.Slider((float) animationEvent.time, 0f, containingState.Duration);
-                                           });
+            {
+                var timeContent = new GUIContent("Time", timeTooltip);
+                EditorGUILayout.LabelField(timeContent, GUILayout.Width(eventLabelWidth));
+                animationEvent.time = EditorGUILayout.Slider((float) animationEvent.time, 0f, containingState.Duration);
+            });
             EditorUtilities.DrawHorizontal(() =>
-                                           {
-                                               var mustBeActiveContent = new GUIContent("Must be active", mustBeActiveTooltip);
-                                               EditorGUILayout.LabelField(mustBeActiveContent, GUILayout.Width(eventLabelWidth));
-                                               animationEvent.mustBeActiveState = EditorGUILayout.Toggle(animationEvent.mustBeActiveState);
-                                           });
+            {
+                var mustBeActiveContent = new GUIContent("Must be active", mustBeActiveTooltip);
+                EditorGUILayout.LabelField(mustBeActiveContent, GUILayout.Width(eventLabelWidth));
+                animationEvent.mustBeActiveState = EditorGUILayout.Toggle(animationEvent.mustBeActiveState);
+            });
             EditorUtilities.DrawHorizontal(() =>
-                                           {
-                                               var minWeightContent = new GUIContent("Minimum weight", minWeightTooltip);
-                                               EditorGUILayout.LabelField(minWeightContent, GUILayout.Width(eventLabelWidth));
-                                               animationEvent.minWeight = EditorGUILayout.Slider(animationEvent.minWeight, 0f, 1f);
-                                           });
+            {
+                var minWeightContent = new GUIContent("Minimum weight", minWeightTooltip);
+                EditorGUILayout.LabelField(minWeightContent, GUILayout.Width(eventLabelWidth));
+                animationEvent.minWeight = EditorGUILayout.Slider(animationEvent.minWeight, 0f, 1f);
+            });
             EditorUtilities.DrawHorizontal(() =>
-                                           {
-                                               GUILayout.FlexibleSpace();
-                                               if (GUILayout.Button($"Delete '{animationEvent.name}'"))
-                                                   shouldDelete = true;
-                                           });
+            {
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button($"Delete '{animationEvent.name}'"))
+                    shouldDelete = true;
+            });
             if (EditorGUI.EndChangeCheck())
                 EditorUtilities.SetDirty(animationPlayer);
 
             return shouldDelete;
         }
+
 
         public void StartDragAndDropMultiChoice(List<AnimationClip> animationClips)
         {
@@ -494,17 +491,17 @@ namespace Animation_Player
             EditorGUILayout.LabelField("Current blend variable values:");
             var blendVars = animationPlayer.GetBlendVariables();
             EditorUtilities.DrawIndented(() =>
-                                         {
-                                             foreach (var blendVar in blendVars)
-                                             {
-                                                 EditorGUILayout.BeginHorizontal();
-                                                 {
-                                                     EditorGUILayout.LabelField(blendVar, GUILayout.Width(100f));
-                                                     EditorGUILayout.LabelField(animationPlayer.GetBlendVar(blendVar).ToString());
-                                                 }
-                                                 EditorGUILayout.EndHorizontal();
-                                             }
-                                         });
+            {
+                foreach (var blendVar in blendVars)
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    {
+                        EditorGUILayout.LabelField(blendVar, GUILayout.Width(100f));
+                        EditorGUILayout.LabelField(animationPlayer.GetBlendVar(blendVar).ToString());
+                    }
+                    EditorGUILayout.EndHorizontal();
+                }
+            });
             EditorUtilities.Splitter();
 
             if (!animationPlayer.gameObject.scene.IsValid())
@@ -518,7 +515,7 @@ namespace Animation_Player
             {
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    EditorGUILayout.LabelField("Current weigth for state " + i + ": " + animationPlayer.GetStateWeight(i, SelectedLayer));
+                    EditorGUILayout.LabelField($"Current weigth for state \"{animationPlayer.layers[SelectedLayer].states[i].Name}\": {animationPlayer.GetStateWeight(i, SelectedLayer)}");
                     if (GUILayout.Button("Play it!"))
                     {
                         animationPlayer.Play(i, SelectedLayer);
@@ -540,9 +537,11 @@ namespace Animation_Player
             SelectedState = Mathf.Clamp(SelectedState, 0, layer.states.Count - 1);
         }
 
-        private const string persistedLayer    = "APE_SelectedLayer_";
-        private const string persistedState    = "APE_SelectedState_";
-        private const string persistedToState  = "APE_SelectedToState_";
+        // private const float selectedLayerWidth = 108f;
+
+        private const string persistedLayer = "APE_SelectedLayer_";
+        private const string persistedState = "APE_SelectedState_";
+        private const string persistedToState = "APE_SelectedToState_";
         private const string persistedEditMode = "APE_EditMode_";
 
         public class PersistedAnimationPlayerEditMode : PersistedVal<AnimationPlayerEditMode>
@@ -572,7 +571,8 @@ namespace Animation_Player
 
         private void OnDestroy()
         {
-            previewer?.Cleanup();
+            if(previewer != null)
+                previewer.Cleanup();
         }
     }
 }

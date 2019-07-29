@@ -5,6 +5,16 @@ Very much WIP! I'm developing this to use in a real Unity game, to ease the work
 
 This means that this isn't in any way stable! Use at your own caution, don't expect upgrades to work yet.
 
+## Installation
+
+Minimum required Unity version is 2018.4
+Add this line to Packages/manifest.json:
+"com.baste.animationplayer": "https://github.com/Baste-RainGames/AnimationPlayer.git"
+
+See this forum thread on the Unity forums for info about getting packages from urls: https://forum.unity.com/threads/git-support-on-package-manager.573673/
+
+If you want to make changes to the projects (to fork or for pull requests), you would clone this project into some other Unity project's Packages folder. If that project is already under project control with git, you'd instead add it as a submodule in the same location.
+
 ## Core idea
 
 The AnimationPlayer is a Unity Component which is used to play animations. Like the built-in Animator Controller, you define both which animations states exist, and how to transition between them. 

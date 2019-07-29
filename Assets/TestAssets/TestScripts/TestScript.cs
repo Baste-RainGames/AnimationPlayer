@@ -30,13 +30,13 @@ public class TestScript : MonoBehaviour
             animationPlayer.Play("Attack 1");
             animationPlayer.PlayAfterSeconds(animationPlayer.GetPlayingState().Duration * .8f, "Movement");
         }
-        
+
         if (Input.GetKeyDown(KeyCode.W))
         {
             animationPlayer.Play("Attack 2");
             animationPlayer.PlayAfterSeconds(animationPlayer.GetPlayingState().Duration * .8f, "Movement");
         }
-        
+
         if (Input.GetKeyDown(KeyCode.E))
         {
             animationPlayer.Play("Attack 3");
@@ -56,7 +56,7 @@ public class TestScript : MonoBehaviour
                 var newState = SingleClip.Create("Test", clip);
                 testIndex = animationPlayer.AddState(newState);
             }
-        
+
             animationPlayer.Play(testIndex);
             animationPlayer.PlayAfterSeconds(animationPlayer.GetPlayingState().Duration * .8f, "Movement");
         }
@@ -66,19 +66,19 @@ public class TestScript : MonoBehaviour
             Debug.Log("0");
             animationPlayer.SetBlendVar("Speed", 0);
         }
-        
+
         if (Input.GetKeyDown(KeyCode.Alpha2))
         {
             Debug.Log("1");
             animationPlayer.SetBlendVar("Speed", 1);
         }
-        
+
         if (Input.GetKeyDown(KeyCode.Alpha3))
         {
             Debug.Log("2");
             animationPlayer.SetBlendVar("Speed", 2);
         }
-        
+
         if (Input.GetKeyDown(KeyCode.Alpha4))
         {
             Debug.Log("2");

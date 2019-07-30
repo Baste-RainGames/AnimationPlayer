@@ -166,9 +166,14 @@ namespace Animation_Player
             for (int i = 0; i < rootPlayable.GetInputCount(); i++)
             {
                 var input = rootPlayable.GetInput(i);
+                var clipDuration = 10f;
+                if (input.IsPlayableOfType<AnimationClipPlayable>()) {
+                    clipDuration = ((AnimationClipPlayable) input).GetAnimationClip().length;
+                }
+
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.Slider(rootPlayable.GetInputWeight(i), 0f, 1f);
-                EditorGUILayout.Slider((float) input.GetTime(), 0f, 10f);
+                EditorGUILayout.Slider((float) input.GetTime(), 0f, clipDuration);
                 EditorGUILayout.EndHorizontal();
             }
 

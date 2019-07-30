@@ -90,6 +90,12 @@ namespace Animation_Player
                 SetValue2(value);
         }
 
+        public void SetInitialValues(float value1, float value2) {
+            currentBlendVector = new Vector2(float.MaxValue, float.MaxValue);
+            SetValue1(value1);
+            SetValue2(value2);
+        }
+
         public void SetValue1(float value)
         {
             currentSetValue1 = Mathf.Clamp(value, minVal1, maxVal1);

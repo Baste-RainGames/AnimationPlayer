@@ -86,7 +86,7 @@ namespace Animation_Player
                 rootPlayable = layerMixer;
             }
 
-            var ikConnection = GetComponent<IKAnimationPlayerConnection>();
+            var ikConnection = GetComponent<IIKAnimationPlayerConnection>();
             if (ikConnection != null) {
                 var ikPlayable = ikConnection.GeneratePlayable(OutputAnimator, graph);
                 ikPlayable.AddInput(rootPlayable, 0, 1f);

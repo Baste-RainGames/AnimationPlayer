@@ -43,8 +43,6 @@ namespace Animation_Player
             all2DControllers.Add(controller);
             varTo2DBlendControllers.GetOrAdd(blendVariable).Add(controller);
             varTo2DBlendControllers.GetOrAdd(blendVariable2).Add(controller);
-            blendVars[blendVariable] = 0;
-            blendVars[blendVariable2] = 0;
 
             for (int j = 0; j < blendTree.Count; j++)
             {
@@ -59,7 +57,7 @@ namespace Animation_Player
 
             controller.OnAllThresholdsAdded();
 
-            treeMixer.SetInputWeight(0, 1f);
+            controller.SetInitialValues(0f, 0f);
             return treeMixer;
         }
 

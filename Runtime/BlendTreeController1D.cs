@@ -41,6 +41,11 @@ namespace Animation_Player
                 CompensateForDurations(0, 0);
         }
 
+        public void SetInitialValue(float value) {
+            lastValue = float.MaxValue;
+            SetValue(value);
+        }
+
         public void SetValue(float value)
         {
             if (value == lastValue)
@@ -86,7 +91,7 @@ namespace Animation_Player
                 mixer.SetInputWeight(i, inputWeight);
             }
 
-            if(compensateForDifferentDurations)
+            if (compensateForDifferentDurations)
                 CompensateForDurations(idxBefore, idxAfter);
         }
 

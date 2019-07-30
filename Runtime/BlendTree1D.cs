@@ -54,11 +54,10 @@ namespace Animation_Player
                 innerPlayables[i] = clipPlayable;
             }
 
-            treeMixer.SetInputWeight(0, 1f);
             var blendController = new BlendTreeController1D(treeMixer, innerPlayables, thresholds, compensateForDifferentDurations,
                                                             val => blendVars[blendVariable] = val);
             varTo1DBlendControllers.GetOrAdd(blendVariable).Add(blendController);
-            blendVars[blendVariable] = 0;
+            blendController.SetInitialValue(0);
 
             return treeMixer;
         }

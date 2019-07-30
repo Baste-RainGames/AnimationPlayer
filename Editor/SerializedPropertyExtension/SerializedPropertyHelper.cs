@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Animation_Player;
 using UnityEditor;
 using UnityEngine;
 
@@ -201,6 +202,7 @@ internal static class ValueContainerRegistry
 
 internal class ValueContainer<T> : ScriptableObject
 {
+    [SerializeField]
     internal T t;
 }
 
@@ -213,3 +215,5 @@ internal class StringContainer : ValueContainer<string> { }
 internal class DoubleContainer : ValueContainer<double> { }
 
 internal class ByteContainer : ValueContainer<byte> { }
+
+internal class AnimationLayerContainer : ValueContainer<AnimationLayer> { }

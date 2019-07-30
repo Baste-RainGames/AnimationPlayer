@@ -6,8 +6,7 @@ using UnityEngine;
 
 namespace Animation_Player
 {
-    //@TODO: internal+internalsVisibleTo?
-    public static class ExtensionMethods
+    internal static class ExtensionMethods
     {
         ///  <summary>
         ///  Returns a pretty string representation of an Array. Or anything else that's IEnumerable. Like a list or whatever.
@@ -150,6 +149,12 @@ namespace Animation_Player
         {
             if (!list.Contains(element))
                 list.Add(element);
+        }
+
+
+        public static Vector3 Normalized2D(this Vector3 vector) {
+            vector.y = 0;
+            return vector.normalized;
         }
     }
 }

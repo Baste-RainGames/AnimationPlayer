@@ -285,8 +285,10 @@ namespace Animation_Player
                 if (GUILayout.Button("Add layer", GUILayout.Width(100f)))
                 {
                     layersSP.arraySize++;
-                    var newLayer = layersSP.GetArrayElementAtIndex(layersSP.arraySize - 1);
+                    var newLayerIndex = layersSP.arraySize - 1;
+                    var newLayer = layersSP.GetArrayElementAtIndex(newLayerIndex);
                     SerializedPropertyHelper.SetValue(newLayer, AnimationLayer.CreateLayer());
+                    SelectedLayer = newLayerIndex;
                 }
 
                 EditorGUI.BeginDisabledGroup(numLayers < 2);
@@ -311,6 +313,8 @@ namespace Animation_Player
 
         private void DrawSelectedLayer()
         {
+            Undo.RecordObject(animationPlayer, "changing layer settings");
+
             var layer = animationPlayer.layers[SelectedLayer];
 
             layer.name = EditorGUILayout.TextField($"Layer {SelectedLayer} Name", layer.name);
@@ -497,7 +501,7 @@ namespace Animation_Player
                     EditorGUILayout.BeginHorizontal();
                     {
                         EditorGUILayout.LabelField(blendVar, GUILayout.Width(100f));
-                        EditorGUILayout.LabelField(animationPlayer.GetBlendVar(blendVar).ToString());
+                        EditorGUILayout.LabelField(animationPlayer.GetBlendVar(blendVar, (int) selectedLayer).ToString());
                     }
                     EditorGUILayout.EndHorizontal();
                 }

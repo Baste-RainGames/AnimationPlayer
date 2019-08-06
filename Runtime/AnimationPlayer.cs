@@ -12,7 +12,7 @@ namespace Animation_Player
     public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     {
         // Serialized data:
-        private const int lastVersion = 1;
+        private const int lastVersion = 2;
         [SerializeField, HideInInspector]
         private int versionNumber;
 
@@ -149,7 +149,15 @@ namespace Animation_Player
             var (layerIndex, stateIndex, foundIndices) = GetLayerAndStateIndices(state, layer, actionIDForErrors);
             if (!foundIndices)
                 return null;
-            return layers[layerIndex].Play(stateIndex, TransitionData.UseDefined());
+            return layers[layerIndex].Play(stateIndex);
+        }
+
+        public AnimationState Play(StateID state, string transition, LayerID layer = default)
+        {
+            var (layerIndex, stateIndex, foundIndices) = GetLayerAndStateIndices(state, layer, "Play state");
+            if (!foundIndices)
+                return null;
+            return layers[layerIndex].Play(stateIndex, transition);
         }
 
         /// <summary>
@@ -215,7 +223,7 @@ namespace Animation_Player
         public void QueueStateChange(StateID state, QueueInstruction instruction, LayerID layer) => QueueStateChange(state, instruction, default, layer);
         public void QueueStateChange(StateID state, TransitionData transition, LayerID layer) => QueueStateChange(state, default, transition, layer);
 
-        public void QueueStateChange(StateID state, QueueInstruction instruction, TransitionData transition, LayerID layer)
+        public void QueueStateChange(StateID state, QueueInstruction instruction, TransitionData? transition, LayerID layer)
         {
             var (layerIndex, stateIndex, foundIndices) = GetLayerAndStateIndices(state, layer, $"Play a state when the next state is done");
             if (!foundIndices)
@@ -794,7 +802,7 @@ namespace Animation_Player
             if (!foundToIndex)
                 return default;
 
-            return layers[layerIndex].GetTransitionFromTo(fromIndex, toIndex);
+            return layers[layerIndex].GetDefaultTransitionFromTo(fromIndex, toIndex);
         }
 
         /// <summary>
@@ -965,6 +973,17 @@ namespace Animation_Player
                 }
             }
 
+            if (versionNumber < 2 && layers != null)
+            {
+                foreach (var layer in layers)
+                {
+                    foreach (var transition in layer.transitions)
+                    {
+                        transition.name = StateTransition.DefaultName;
+                    }
+                }
+            }
+
             versionNumber = lastVersion;
             return true;
         }
@@ -988,6 +1007,15 @@ namespace Animation_Player
                 if (!results.Contains(clip))
                     results.Add(clip);
             }
+        }
+
+        public bool IsTransitioning(LayerID layer = default)
+        {
+            var (layerIdx, foundLayer) = GetLayerIndex(layer, "checking if transitioning");
+            if (!foundLayer)
+                return false;
+
+            return layers[layerIdx].Transitioning;
         }
     }
 

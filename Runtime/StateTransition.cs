@@ -10,12 +10,18 @@ namespace Animation_Player
     [Serializable]
     public class StateTransition
     {
+        public const string DefaultName = "Default";
+
+        public string name = DefaultName;
+
         [SerializeField]
         private SerializedGUID fromStateGUID;
         [SerializeField]
         private SerializedGUID toStateGUID;
 
         public TransitionData transitionData;
+
+        public bool IsDefault => name == DefaultName;
 
         private AnimationState fromState, toState;
         public AnimationState FromState
@@ -50,19 +56,20 @@ namespace Animation_Player
     /// </summary>
     public enum TransitionType
     {
-        /// <summary>
-        /// Use the transition defined for the two states being moved between, or the AnimationPlayer's default transition if no such transition
-        /// is defined.
-        /// </summary>
-        UseDefined,
+        // UserDefined = 0 was a bad idea.
+
         /// <summary>
         /// Use a linear transition with a certain duration
         /// </summary>
-        Linear,
+        Linear = 1,
         /// <summary>
         /// Use an AnimationCurve for the transition.
         /// </summary>
-        Curve
+        Curve = 2,
+        /// <summary>
+        /// Use an Animation clip to blend between the states.
+        /// </summary>
+        Clip = 3,
     }
 
     /// <summary>
@@ -74,8 +81,7 @@ namespace Animation_Player
         public TransitionType type;
         public float duration;
         public AnimationCurve curve;
-
-        public static TransitionData UseDefined() => default; // default for TransitionType is UseDefined.
+        public AnimationClip clip;
 
         public static TransitionData Linear(float duration)
         {
@@ -83,7 +89,8 @@ namespace Animation_Player
             {
                 duration = Mathf.Max(0f, duration),
                 type = TransitionType.Linear,
-                curve = new AnimationCurve()
+                curve = new AnimationCurve(),
+                clip = null
             };
         }
 
@@ -93,7 +100,8 @@ namespace Animation_Player
             {
                 duration = curve.Duration(),
                 type = TransitionType.Curve,
-                curve = curve
+                curve = curve,
+                clip = null
             };
         }
 
@@ -103,7 +111,19 @@ namespace Animation_Player
             {
                 duration = 0f,
                 type = TransitionType.Linear,
-                curve = new AnimationCurve()
+                curve = new AnimationCurve(),
+                clip = null
+            };
+        }
+
+        public static TransitionData Clip(AnimationClip clip)
+        {
+            return new TransitionData
+            {
+                duration = 0f,
+                type     = TransitionType.Clip,
+                curve    = new AnimationCurve(),
+                clip     = clip
             };
         }
 

@@ -339,7 +339,7 @@ namespace Animation_Player
 
             EditorGUILayout.EndHorizontal();
 
-            DrawTabHeader(editStatesRect, "Clips", 0);
+            DrawTabHeader(editStatesRect, "States", 0);
             DrawTabHeader(editTransitionsRect, "Transitions", 1);
             DrawTabHeader(eventsRect, "Events", 2);
             DrawTabHeader(metaDataRect, "Metadata", 3);

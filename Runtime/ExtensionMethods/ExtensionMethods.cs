@@ -113,7 +113,14 @@ namespace Animation_Player
             return t;
         }
 
-        public static bool IsInBounds<T>(this List<T> arr, int index)
+        public static T GetIfInBounds<T>(this IList<T> arr, int index)
+        {
+            if (!arr.IsInBounds(index))
+                return default;
+            return arr[index];
+        }
+
+        public static bool IsInBounds<T>(this IList<T> arr, int index)
         {
             if (arr == null)
                 return false;

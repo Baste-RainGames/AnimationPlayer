@@ -30,8 +30,9 @@ namespace Animation_Player
         private int layerIndex; //only use for re-initting!
 
         //blend info:
-        internal bool Transitioning { get; private set; }
+        private bool transitioning;
         private TransitionData currentTransitionData;
+        private string currentTransitionName;
         private float transitionStartTime;
         private List<bool> activeWhenBlendStarted;
         private List<float> valueWhenBlendStarted;
@@ -107,7 +108,7 @@ namespace Animation_Player
             for (var i = 0; i < transitions.Count; i++)
             {
                 var transition = transitions[i];
-                if (!transition.IsDefault)
+                if (!transition.isDefault)
                     continue;
 
                 var fromState = states.IndexOf(transition.FromState);
@@ -162,7 +163,8 @@ namespace Animation_Player
 
         public AnimationState Play(int state)
         {
-            return Play(state, FindCorrectTransition(state), true);
+            var (transitionData, transitionName) = FindCorrectTransition(state);
+            return Play(state, transitionData, transitionName, true);
         }
 
         public AnimationState Play(int state, string transition)
@@ -174,7 +176,7 @@ namespace Animation_Player
             {
                 if (t.FromState == transitionFrom && t.ToState == transitionTo && t.name == transition)
                 {
-                    return Play(state, t.transitionData);
+                    return Play(state, t.transitionData, transition);
                 }
             }
 
@@ -182,16 +184,16 @@ namespace Animation_Player
             return Play(state);
         }
 
-        public AnimationState Play(int state, TransitionData transition)
+        public AnimationState Play(int state, TransitionData transition, string transitionName)
         {
-            return Play(state, transition, true);
+            return Play(state, transition, transitionName, true);
         }
 
-        private TransitionData FindCorrectTransition(int stateToPlay) {
+        private (TransitionData data, string name) FindCorrectTransition(int stateToPlay) {
             return GetDefaultTransitionFromTo(currentPlayedState, stateToPlay);
         }
 
-        private AnimationState Play(int newState, TransitionData transitionData, bool clearQueuedPlayInstructions)
+        private AnimationState Play(int newState, TransitionData transitionData, string transitionName, bool clearQueuedPlayInstructions)
         {
             if (clearQueuedPlayInstructions)
                 playInstructionQueue.Clear();
@@ -226,7 +228,7 @@ namespace Animation_Player
                 stateMixer.SetInputWeight(newState, 1);
                 runtimePlayables[newState].SetTime(0);
                 currentPlayedState = newState;
-                Transitioning      = false;
+                transitioning      = false;
 
                 ClearFinishedTransitionStates();
             }
@@ -243,9 +245,10 @@ namespace Animation_Player
                     stateMixer.SetInputWeight(i, 0);
                 stateMixer.SetInputWeight(transitionStateindex, 1);
 
-                Transitioning = true;
+                transitioning = true;
                 transitionStartTime = Time.time;
                 currentTransitionData = transitionData;
+                currentTransitionName = transitionName;
                 currentPlayedState = newState;
 
                 activeWhenBlendStarted.Add(true);
@@ -299,7 +302,7 @@ namespace Animation_Player
                     valueWhenBlendStarted[i]  = currentMixVal;
                 }
 
-                Transitioning         = true;
+                transitioning         = true;
                 currentPlayedState    = newState;
                 currentTransitionData = transitionData;
                 transitionStartTime   = Time.time;
@@ -307,9 +310,9 @@ namespace Animation_Player
         }
 
 
-        public void QueuePlayCommand(int stateToPlay, QueueInstruction instruction, TransitionData? transition)
+        public void QueuePlayCommand(int stateToPlay, QueueInstruction instruction, TransitionData? transition, string transitionName)
         {
-            playInstructionQueue.Enqueue(new PlayAtTimeInstruction(instruction, stateToPlay, transition));
+            playInstructionQueue.Enqueue(new PlayAtTimeInstruction(instruction, stateToPlay, transition, transitionName));
         }
 
         public void ClearQueuedPlayCommands()
@@ -369,7 +372,7 @@ namespace Animation_Player
 
         private void HandleTransitions()
         {
-            if (!Transitioning)
+            if (!transitioning)
                 return;
 
             var lerpVal = (Time.time - transitionStartTime) / currentTransitionData.duration;
@@ -385,7 +388,7 @@ namespace Animation_Player
                 stateMixer.SetInputWeight(currentPlayedState, 1);
                 runtimePlayables[currentPlayedState].SetTime(0);
                 ClearFinishedTransitionStates();
-                Transitioning = false;
+                transitioning = false;
                 return;
             }
 
@@ -411,7 +414,7 @@ namespace Animation_Player
 
             if (lerpVal >= 1)
             {
-                Transitioning = false;
+                transitioning = false;
                 if (states.Count != stateMixer.GetInputCount())
                     throw new Exception($"{states.Count} != {stateMixer.GetInputCount()}");
             }
@@ -455,9 +458,12 @@ namespace Animation_Player
                 var instruction = playInstructionQueue.Peek();
                 if (instruction.ShouldPlay()) {
                     if (instruction.transition.HasValue)
-                        Play(instruction.stateToPlay, instruction.transition.Value, false);
-                    else
-                        Play(instruction.stateToPlay, FindCorrectTransition(instruction.stateToPlay), false);
+                        Play(instruction.stateToPlay, instruction.transition.Value, instruction.transitionName, false);
+                    else {
+                        var (transitionData, transitionName) = FindCorrectTransition(instruction.stateToPlay);
+                        Play(instruction.stateToPlay, transitionData, transitionName, false);
+                    }
+
                     playInstructionQueue.Dequeue();
                 }
             }
@@ -481,9 +487,17 @@ namespace Animation_Player
             return -1;
         }
 
-        public bool IsBlending()
+        public bool IsTransitioning()
         {
-            return Transitioning;
+            return transitioning;
+        }
+
+        public bool IsInTransition(string transition)
+        {
+            if (!IsTransitioning())
+                return false;
+
+            return currentTransitionName == transition;
         }
 
         public static AnimationLayer CreateLayer()
@@ -804,6 +818,7 @@ namespace Animation_Player
         {
             internal int stateToPlay;
             internal TransitionData? transition;
+            internal string transitionName;
 
             internal float isDoneTime;
             internal QueueStateType type;
@@ -814,7 +829,7 @@ namespace Animation_Player
             internal float Seconds => timeParam;
             internal float RelativeDuration => timeParam;
 
-            public PlayAtTimeInstruction(QueueInstruction instruction, int stateToPlay, TransitionData? transition)
+            public PlayAtTimeInstruction(QueueInstruction instruction, int stateToPlay, TransitionData? transition, string transitionName)
             {
                 type = instruction.type;
                 boolParam = instruction.boolParam;
@@ -822,6 +837,7 @@ namespace Animation_Player
 
                 this.stateToPlay = stateToPlay;
                 this.transition = transition;
+                this.transitionName = transitionName;
 
                 if (instruction.type == QueueStateType.AfterSeconds && instruction.CountFromQueued)
                     isDoneTime = Time.time + instruction.timeParam;
@@ -954,9 +970,13 @@ namespace Animation_Player
             return stateMixer.GetInput(stateIndex).GetTime() / states[stateIndex].Duration;
         }
 
-        public TransitionData GetDefaultTransitionFromTo(int from, int to) {
+        public (TransitionData transition, string name) GetDefaultTransitionFromTo(int from, int to) {
             var transitionIndex = transitionLookup[from, to];
-            return transitionIndex == -1 ? defaultTransition : transitions[transitionIndex].transitionData;
+            if (transitionIndex == -1)
+                return (defaultTransition, "Default");
+
+            var transition = transitions[transitionIndex];
+            return (transition.transitionData, transition.name);
         }
     }
 }

@@ -29,7 +29,7 @@ Animation states:
         + reset to bind pose after the preview is done
     * Animation events!
         + Make own tab for animation events
-        + Define API. 
+        + Define API.
         + Make sure events are called
         - Make settings:
             - min blend factor - default to 0. Only call the event if the current blend factor is larger than this
@@ -38,11 +38,18 @@ Animation states:
     - Add support for mirroring.
 
 Animation transitions:
-    - Transition-by-clip:
+    - Redo entire layout. Having the transitions store from and to is silly, and the current "default" implementation is wonk. Here's a better version:
+        - The Animation Layer has a array "B" where each entry is a (int targetState, Transition transition).
+        - The Animation Layer also has an array "A" where each entry is (int firstIndex, int numTransitions)
+        - All the transitions for state i are stored between B[A[i].firstIndex] and B[A[i].firstIndex + A[i].numTransitions]
+        - The default transition from state i to state j is the earliest transition from state i that targets j.
+        - This layout is pretty error-free
+
+    + Transition-by-clip:
         If you're transitioning from A to B, specify a clip C so the transition is A->C->B.
         This will be usefull for run-stops and such.
         Have to figure out if C here is a clip, another state in the state view, or another state in a special view.
-    - Several ways of transitioning between two states
+    + Several ways of transitioning between two states
         probably want default transition and named transition
     * Better layout! Show list of all defined transitions
         + There's a list of all transitions defined from the current state
@@ -50,6 +57,8 @@ Animation transitions:
 
 Misc
     - Move AnimationPlayer.Update to it's own method that runs after Update, using the new player loop system, when it's available (2018.1)
+        - Update on that - that's a bit hard. There's an easy part - where we generate a list of AnimationPlayers and have the static method added to the
+          Player Loop that iterates the AnimationPlayers is easy. The hard part is not fucking with the user's use of the player loop system.
     - Add delete buttons to blend trees etc.
     - Ensure that all public methods in AnimationPlayer have int overload, so it's not neccessary to pay the cost of sending in strings
     - Make the cached values in the editor be per-layer where appropriate (selected from/to state for transitions)
@@ -72,10 +81,10 @@ Misc
 Issues:
     - Calling Play("MyState") every frame will cause MyState to never play, if wherever you're calling from executes Update before the AnimationPlayer.
       This is because the timer for when the transition was started gets reset to this frame every time you call it. I don't have any good solutions for
-      this, but then again, calling Play("Attack") in Update is a bit insane.  
+      this, but then again, calling Play("Attack") in Update is a bit insane.
 
 Possible optimizations:
     - We do what the Animator's doing, and have all the states that's in the AnimationPlayer added to the mixer, with the vast majority of them with weight 0.
-      It might be that it would be faster to only have the states that have a non-zero weight in the mixer. That would require re-writing quite a bit, and would make the 
+      It might be that it would be faster to only have the states that have a non-zero weight in the mixer. That would require re-writing quite a bit, and would make the
       visualizer less usefull, so only do it if there's an actual gain to be had.
     - Do a check for GC!

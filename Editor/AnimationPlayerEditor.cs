@@ -22,7 +22,7 @@ namespace Animation_Player
 
         private PersistedInt selectedLayer;
         private PersistedInt selectedState;
-        private PersistedInt selectedToState;
+        private PersistedShortPair selectedToState;
         private PersistedAnimationPlayerEditMode selectedEditMode;
 
         private int SelectedLayer
@@ -34,11 +34,6 @@ namespace Animation_Player
         {
             get => selectedState;
             set => selectedState.SetTo(value);
-        }
-        private int SelectedToState
-        {
-            get => selectedToState;
-            set => selectedToState.SetTo(value);
         }
         private AnimationPlayerEditMode SelectedEditMode
         {
@@ -91,7 +86,7 @@ namespace Animation_Player
 
             selectedLayer    = new PersistedInt(persistedLayer + instanceId);
             selectedState    = new PersistedInt(persistedState + instanceId);
-            selectedToState  = new PersistedInt(persistedToState + instanceId);
+            selectedToState  = new PersistedShortPair(persistedToState + instanceId);
             selectedEditMode = new PersistedAnimationPlayerEditMode(persistedEditMode + instanceId);
 
             stateNamesNeedsUpdate = true;

@@ -1,5 +1,5 @@
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -7,8 +7,8 @@ namespace Animation_Player
 {
     public static class AnimationTransitionDrawer
     {
-        public static void DrawTransitions(AnimationPlayer animationPlayer, int selectedLayer, int selectedStateIdx, PersistedInt selectedToStateIdx,
-                                           string[] stateNamesInLayer)
+        public static void DrawTransitions(AnimationPlayer animationPlayer, int selectedLayer, int selectedStateIdx,
+                                           PersistedShortPair selectedToStateAndTransition, string[] stateNamesInLayer)
         {
             var layer = animationPlayer.layers[selectedLayer];
             if (layer.states.Count == 0)
@@ -17,15 +17,26 @@ namespace Animation_Player
                 return;
             }
 
+            var (toStateIndex, transitionIndex) = selectedToStateAndTransition;
+
             var selectedState      = layer.states[selectedStateIdx];
-            var selectedToState    = layer.states[selectedToStateIdx];
-            var selectedTransition = layer.transitions.Find(t => t.FromState == selectedState && t.ToState == selectedToState);
+            var selectedToState    = layer.states.GetIfInBounds(toStateIndex);
+            var allTransitionsBetweenStates = GetTransitionsBetweenStates(layer, selectedState, selectedToState);
+
+            var selectedTransition = allTransitionsBetweenStates.GetIfInBounds(transitionIndex);
             var fromStateName      = selectedState.Name;
             var toStateName        = selectedToState.Name;
 
+            void SetTransition(StateTransition transition) {
+                var newStateIndex = layer.states.IndexOf(transition.ToState);
+                var newTransitionIndex = GetTransitionsBetweenStates(layer, selectedState, transition.ToState).IndexOf(transition);
+
+                selectedToStateAndTransition.SetTo(((short) newStateIndex, (short) newTransitionIndex));
+            }
+
             EditorUtilities.Splitter();
-            DrawTransitionSelection(selectedToStateIdx, layer, selectedState, fromStateName, selectedTransition);
-            DrawCreateNewTransition(animationPlayer, selectedToStateIdx, stateNamesInLayer, fromStateName, toStateName, selectedState, layer);
+            DrawTransitionSelection(layer, selectedState, fromStateName, selectedTransition, SetTransition);
+            DrawCreateNewTransition(animationPlayer, SetTransition, stateNamesInLayer, fromStateName, toStateName, selectedState, layer);
 
             EditorUtilities.Splitter();
             DrawSelectedTransition(animationPlayer, selectedTransition, fromStateName, toStateName, layer, transitionsFromState);
@@ -34,7 +45,15 @@ namespace Animation_Player
             DrawDefaultTransition(animationPlayer);
         }
 
-        private static void DrawCreateNewTransition(AnimationPlayer animationPlayer, PersistedInt selectedToStateIdx, string[] stateNamesInLayer,
+        private static List<StateTransition> GetTransitionsBetweenStates(AnimationLayer layer, AnimationState selectedState, AnimationState selectedToState) {
+            var allTransitionsBetweenStates = new List<StateTransition>();
+            foreach (var transition in layer.transitions)
+                if (transition.FromState == selectedState && transition.ToState == selectedToState)
+                    allTransitionsBetweenStates.Add(transition);
+            return allTransitionsBetweenStates;
+        }
+
+        private static void DrawCreateNewTransition(AnimationPlayer animationPlayer, Action<StateTransition> SetSelectedTransition, string[] stateNamesInLayer,
                                                     string fromStateName, string toStateName, AnimationState selectedState, AnimationLayer layer) {
             using (new EditorGUILayout.HorizontalScope()) {
                 GUILayout.FlexibleSpace();
@@ -49,7 +68,7 @@ namespace Animation_Player
                                 transitionData = TransitionData.Linear(.2f)
                             };
                             layer.transitions.Add(newState);
-                            selectedToStateIdx.SetTo(layer.states.FindIndex(s => s.Name == state));
+                            SetSelectedTransition(newState);
                         });
                     }
                     menu.ShowAsContext();
@@ -58,8 +77,8 @@ namespace Animation_Player
         }
 
         private static readonly List<StateTransition> transitionsFromState = new List<StateTransition>();
-        private static void DrawTransitionSelection(PersistedInt selectedToStateIdx, AnimationLayer layer, AnimationState selectedState,
-                                                                   string fromStateName, StateTransition selectedTransition)
+        private static void DrawTransitionSelection(AnimationLayer layer, AnimationState selectedState, string fromStateName,
+                                                    StateTransition selectedTransition, Action<StateTransition> SetSelectedTransition)
         {
             transitionsFromState.Clear();
             foreach (var transition in layer.transitions)
@@ -95,9 +114,13 @@ namespace Animation_Player
                             EditorGUILayout.LabelField($"Transitions to {lastToState.Name}");
                         }
 
+                        using (new GUILayout.HorizontalScope())
                         using (new EditorGUI.DisabledScope(transition == selectedTransition)) {
                             if (GUILayout.Button(transition.name, GUILayout.Width(buttonWidth)))
-                                selectedToStateIdx.SetTo(layer.states.IndexOf(transition.ToState));
+                                SetSelectedTransition(transition);
+
+                            if (transition.isDefault)
+                                EditorGUILayout.LabelField("(Default)");
                         }
                     }
                 });
@@ -115,23 +138,20 @@ namespace Animation_Player
 
                 EditorUtilities.DrawIndented(() =>
                 {
-                    var selectedIsDefault = IsDefault(selectedTransition);
                     EditorGUI.BeginChangeCheck();
-                    selectedIsDefault = EditorGUILayout.Toggle("Is Default", selectedIsDefault);
-                    if (EditorGUI.EndChangeCheck()) {
-                        selectedTransition.name = selectedIsDefault ? StateTransition.DefaultName : "Needs new name, not default anymore";
-                        foreach (var transition in allTransitionsFromState.Where(t => t.ToState == selectedTransition.ToState)) {
-                            if (transition != selectedTransition) {
-                                if (IsDefault(transition) && selectedIsDefault) {
-                                    transition.name = "Needs new name, not default anymore!";
-                                }
+                    selectedTransition.isDefault = EditorGUILayout.Toggle("Is Default", selectedTransition.isDefault);
+                    if (EditorGUI.EndChangeCheck() && selectedTransition.isDefault)
+                    {
+                        foreach (var transition in allTransitionsFromState)
+                        {
+                            if (transition != selectedTransition && transition.ToState == selectedTransition.ToState)
+                            {
+                                transition.isDefault = false;
                             }
                         }
                     }
 
-                    using(new EditorGUI.IndentLevelScope())
-                    using(new EditorGUI.DisabledScope(selectedIsDefault))
-                        selectedTransition.name = EditorGUILayout.TextField("Name", selectedTransition.name);
+                    selectedTransition.name = EditorGUILayout.TextField("Name", selectedTransition.name);
 
                     selectedTransition.transitionData = DrawTransitionData(selectedTransition.transitionData);
                     GUILayout.Space(20f);
@@ -144,10 +164,6 @@ namespace Animation_Player
 
                     EditorGUILayout.EndHorizontal();
                 });
-            }
-
-            bool IsDefault(StateTransition t) {
-                return t.name == StateTransition.DefaultName;
             }
         }
 

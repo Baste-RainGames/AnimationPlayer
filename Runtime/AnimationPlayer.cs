@@ -185,7 +185,7 @@ namespace Animation_Player
                 return;
             }
 
-            layers[layerIndex].Play(stateIndex, transitionData);
+            layers[layerIndex].Play(stateIndex, transitionData, "Custom");
         }
 
         /// <summary>
@@ -229,7 +229,7 @@ namespace Animation_Player
             if (!foundIndices)
                 return;
 
-            layers[layerIndex].QueuePlayCommand(stateIndex, instruction, transition);
+            layers[layerIndex].QueuePlayCommand(stateIndex, instruction, transition, "Custom");
         }
 
         public void ClearQueuedPlayCommands(LayerID layer = default)
@@ -802,7 +802,7 @@ namespace Animation_Player
             if (!foundToIndex)
                 return default;
 
-            return layers[layerIndex].GetDefaultTransitionFromTo(fromIndex, toIndex);
+            return layers[layerIndex].GetDefaultTransitionFromTo(fromIndex, toIndex).transition;
         }
 
         /// <summary>
@@ -979,7 +979,7 @@ namespace Animation_Player
                 {
                     foreach (var transition in layer.transitions)
                     {
-                        transition.name = StateTransition.DefaultName;
+                        transition.name = "Transition";
                     }
                 }
             }
@@ -1015,7 +1015,16 @@ namespace Animation_Player
             if (!foundLayer)
                 return false;
 
-            return layers[layerIdx].Transitioning;
+            return layers[layerIdx].IsTransitioning();
+        }
+
+        public bool IsInTransition(string transition, LayerID layer = default)
+        {
+            var (layerIdx, foundLayer) = GetLayerIndex(layer, "checking if in transition");
+            if (!foundLayer)
+                return false;
+
+            return layers[layerIdx].IsInTransition(transition);
         }
     }
 

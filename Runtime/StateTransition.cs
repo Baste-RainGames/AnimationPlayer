@@ -10,8 +10,9 @@ namespace Animation_Player
     [Serializable]
     public class StateTransition
     {
-        public const string DefaultName = "Default";
+        private const string DefaultName = "Transition";
 
+        public bool isDefault;
         public string name = DefaultName;
 
         [SerializeField]
@@ -20,8 +21,6 @@ namespace Animation_Player
         private SerializedGUID toStateGUID;
 
         public TransitionData transitionData;
-
-        public bool IsDefault => name == DefaultName;
 
         private AnimationState fromState, toState;
         public AnimationState FromState

@@ -950,27 +950,34 @@ namespace Animation_Player
             }
         }
 
-        public void AddAllClipsInStatesTo(List<AnimationClip> list) {
-            foreach (var state in states) {
+        public void AddAllClipsInStatesAndTransitionsTo(List<AnimationClip> list)
+        {
+            foreach (var state in states)
                 state.AddAllClipsTo(list);
+            foreach (var transition in transitions) {
+                if (transition.transitionData.clip != null)
+                    list.Add(transition.transitionData.clip);
             }
         }
 
-        public double GetHowLongStateHasBeenPlaying(int stateIndex) {
+        public double GetHowLongStateHasBeenPlaying(int stateIndex)
+        {
             if (stateMixer.GetInputWeight(stateIndex) <= 0f)
                 return 0f;
 
             return stateMixer.GetInput(stateIndex).GetTime();
         }
 
-        public double GetNormalizedStateProgress(int stateIndex) {
+        public double GetNormalizedStateProgress(int stateIndex)
+        {
             if (stateMixer.GetInputWeight(stateIndex) <= 0f)
                 return 0f;
 
             return stateMixer.GetInput(stateIndex).GetTime() / states[stateIndex].Duration;
         }
 
-        public (TransitionData transition, string name) GetDefaultTransitionFromTo(int from, int to) {
+        public (TransitionData transition, string name) GetDefaultTransitionFromTo(int from, int to)
+        {
             var transitionIndex = transitionLookup[from, to];
             if (transitionIndex == -1)
                 return (defaultTransition, "Default");

@@ -995,12 +995,11 @@ namespace Animation_Player
             }
         }
 
-        private List<AnimationClip> allClipsInPlayer = new List<AnimationClip>();
+        private readonly List<AnimationClip> allClipsInPlayer = new List<AnimationClip>();
         public void GetAnimationClips(List<AnimationClip> results) {
-            if (allClipsInPlayer.Count == 0) {
-                foreach (var layer in layers) {
-                    layer.AddAllClipsInStatesTo(allClipsInPlayer);
-                }
+            allClipsInPlayer.Clear();
+            foreach (var layer in layers) {
+                layer.AddAllClipsInStatesAndTransitionsTo(allClipsInPlayer);
             }
 
             foreach (var clip in allClipsInPlayer) {

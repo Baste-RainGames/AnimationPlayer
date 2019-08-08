@@ -27,7 +27,7 @@ namespace Animation_Player
                                                   Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers,
                                                   List<BlendTreeController2D> all2DControllers, Dictionary<string, float> blendVars)
         {
-            if(clip == null)
+            if (clip == null)
                 clip = new AnimationClip();
             clipPlayable = AnimationClipPlayable.Create(graph, clip);
             clipPlayable.SetApplyFootIK(true);
@@ -47,7 +47,7 @@ namespace Animation_Player
         public override float Duration => clip != null ? clip.length : 0f;
         public override bool Loops => clip != null && clip.isLooping;
 
-        public override void JumpToRelativeTime(float time)
+        public override void JumpToRelativeTime(float time, AnimationMixerPlayable stateMixer)
         {
             clipPlayable.SetTime(time * Duration);
         }

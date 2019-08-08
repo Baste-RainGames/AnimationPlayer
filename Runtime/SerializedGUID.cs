@@ -31,7 +31,10 @@ namespace Animation_Player
         {
             if (guid == Guid.Empty)
                 guid = Guid.NewGuid();
-            guidSerialized = guid.ToString();
+
+            // Assumes that the guid never changes.
+            if (string.IsNullOrEmpty(guidSerialized))
+                guidSerialized = guid.ToString();
         }
 
         public void OnAfterDeserialize()

@@ -108,6 +108,9 @@ namespace Animation_Player
                 case PlayRandomClip playRandom:
                     DrawSelectRandomState(playRandom, ref markDirty);
                     break;
+                case Sequence sequence:
+                    DrawSequence(sequence, ref markDirty);
+                    break;
                 default:
                     EditorGUILayout.LabelField($"Unknown animation state type: {(state == null ? "null" : state.GetType().Name)}");
                     break;
@@ -262,6 +265,39 @@ namespace Animation_Player
             if (GUILayout.Button("Add blend tree entry", GUILayout.Width(150f)))
             {
                 state.blendTree.Add(new BlendTreeEntry2D());
+                markDirty = true;
+            }
+
+            GUILayout.FlexibleSpace();
+            EditorGUILayout.EndHorizontal();
+        }
+
+        private static void DrawSequence(Sequence state, ref bool markDirty)
+        {
+            EditorGUILayout.HelpBox("The clips in the sequence are played one by one. The final one will loop if it's set to loop.", MessageType.None);
+
+            EditorGUILayout.LabelField("Sequence");
+            EditorGUI.indentLevel++;
+            for (var i = 0; i < state.clips.Count; i++)
+            {
+                var oldClip = state.clips[i];
+
+                state.clips[i] = EditorUtilities.ObjectField("Clip", oldClip, 150f, 200f);
+                if (state.clips[i] != oldClip)
+                {
+                    state.OnClipAssigned(state.clips[i]);
+                    markDirty = true;
+                }
+            }
+            EditorGUI.indentLevel--;
+
+            EditorGUI.indentLevel--;
+
+            GUILayout.Space(10f);
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Add new part", GUILayout.Width(150f)))
+            {
+                state.clips.Add(null);
                 markDirty = true;
             }
 

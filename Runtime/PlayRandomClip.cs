@@ -61,6 +61,7 @@ namespace Animation_Player
             var oldPlayable = ownPlayable;
             var oldWeight = stateMixer.GetInputWeight(ownIndex);
 
+            //@TODO: What does these lines do? were they a test for if this could be done instead of swapping clips? Does it _work_?
             var asClipPlayable = (AnimationClipPlayable) oldPlayable;
             asClipPlayable.SetAnimatedProperties(clips[wantedClip]);
 
@@ -86,7 +87,7 @@ namespace Animation_Player
             return clips;
         }
 
-        public override void JumpToRelativeTime(float time)
+        public override void JumpToRelativeTime(float time, AnimationMixerPlayable stateMixer)
         {
             playable.SetTime(time * Duration);
         }

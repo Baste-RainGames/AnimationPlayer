@@ -217,6 +217,8 @@ namespace Animation_Player
             else
                 StartTimedTransition();
 
+            states[newState].OnWillStartPlaying(containingGraph, stateMixer, newState, ref runtimePlayables[newState]);
+
             return states[newState];
 
             // HELPERS:
@@ -294,8 +296,6 @@ namespace Animation_Player
                     }
                 }
 
-                states[newState].OnWillStartPlaying(containingGraph, stateMixer, newState, ref runtimePlayables[newState]);
-
                 for (int i = 0; i < stateMixer.GetInputCount(); i++) {
                     var currentMixVal = stateMixer.GetInputWeight(i);
                     activeWhenBlendStarted[i] = currentMixVal > 0f;
@@ -338,14 +338,17 @@ namespace Animation_Player
 
             ClearFinishedTransitionStates();
 
-            states[currentPlayedState].JumpToRelativeTime(time);
+            states[currentPlayedState].JumpToRelativeTime(time, stateMixer);
         }
 
         public void Update()
         {
             if (states.Count == 0)
                 return;
-            if(anyStatesHasAnimationEvents)
+
+            HandleAnimationSequences();
+
+            if (anyStatesHasAnimationEvents)
                 HandleAnimationEvents();
             HandleTransitions();
             HandleQueuedInstructions();
@@ -355,8 +358,20 @@ namespace Animation_Player
             firstFrame = false;
         }
 
+        private void HandleAnimationSequences() {
+            for (int i = 0; i < states.Count; i++) {
+                if (states[i] is Sequence sequence && stateMixer.GetInputWeight(i) > 0) {
+                    var playable = runtimePlayables[i];
+                    sequence.ProgressThroughSequence(ref playable, stateMixer);
+                    runtimePlayables[i] = playable;
+                }
+            }
+        }
+
         private void HandleAnimationEvents()
         {
+            //@TODO This is kinda broken for sequences. For sequences we want events when (or just before) the sequence changes.
+
             for (int i = 0; i < states.Count; i++)
             {
                 //This line eats about 1.2% of all cpu time, with 580+ calls per frame
@@ -725,6 +740,8 @@ namespace Animation_Player
         [SerializeField]
         private List<PlayRandomClip> serializedSelectRandomStates = new List<PlayRandomClip>();
         [SerializeField]
+        private List<Sequence> serializedSequences = new List<Sequence>();
+        [SerializeField]
         private SerializedGUID[] serializedStateOrder;
         public void OnBeforeSerialize()
         {
@@ -742,10 +759,15 @@ namespace Animation_Player
                 serializedBlendTree2Ds = new List<BlendTree2D>();
             else
                 serializedBlendTree2Ds.Clear();
-            if(serializedSelectRandomStates == null)
+            if (serializedSelectRandomStates == null)
                 serializedSelectRandomStates = new List<PlayRandomClip>();
             else
                 serializedSelectRandomStates.Clear();
+
+            if (serializedSequences == null)
+                serializedSequences = new List<Sequence>();
+            else
+                serializedSequences.Clear();
 
             foreach (var state in states)
             {
@@ -761,6 +783,9 @@ namespace Animation_Player
                         continue;
                     case PlayRandomClip playRandomClip:
                         serializedSelectRandomStates.Add(playRandomClip);
+                        continue;
+                    case Sequence sequence:
+                        serializedSequences.Add(sequence);
                         continue;
                     default:
                         if (state != null)
@@ -797,10 +822,15 @@ namespace Animation_Player
             foreach (var state in serializedSelectRandomStates)
                 states.Add(state);
 
+            foreach (var sequence in serializedSequences) {
+                states.Add(sequence);
+            }
+
             serializedSingleClipStates.Clear();
             serializedBlendTree1Ds.Clear();
             serializedBlendTree2Ds.Clear();
             serializedSelectRandomStates.Clear();
+            serializedSequences.Clear();
 
             states.Sort(CompareListIndices);
         }

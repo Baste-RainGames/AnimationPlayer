@@ -3,7 +3,6 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using EditMode = Animation_Player.AnimationPlayerEditor.AnimationPlayerEditMode;
-using PersistedEditMode = Animation_Player.AnimationPlayerEditor.PersistedAnimationPlayerEditMode;
 
 namespace Animation_Player
 {
@@ -14,8 +13,8 @@ namespace Animation_Player
         private static GUIStyle popupStyle;
         private static GUIStyle dragAndDropBoxStyle;
 
-        public static void Draw(AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedState, PersistedEditMode selectedEditMode,
-                                AnimationPlayerEditor editor, List<AnimationClip> multiSelectClips)
+        public static void Draw(AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedState, AnimationPlayerEditor editor,
+                                List<AnimationClip> multiSelectClips)
         {
             if (popupStyle == null)
             {
@@ -156,7 +155,10 @@ namespace Animation_Player
         {
 
             EditorGUILayout.LabelField($"Adding {multiSelectClips.Count} clips! How do you want to add them?");
-            if (GUILayout.Button("Seperate Clips"))
+
+            // @TODO: Sequences, Random Selection
+
+            if (GUILayout.Button("Separate Clips"))
             {
                 AddClipsAsSeperateStates(animationPlayer, selectedLayer, selectedState, editor, multiSelectClips);
                 editor.StopDragAndDropMultiChoice();
@@ -229,6 +231,22 @@ namespace Animation_Player
                 editor.MarkDirty();
             }
 
+            if (GUILayout.Button("Play Random Clip", buttonWidth))
+            {
+                EditorUtilities.RecordUndo(animationPlayer, "Add random state to animation player");
+                layer.states.Add(PlayRandomClip.Create(GetUniqueStateName(PlayRandomClip.DefaultName, layer.states)));
+                selectedState.SetTo(layer.states.Count - 1);
+                editor.MarkDirty();
+            }
+
+            if (GUILayout.Button("Sequence", buttonWidth))
+            {
+                EditorUtilities.RecordUndo(animationPlayer, "Add sequence to animation player");
+                layer.states.Add(Sequence.Create(GetUniqueStateName(Sequence.DefaultName, layer.states)));
+                selectedState.SetTo(layer.states.Count - 1);
+                editor.MarkDirty();
+            }
+
             if (GUILayout.Button("1D Blend Tree", buttonWidth))
             {
                 EditorUtilities.RecordUndo(animationPlayer, "Add blend tree to animation player");
@@ -241,14 +259,6 @@ namespace Animation_Player
             {
                 EditorUtilities.RecordUndo(animationPlayer, "Add 2D blend tree to animation player");
                 layer.states.Add(BlendTree2D.Create(GetUniqueStateName(BlendTree2D.DefaultName, layer.states)));
-                selectedState.SetTo(layer.states.Count - 1);
-                editor.MarkDirty();
-            }
-
-            if (GUILayout.Button("Play Random Clip", buttonWidth))
-            {
-                EditorUtilities.RecordUndo(animationPlayer, "Add random state to animation player");
-                layer.states.Add(PlayRandomClip.Create(GetUniqueStateName(PlayRandomClip.DefaultName, layer.states)));
                 selectedState.SetTo(layer.states.Count - 1);
                 editor.MarkDirty();
             }

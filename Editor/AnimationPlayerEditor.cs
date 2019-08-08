@@ -204,7 +204,7 @@ namespace Animation_Player
             EditorUtilities.Splitter();
 
             var numStatesBefore = animationPlayer.layers[SelectedLayer].states.Count;
-            StateSelectionAndAdditionDrawer.Draw(animationPlayer, selectedLayer, selectedState, selectedEditMode, this, multiChoiceAnimationClips);
+            StateSelectionAndAdditionDrawer.Draw(animationPlayer, selectedLayer, selectedState, this, multiChoiceAnimationClips);
             if (numStatesBefore != animationPlayer.layers[SelectedLayer].states.Count)
             {
                 Repaint();

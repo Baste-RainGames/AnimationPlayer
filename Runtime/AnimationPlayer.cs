@@ -141,7 +141,7 @@ namespace Animation_Player
         /// <param name="layer">Layer the state should be played on</param>
         public AnimationState Play(StateID state, LayerID layer = default)
         {
-            return Play(state, layer, "Play state");
+            return Play(state, layer, "Play");
         }
 
         private AnimationState Play(StateID state, LayerID layer, string actionIDForErrors)
@@ -154,7 +154,7 @@ namespace Animation_Player
 
         public AnimationState Play(StateID state, string transition, LayerID layer = default)
         {
-            var (layerIndex, stateIndex, foundIndices) = GetLayerAndStateIndices(state, layer, "Play state");
+            var (layerIndex, stateIndex, foundIndices) = GetLayerAndStateIndices(state, layer, "Play");
             if (!foundIndices)
                 return null;
             return layers[layerIndex].Play(stateIndex, transition);

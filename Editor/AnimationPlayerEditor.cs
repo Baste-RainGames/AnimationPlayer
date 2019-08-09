@@ -491,11 +491,18 @@ namespace Animation_Player
             var blendVars = animationPlayer.GetBlendVariables();
             EditorUtilities.DrawIndented(() =>
             {
+                var maxWidth = 100f;
+                foreach (var blendVar in blendVars)
+                {
+                    GUI.skin.label.CalcMinMaxWidth(new GUIContent(blendVar), out _, out var varNameMaxWidth);
+                    maxWidth = Mathf.Max(maxWidth, varNameMaxWidth);
+                }
+
                 foreach (var blendVar in blendVars)
                 {
                     EditorGUILayout.BeginHorizontal();
                     {
-                        EditorGUILayout.LabelField(blendVar, GUILayout.Width(100f));
+                        EditorGUILayout.LabelField(blendVar, GUILayout.Width(maxWidth));
                         EditorGUILayout.LabelField(animationPlayer.GetBlendVar(blendVar, (int) selectedLayer).ToString());
                     }
                     EditorGUILayout.EndHorizontal();

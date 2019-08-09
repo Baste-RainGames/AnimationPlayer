@@ -61,6 +61,7 @@ namespace Animation_Player
                     GenericMenu menu = new GenericMenu();
                     foreach (var state in stateNamesInLayer) {
                         menu.AddItem(new GUIContent($"Transition from {fromStateName} to {state}"), false, () => {
+                            //@TODO: If this is the first transition between the states, it should be set as default.
                             EditorUtilities.RecordUndo(animationPlayer, $"Adding transition from {fromStateName} to {toStateName}");
                             var newState = new StateTransition {
                                 FromState      = selectedState,

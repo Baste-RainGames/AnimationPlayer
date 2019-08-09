@@ -142,10 +142,16 @@ namespace Animation_Player
             {
                 var blendTreeEntry = state.blendTree[i];
 
+                var whenLabel = $"When '{state.blendVariable}' =";
+                var whenLabelRequiredWidth = GUI.skin.label.CalcSize(new GUIContent(whenLabel)).x;
+
+                var remainingAfterClipLabel = Screen.width - 30f - 70f - 25f - 100f;
+                var remainingAfterWhenLabel = Screen.width - whenLabelRequiredWidth - 70f - 25f - 100f;
+
                 EditorGUILayout.BeginHorizontal();
                 {
                     var oldClip = blendTreeEntry.clip;
-                    blendTreeEntry.clip = EditorUtilities.ObjectField("Clip", blendTreeEntry.clip, 150f, 200f);
+                    blendTreeEntry.clip = EditorUtilities.ObjectField("Clip", blendTreeEntry.clip, 30f, remainingAfterClipLabel);
                     if (blendTreeEntry.clip != oldClip) {
                         if(blendTreeEntry.clip != null)
                             state.OnClipAssigned(blendTreeEntry.clip);
@@ -161,7 +167,7 @@ namespace Animation_Player
 
                 EditorGUILayout.BeginHorizontal();
                 {
-                    blendTreeEntry.threshold = EditorUtilities.FloatField($"When '{state.blendVariable}' =", blendTreeEntry.threshold, 150f, 200f);
+                    blendTreeEntry.threshold = EditorUtilities.FloatField(whenLabel, blendTreeEntry.threshold, whenLabelRequiredWidth, remainingAfterWhenLabel);
 
                     EditorGUI.BeginDisabledGroup(i == state.blendTree.Count - 1);
                     if (GUILayout.Button("\u2193", upDownButtonStyle, upDownButtonOptions))
@@ -176,7 +182,7 @@ namespace Animation_Player
 
                 if (i != state.blendTree.Count - 1)
                 {
-                    EditorUtilities.Splitter(width: 350f);
+                    EditorUtilities.Splitter(width: Screen.width - 100f);
                 }
             }
 

@@ -277,8 +277,7 @@ namespace Animation_Player
                         // Later, when the copy's weight hits zero, we discard it.
 
                         var original = runtimePlayables[newState];
-                        var copy = states[newState]
-                            .GeneratePlayable(containingGraph, varTo1DBlendControllers, varTo2DBlendControllers, all2DControllers, blendVars);
+                        var copy = states[newState].GeneratePlayable(containingGraph, varTo1DBlendControllers, varTo2DBlendControllers, all2DControllers, blendVars);
                         var copyIndex = stateMixer.GetInputCount();
                         stateMixer.SetInputCount(copyIndex + 1);
 
@@ -289,6 +288,7 @@ namespace Animation_Player
 
                         copy.SetTime(original.GetTime());
 
+                        runtimePlayables[newState].SetTime(0);
                         stateMixer.SetInputWeight(copyIndex, currentWeightOfState);
                         stateMixer.SetInputWeight(newState,  0);
                     }

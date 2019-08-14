@@ -163,5 +163,17 @@ namespace Animation_Player
             vector.y = 0;
             return vector.normalized;
         }
+
+
+        public static int IndexOf<T>(this IReadOnlyList<T> list, T element) {
+            if(list == null)
+                throw new ArgumentNullException(nameof (list));
+
+            for (int i = 0; i < list.Count; i++) {
+                if (EqualityComparer<T>.Default.Equals(list[i], element))
+                    return i;
+            }
+            return -1;
+        }
     }
 }

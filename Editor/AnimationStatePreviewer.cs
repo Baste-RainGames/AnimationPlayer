@@ -13,6 +13,8 @@ namespace Animation_Player
 
         private readonly AnimationPlayer animationPlayer;
         private AnimationState previewedState;
+        private Playable previewedPlayable;
+        private AnimationMixerPlayable previewedPlayableMixer;
         private PlayableGraph previewGraph;
         private PreviewMode previewMode;
         private float manualModeTime;
@@ -69,7 +71,10 @@ namespace Animation_Player
             all2DControllers.Clear();
             blendVarControllers.Clear();
             Dictionary<string, float> blendVars = new Dictionary<string, float>();
-            animOutput.SetSourcePlayable(state.GeneratePlayable(previewGraph, previewControllers1D, previewControllers2D, all2DControllers , blendVars));
+            previewedPlayableMixer = AnimationMixerPlayable.Create(previewGraph, 1);
+            previewedPlayable = state.GeneratePlayable(previewGraph, previewControllers1D, previewControllers2D, all2DControllers , blendVars);
+            previewedPlayableMixer.AddInput(previewedPlayable, 0, 1f);
+            animOutput.SetSourcePlayable(previewedPlayableMixer);
             previewGraph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
             previewGraph.GetRootPlayable(0).SetTime(0);
             previewGraph.GetRootPlayable(0).SetPropagateSetTime(true);
@@ -116,12 +121,11 @@ namespace Animation_Player
 
             swapToManual = false;
 
-            var rootPlayable = previewGraph.GetRootPlayable(0);
             if (oldPreviewMode != previewMode) {
                 if (previewMode == PreviewMode.Automatic)
                     automaticModeTime = Time.realtimeSinceStartup;
                 else
-                    manualModeTime = (float) rootPlayable.GetTime();
+                    manualModeTime = (float) previewedPlayable.GetTime();
             }
 
             if (previewMode == PreviewMode.Manual) {
@@ -129,8 +133,11 @@ namespace Animation_Player
                 manualModeTime = EditorGUILayout.Slider(manualModeTime, 0f, previewedState.Duration);
                 if (manualModeTime != last || changedState)
                 {
-                    rootPlayable.SetTime(manualModeTime);
+                    previewedPlayable.SetTime(manualModeTime);
                     previewGraph.Evaluate();
+                    if (previewedState is Sequence sequence) {
+                        sequence.ProgressThroughSequence(ref previewedPlayable, previewedPlayableMixer);
+                    }
                 }
             }
             else
@@ -140,14 +147,17 @@ namespace Animation_Player
                 automaticModeTime = currentTime;
 
                 previewGraph.Evaluate(deltaTime);
-                var evaluatedTime = rootPlayable.GetTime();
+                if (previewedState is Sequence sequence) {
+                    sequence.ProgressThroughSequence(ref previewedPlayable, previewedPlayableMixer);
+                }
+                var evaluatedTime = previewedPlayable.GetTime();
                 if (evaluatedTime > previewedState.Duration) {
                     evaluatedTime %= previewedState.Duration;
-                    rootPlayable.SetTime(evaluatedTime);
+                    previewedPlayable.SetTime(evaluatedTime);
                 }
                 else if (evaluatedTime < 0 && previewedState.speed < 0) {
                     evaluatedTime = previewedState.Duration + evaluatedTime;
-                    rootPlayable.SetTime(evaluatedTime);
+                    previewedPlayable.SetTime(evaluatedTime);
                 }
 
                 var oldTime = (float) evaluatedTime;
@@ -155,7 +165,7 @@ namespace Animation_Player
                 if (newTime != oldTime)
                 {
                     swapToManual = true;
-                    rootPlayable.SetTime(newTime);
+                    previewedPlayable.SetTime(newTime);
                 }
             }
 
@@ -163,16 +173,16 @@ namespace Animation_Player
                 controller2D.Update();
             }
 
-            for (int i = 0; i < rootPlayable.GetInputCount(); i++)
+            for (int i = 0; i < previewedPlayable.GetInputCount(); i++)
             {
-                var input = rootPlayable.GetInput(i);
+                var input = previewedPlayable.GetInput(i);
                 var clipDuration = 10f;
                 if (input.IsPlayableOfType<AnimationClipPlayable>()) {
                     clipDuration = ((AnimationClipPlayable) input).GetAnimationClip().length;
                 }
 
                 EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.Slider(rootPlayable.GetInputWeight(i), 0f, 1f);
+                EditorGUILayout.Slider(previewedPlayable.GetInputWeight(i), 0f, 1f);
                 EditorGUILayout.Slider((float) input.GetTime(), 0f, clipDuration);
                 EditorGUILayout.EndHorizontal();
             }

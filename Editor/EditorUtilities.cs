@@ -260,7 +260,9 @@ namespace Animation_Player
         public static T ObjectField<T>(string label, T obj, float labelWidth, float objectSelectWidth) where T : Object
         {
             EditorGUILayout.BeginHorizontal(GUILayout.Width(labelWidth + objectSelectWidth));
-            EditorGUILayout.LabelField(label, GUILayout.Width(labelWidth));
+            var style = new GUIStyle(GUI.skin.label);
+            style.clipping = TextClipping.Overflow;
+            EditorGUILayout.LabelField(label, style, GUILayout.Width(labelWidth));
             obj = ObjectField(obj, GUILayout.Width(objectSelectWidth));
             EditorGUILayout.EndHorizontal();
             return obj;

@@ -121,6 +121,6 @@ namespace Animation_Player
 
         public abstract IEnumerable<AnimationClip> GetClips();
 
-        public abstract void JumpToRelativeTime(float time);
+        public abstract void JumpToRelativeTime(float time, AnimationMixerPlayable stateMixer);
     }
 }

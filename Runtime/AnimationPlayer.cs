@@ -166,26 +166,26 @@ namespace Animation_Player
         /// <param name="state">state index to play</param>
         /// <param name="transitionData">How to transition into the state</param>
         /// <param name="layer">Layer the state should be played on</param>
-        public void Play(StateID state, TransitionData transitionData, LayerID layer = default)
+        public AnimationState Play(StateID state, TransitionData transitionData, LayerID layer = default)
         {
-            Play(state, transitionData, layer, "Play state with transition");
+            return Play(state, transitionData, layer, "Play state with transition");
         }
 
-        private void Play(StateID state, TransitionData transitionData, LayerID layer, string actionIDForErrors)
+        private AnimationState Play(StateID state, TransitionData transitionData, LayerID layer, string actionIDForErrors)
         {
             var (layerIndex, stateIndex, foundIndices) = GetLayerAndStateIndices(state, layer, actionIDForErrors);
             if (!foundIndices)
-                return;
+                return null;
 
             if (transitionData.type == TransitionType.Curve && transitionData.curve != null) {
                 Debug.LogError(
                     $"Trying to transition using a curve, but the curve is null! " +
                     $"Error happened for AnimationPlayer on GameObject {gameObject.name})", gameObject
                 );
-                return;
+                return null;
             }
 
-            layers[layerIndex].Play(stateIndex, transitionData, "Custom");
+            return layers[layerIndex].Play(stateIndex, transitionData, "Custom");
         }
 
         /// <summary>

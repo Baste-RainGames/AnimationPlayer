@@ -54,13 +54,13 @@ namespace Animation_Player
 
         public float GetBlendVar()
         {
-            if(inner1D.Count > 0)
+            if (inner1D.Count > 0)
                 return inner1D[0].CurrentValue;
 
-            if(inner2D_set1.Count > 0)
+            if (inner2D_set1.Count > 0)
                 return inner2D_set1[0].CurrentValue1;
 
-            if(inner2D_set2.Count > 0)
+            if (inner2D_set2.Count > 0)
                 return inner2D_set2[0].CurrentValue2;
 
             return 0f; //error?

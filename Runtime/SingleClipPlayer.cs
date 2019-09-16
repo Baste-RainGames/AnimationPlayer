@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
@@ -9,7 +10,7 @@ namespace Animation_Player {
     /// You'd want to use this over the animation player as it builds a simpler graph, and because it destroys it's graph and disables the animator when it's
     /// done.
     /// </summary>
-    public class SingleClipPlayer : MonoBehaviour {
+    public class SingleClipPlayer : MonoBehaviour, IAnimationClipSource {
 
         [SerializeField] private AnimationClip clip;
         [SerializeField] private bool playOnStart;
@@ -56,8 +57,9 @@ namespace Animation_Player {
             if (!isPlaying)
                 return;
 
-            if (clipPlayable.GetTime() >= clipLength)
+            if (clipPlayable.GetTime() >= clipLength) {
                 Stop();
+            }
         }
 
         public void Stop() {
@@ -71,6 +73,10 @@ namespace Animation_Player {
 
         private void OnDestroy() {
             Stop();
+        }
+
+        public void GetAnimationClips(List<AnimationClip> results) {
+            results.EnsureContains(clip);
         }
     }
 }

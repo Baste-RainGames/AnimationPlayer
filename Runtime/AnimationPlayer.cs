@@ -934,6 +934,7 @@ namespace Animation_Player
         /// <param name="blendVar">blendVar you want to controll</param>
         public BlendVarController GetBlendControllerFor(string blendVar)
         {
+            //@TODO: This is still slow! If we move handling of the blend vars to the layer's update, we're probably in a much better place.
             BlendVarController controller = new BlendVarController(blendVar);
             foreach (var animationLayer in layers)
             {

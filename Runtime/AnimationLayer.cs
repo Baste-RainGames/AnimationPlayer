@@ -340,7 +340,7 @@ namespace Animation_Player
 
             ClearFinishedTransitionStates();
 
-            states[currentPlayedState].JumpToRelativeTime(time);
+            states[currentPlayedState].JumpToRelativeTime(ref runtimePlayables[currentPlayedState], time);
         }
 
         public void Update()
@@ -636,7 +636,7 @@ namespace Animation_Player
                 return;
             }
 
-            runtimePlayables[state] = singleClipState.SwapClipTo(clip);
+            singleClipState.SwapClipTo(ref runtimePlayables[state], clip);
         }
 
         public int AddState(AnimationPlayerState state)
@@ -989,6 +989,19 @@ namespace Animation_Player
             return (transition.transitionData, transition.name);
         }
 
+        public void OnClipSwapsChanged()
+        {
+            for (var i = 0; i < states.Count; i++)
+            {
+//                var state = states[i];
+//                var (playableChanged, newPlayable) = state.OnClipSwapsChanged();
+//                if (playableChanged)
+//                {
+//                    runtimePlayables[i] = newPlayable;
+//                }
+            }
+        }
+
         public void AddAllClipsInStatesAndTransitionsTo(List<AnimationClip> list)
         {
             foreach (var state in states)
@@ -1029,7 +1042,7 @@ namespace Animation_Player
                 }
                 case SingleClip singleClip:
                 {
-                    AddClip(singleClip.assignedClip);
+                    AddClip(singleClip.clip);
                     break;
                 }
             }
@@ -1040,6 +1053,5 @@ namespace Animation_Player
                     list.Add(clip);
             }
         }
-
     }
 }

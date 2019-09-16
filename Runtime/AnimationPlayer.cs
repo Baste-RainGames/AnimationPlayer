@@ -910,6 +910,36 @@ namespace Animation_Player
             return false;
         }
 
+        public void SetClipSwapActive(string name, bool active)
+        {
+            var found = false;
+            var changed = false;
+
+            foreach (var clipSwapCollection in clipSwapCollections)
+            {
+                if (clipSwapCollection.name == name)
+                {
+                    found = true;
+                    changed = active != clipSwapCollection.active;
+                }
+            }
+
+            if (!found)
+            {
+                Debug.LogError($"Couldn't find the clip swap {name} on the AnimationPlayer {gameObject.name}. The ones that exist are:\n" +
+                               $"{clipSwapCollections.PrettyPrint(csc => csc.name)}");
+                return;
+            }
+
+            if (changed)
+            {
+                foreach (var layer in layers)
+                {
+                    layer.OnClipSwapsChanged();
+                }
+            }
+        }
+
         /// <summary>
         /// Adds a new state to the AnimationPlayer, and makes sure that all the graphs are correctly setup.
         /// At edit time, just add new states directly into the layer's states

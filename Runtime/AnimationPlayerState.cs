@@ -134,19 +134,18 @@ namespace Animation_Player
                                    List<ClipSwapCollection> clipSwapCollections)
         {
             this.clipSwapCollections = clipSwapCollections;
-            var playable = GeneratePlayable(graph, varTo1DBlendControllers, varTo2DBlendControllers, all2DControllers, blendVars);
-            SetRuntimePlayable(playable);
-            return playable;
+            return GeneratePlayable(graph, varTo1DBlendControllers, varTo2DBlendControllers, all2DControllers, blendVars);
         }
 
         public abstract Playable GeneratePlayable(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
                                                        Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers,
                                                        List<BlendTreeController2D> all2DControllers, Dictionary<string, float> blendVars);
-        protected abstract void SetRuntimePlayable(Playable runtimePlayable);
 
         public virtual void OnWillStartPlaying(ref Playable ownPlayable) { }
 
-        public abstract void JumpToRelativeTime(float time);
+        public abstract void JumpToRelativeTime(ref Playable runtimePlayable, float time);
+
+//        public abstract (bool playableChanged, Playable newPlayable) OnClipSwapsChanged();
 
         protected struct ClipSwapHandler
         {
@@ -197,7 +196,6 @@ namespace Animation_Player
 
                 public AnimationClip Current => state.GetClipToUseFor(clips[index]);
             }
-
         }
     }
 }

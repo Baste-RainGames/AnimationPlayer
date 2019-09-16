@@ -13,7 +13,6 @@ namespace Animation_Player
         public string blendVariable;
         public string blendVariable2;
         public List<BlendTreeEntry2D> blendTree;
-        private AnimationMixerPlayable runtimePlayable;
 
         private BlendTree2D() { }
 
@@ -59,11 +58,6 @@ namespace Animation_Player
             return treeMixer;
         }
 
-        protected override void SetRuntimePlayable(Playable runtimePlayable)
-        {
-            this.runtimePlayable = (AnimationMixerPlayable) runtimePlayable;
-        }
-
         public override float Duration
         {
             get
@@ -94,7 +88,7 @@ namespace Animation_Player
             }
         }
 
-        public override void JumpToRelativeTime(float time)
+        public override void JumpToRelativeTime(ref Playable runtimePlayable, float time)
         {
             var unNormalizedTime = time * Duration;
             runtimePlayable.SetTime(unNormalizedTime);

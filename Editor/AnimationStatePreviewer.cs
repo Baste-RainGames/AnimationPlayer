@@ -242,7 +242,7 @@ namespace Animation_Player
                 else if (state is PlayRandomClip randomClip)
                     clip = randomClip.clips[0];
                 else if (state is SingleClip singleClip)
-                    clip = singleClip.assignedClip;
+                    clip = singleClip.clip;
                 else
                     throw new System.Exception("Unknown type");
 

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
-using UnityEngine.Serialization;
 
 namespace Animation_Player
 {
@@ -11,9 +10,7 @@ namespace Animation_Player
     public class SingleClip : AnimationPlayerState
     {
         public const string DefaultName = "New State";
-        [FormerlySerializedAs("clip")]
-        public AnimationClip assignedClip;
-        private AnimationClipPlayable runtimePlayable;
+        public AnimationClip clip;
 
         private SingleClip() { }
 
@@ -21,7 +18,7 @@ namespace Animation_Player
         {
             var state = new SingleClip();
             state.Initialize(name, DefaultName);
-            state.assignedClip = clip;
+            state.clip = clip;
             return state;
         }
 
@@ -29,25 +26,20 @@ namespace Animation_Player
                                                   Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers,
                                                   List<BlendTreeController2D> all2DControllers, Dictionary<string, float> blendVars)
         {
-            if (assignedClip == null)
-                assignedClip = new AnimationClip();
-            var clipPlayable = AnimationClipPlayable.Create(graph, GetClipToUseFor(assignedClip));
+            if (clip == null)
+                clip = new AnimationClip();
+            var clipPlayable = AnimationClipPlayable.Create(graph, GetClipToUseFor(clip));
             clipPlayable.SetApplyFootIK(true);
             clipPlayable.SetSpeed(speed);
             return clipPlayable;
-        }
-
-        protected override void SetRuntimePlayable(Playable runtimePlayable)
-        {
-            this.runtimePlayable = (AnimationClipPlayable) runtimePlayable;
         }
 
         public override float Duration
         {
             get
             {
-                var clip = GetClipToUseFor(assignedClip);
-                return clip == null ? 0f : clip.length;
+                var clipToUse = GetClipToUseFor(clip);
+                return clipToUse == null ? 0f : clipToUse.length;
             }
         }
 
@@ -55,21 +47,22 @@ namespace Animation_Player
         {
             get
             {
-                var clip = GetClipToUseFor(assignedClip);
-                return clip != null && clip.isLooping;
+                var clipToUse = GetClipToUseFor(clip);
+                return clipToUse != null && clipToUse.isLooping;
             }
         }
 
-        public override void JumpToRelativeTime(float time)
+        public override void JumpToRelativeTime(ref Playable runtimePlayable, float time)
         {
             runtimePlayable.SetTime(time * Duration);
         }
 
-        public Playable SwapClipTo(AnimationClip animationClip)
+        public void SwapClipTo(ref Playable runtimePlayable, AnimationClip animationClip)
         {
-            assignedClip = animationClip;
-            PlayableUtilities.ReplaceClipInPlace(ref runtimePlayable, GetClipToUseFor(animationClip));
-            return runtimePlayable;
+            clip = animationClip;
+            var asClipPlayable = (AnimationClipPlayable) runtimePlayable;
+            PlayableUtilities.ReplaceClipInPlace(ref asClipPlayable, GetClipToUseFor(animationClip));
+            runtimePlayable = asClipPlayable;
         }
     }
 }

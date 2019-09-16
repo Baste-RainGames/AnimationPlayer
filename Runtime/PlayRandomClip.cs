@@ -11,7 +11,6 @@ namespace Animation_Player
     {
         public const string DefaultName = "New Random State";
         private int playedClip;
-        private Playable runtimePlayable;
 
         public  List<AnimationClip> clips = new List<AnimationClip>();
         private ClipSwapHandler _clipsToUse;
@@ -72,11 +71,6 @@ namespace Animation_Player
             return clipPlayable;
         }
 
-        protected override void SetRuntimePlayable(Playable runtimePlayable)
-        {
-            this.runtimePlayable = runtimePlayable;
-        }
-
         public override void OnWillStartPlaying(ref Playable ownPlayable)
         {
             //this happens if we're looping, and were already partially playing when the state were started. In that case, don't snap to a different random choice.
@@ -94,7 +88,7 @@ namespace Animation_Player
             ownPlayable = clipPlayable;
         }
 
-        public override void JumpToRelativeTime(float time)
+        public override void JumpToRelativeTime(ref Playable runtimePlayable, float time)
         {
             runtimePlayable.SetTime(time * Duration);
         }

@@ -21,8 +21,6 @@ namespace Animation_Player {
             }
         }
 
-        private AnimationClipPlayable runtimePlayable;
-
         private Sequence() { }
 
         public static Sequence Create(string name) {
@@ -71,13 +69,10 @@ namespace Animation_Player {
             return clipPlayable;
         }
 
-        protected override void SetRuntimePlayable(Playable runtimePlayable)
+        internal void ProgressThroughSequence(ref Playable playable)
         {
-            this.runtimePlayable = (AnimationClipPlayable) runtimePlayable;
-        }
-
-        internal void ProgressThroughSequence(ref Playable playable) {
-            var currentClipIndex = ClipsToUse.IndexOf(runtimePlayable.GetAnimationClip());
+            var asACPlayable = (AnimationClipPlayable) playable;
+            var currentClipIndex = ClipsToUse.IndexOf(asACPlayable.GetAnimationClip());
 
             if (currentClipIndex == -1)
             {
@@ -85,10 +80,11 @@ namespace Animation_Player {
                 return;
             }
 
-            ProgressThroughSequenceFrom(currentClipIndex, ref playable);
+            ProgressThroughSequenceFrom(currentClipIndex, ref asACPlayable);
+            playable = asACPlayable;
         }
 
-        private void ProgressThroughSequenceFrom(int currentClipIndex, ref Playable playable) {
+        private void ProgressThroughSequenceFrom(int currentClipIndex, ref AnimationClipPlayable runtimePlayable) {
             if (currentClipIndex == ClipsToUse.Count - 1)
                 return; // has to change if we start supporting the entire sequence looping instead of just the last clip.
 
@@ -99,22 +95,21 @@ namespace Animation_Player {
                 return;
 
             var timeToPlayNextClipAt = currentClipTime - currentClipDuration;
-            SwapPlayedClipTo(ClipsToUse[currentClipIndex + 1], timeToPlayNextClipAt);
-            playable = runtimePlayable;
+            SwapPlayedClipTo(ref runtimePlayable, ClipsToUse[currentClipIndex + 1], timeToPlayNextClipAt);
 
             // recurse in case we've got a really long delta time or a really short clip, and have to jump past two clips.
-            ProgressThroughSequenceFrom(currentClipIndex + 1, ref playable);
+            ProgressThroughSequenceFrom(currentClipIndex + 1, ref runtimePlayable);
         }
 
         public override void OnWillStartPlaying(ref Playable ownPlayable) {
-            if (runtimePlayable.GetAnimationClip() != ClipsToUse[0]) {
+            var asACPlayable = (AnimationClipPlayable) ownPlayable;
+            if (asACPlayable.GetAnimationClip() != ClipsToUse[0]) {
                 // woo side effects!
-                JumpToRelativeTime(0f);
-                ownPlayable = runtimePlayable;
+                JumpToRelativeTime(ref ownPlayable, 0f);
             }
         }
 
-        public override void JumpToRelativeTime(float time) {
+        public override void JumpToRelativeTime(ref Playable runtimePlayable, float time) {
             var (clipToUse, timeToPlayClipAt) = FindClipAndTimeAtRelativeTime(time);
 
             if (clipToUse == null) {
@@ -122,15 +117,17 @@ namespace Animation_Player {
                 return;
             }
 
-            if (runtimePlayable.GetAnimationClip() != clipToUse) {
-                SwapPlayedClipTo(clipToUse, timeToPlayClipAt);
+            var asACPlayable = (AnimationClipPlayable) runtimePlayable;
+            if (asACPlayable.GetAnimationClip() != clipToUse) {
+                SwapPlayedClipTo(ref asACPlayable, clipToUse, timeToPlayClipAt);
+                runtimePlayable = asACPlayable;
             }
             else {
                 runtimePlayable.SetTime(timeToPlayClipAt);
             }
         }
 
-        private void SwapPlayedClipTo(AnimationClip clipToUse, double timeToPlayClipAt) {
+        private void SwapPlayedClipTo(ref AnimationClipPlayable runtimePlayable, AnimationClip clipToUse, double timeToPlayClipAt) {
             PlayableUtilities.ReplaceClipInPlace(ref runtimePlayable, clipToUse);
             runtimePlayable.SetTime(timeToPlayClipAt);
         }

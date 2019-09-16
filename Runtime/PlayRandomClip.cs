@@ -7,7 +7,7 @@ using UnityEngine.Playables;
 namespace Animation_Player
 {
     [Serializable]
-    public class PlayRandomClip : AnimationState
+    public class PlayRandomClip : AnimationPlayerState
     {
         public const string DefaultName = "New Random State";
         public List<AnimationClip> clips = new List<AnimationClip>();
@@ -74,7 +74,7 @@ namespace Animation_Player
             playable = ownPlayable;
         }
 
-        public override void AddAllClipsTo(List<AnimationClip> list)
+        public virtual void AddAllClipsTo(List<AnimationClip> list)
         {
             foreach (var clip in clips)
             {
@@ -83,7 +83,7 @@ namespace Animation_Player
             }
         }
 
-        public override IEnumerable<AnimationClip> GetClips() {
+        public virtual IEnumerable<AnimationClip> GetClips() {
             return clips;
         }
 

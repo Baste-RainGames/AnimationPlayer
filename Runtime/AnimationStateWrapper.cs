@@ -19,7 +19,7 @@ namespace Animation_Player {
         public SingleClip     singleClip;
         public PlayRandomClip playRandomClip;
 
-        public AnimationState GetState() {
+        public AnimationPlayerState GetState() {
             switch (type) {
                 case Type.BlendTree1D:
                     return blendTree1D;

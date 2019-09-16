@@ -8,7 +8,7 @@ using UnityEngine.Playables;
 namespace Animation_Player
 {
     [Serializable]
-    public class BlendTree2D : AnimationState
+    public class BlendTree2D : AnimationPlayerState
     {
         public const string DefaultName = "New 2D Blend Tree";
 
@@ -61,14 +61,14 @@ namespace Animation_Player
             return treeMixer;
         }
 
-        public override void AddAllClipsTo(List<AnimationClip> list) {
+        public virtual void AddAllClipsTo(List<AnimationClip> list) {
             foreach (var entry in blendTree) {
                 if(entry.clip != null && !list.Contains(entry.clip))
                     list.Add(entry.clip);
             }
         }
 
-        public override IEnumerable<AnimationClip> GetClips() {
+        public virtual IEnumerable<AnimationClip> GetClips() {
             return blendTree.Select(entry => entry.clip);
         }
 

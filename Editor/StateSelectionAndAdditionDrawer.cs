@@ -264,7 +264,7 @@ namespace Animation_Player
             }
         }
 
-        private static string GetUniqueStateName(string wantedName, List<AnimationState> otherStates)
+        private static string GetUniqueStateName(string wantedName, List<AnimationPlayerState> otherStates)
         {
             if (otherStates.All(state => state.Name != wantedName))
                 return wantedName;

@@ -7,7 +7,7 @@ using UnityEngine.Playables;
 namespace Animation_Player
 {
     [Serializable]
-    public class SingleClip : AnimationState
+    public class SingleClip : AnimationPlayerState
     {
         public const string DefaultName = "New State";
         public AnimationClip clip;
@@ -35,12 +35,12 @@ namespace Animation_Player
             return clipPlayable;
         }
 
-        public override void AddAllClipsTo(List<AnimationClip> list) {
+        public virtual void AddAllClipsTo(List<AnimationClip> list) {
             if(clip != null && !list.Contains(clip))
                 list.Add(clip);
         }
 
-        public override IEnumerable<AnimationClip> GetClips() {
+        public virtual IEnumerable<AnimationClip> GetClips() {
             yield return clip;
         }
 

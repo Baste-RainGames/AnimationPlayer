@@ -424,7 +424,7 @@ namespace Animation_Player
         }
 
 
-        private bool DrawEvent(AnimationEvent animationEvent, AnimationState containingState)
+        private bool DrawEvent(AnimationEvent animationEvent, AnimationPlayerState containingState)
         {
             const float  eventLabelWidth = 100f;
             const string nameTooltip = "The name of the event, used when subscribing.";

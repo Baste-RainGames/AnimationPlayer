@@ -139,12 +139,12 @@ namespace Animation_Player
         /// </summary>
         /// <param name="state">state index to play</param>
         /// <param name="layer">Layer the state should be played on</param>
-        public AnimationState Play(StateID state, LayerID layer = default)
+        public AnimationPlayerState Play(StateID state, LayerID layer = default)
         {
             return Play(state, layer, "Play");
         }
 
-        private AnimationState Play(StateID state, LayerID layer, string actionIDForErrors)
+        private AnimationPlayerState Play(StateID state, LayerID layer, string actionIDForErrors)
         {
             var (layerIndex, stateIndex, foundIndices) = GetLayerAndStateIndices(state, layer, actionIDForErrors);
             if (!foundIndices)
@@ -152,7 +152,7 @@ namespace Animation_Player
             return layers[layerIndex].Play(stateIndex);
         }
 
-        public AnimationState Play(StateID state, string transition, LayerID layer = default)
+        public AnimationPlayerState Play(StateID state, string transition, LayerID layer = default)
         {
             var (layerIndex, stateIndex, foundIndices) = GetLayerAndStateIndices(state, layer, "Play");
             if (!foundIndices)
@@ -166,12 +166,12 @@ namespace Animation_Player
         /// <param name="state">state index to play</param>
         /// <param name="transitionData">How to transition into the state</param>
         /// <param name="layer">Layer the state should be played on</param>
-        public AnimationState Play(StateID state, TransitionData transitionData, LayerID layer = default)
+        public AnimationPlayerState Play(StateID state, TransitionData transitionData, LayerID layer = default)
         {
             return Play(state, transitionData, layer, "Play state with transition");
         }
 
-        private AnimationState Play(StateID state, TransitionData transitionData, LayerID layer, string actionIDForErrors)
+        private AnimationPlayerState Play(StateID state, TransitionData transitionData, LayerID layer, string actionIDForErrors)
         {
             var (layerIndex, stateIndex, foundIndices) = GetLayerAndStateIndices(state, layer, actionIDForErrors);
             if (!foundIndices)
@@ -343,7 +343,7 @@ namespace Animation_Player
         /// <param name="state">State to get</param>
         /// <param name="layer">Layer to get the state from</param>
         /// <returns>The state container.</returns>
-        public AnimationState GetState(StateID state, LayerID layer = default)
+        public AnimationPlayerState GetState(StateID state, LayerID layer = default)
         {
             var (layerIndex, stateIndex, foundIndices) = GetLayerAndStateIndices(state, layer, "Get a state");
             if (!foundIndices)
@@ -387,7 +387,7 @@ namespace Animation_Player
         /// </summary>
         /// <param name="layer">Layer to get the currently playing state in.</param>
         /// <returns>The currently playing state.</returns>
-        public AnimationState GetPlayingState(LayerID layer = default)
+        public AnimationPlayerState GetPlayingState(LayerID layer = default)
         {
             var (layerIndex, foundLayer) = GetLayerIndex(layer, "get the current playing state");
             if (!foundLayer)
@@ -431,7 +431,7 @@ namespace Animation_Player
         /// <param name="results">Result container for the states.</param>
         /// <param name="layer">Layer to get the states from.</param>
         /// <param name="clearResultsList">Should the results list be cleared before the states are added?</param>
-        public void GetAllPlayingStates(List<AnimationState> results, LayerID layer = default, bool clearResultsList = true)
+        public void GetAllPlayingStates(List<AnimationPlayerState> results, LayerID layer = default, bool clearResultsList = true)
         {
             var (layerIndex, foundLayer) = GetLayerIndex(layer, "get all playing states");
             if (!foundLayer)
@@ -487,7 +487,7 @@ namespace Animation_Player
         /// <param name="results">Result container for the states.</param>
         /// <param name="layer">Layer to get the states from.</param>
         /// <param name="clearResultsList">Should the results list be cleared before the states are added?</param>
-        public void CopyAllStatesTo(List<AnimationState> results, LayerID layer = default, bool clearResultsList = true)
+        public void CopyAllStatesTo(List<AnimationPlayerState> results, LayerID layer = default, bool clearResultsList = true)
         {
             var (layerIndex, foundLayer) = GetLayerIndex(layer, "get all states");
             if (!foundLayer)
@@ -912,7 +912,7 @@ namespace Animation_Player
         /// <param name="state">State to add.</param>
         /// <param name="layer">Layer to add the state to.</param>
         /// <returns>The index of the added state</returns>
-        public int AddState(AnimationState state, LayerID layer = default)
+        public int AddState(AnimationPlayerState state, LayerID layer = default)
         {
             if (!Application.isPlaying)
             {

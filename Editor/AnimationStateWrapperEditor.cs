@@ -42,7 +42,7 @@ namespace Animation_Player
         {
             bool markDirty = false;
             StateDataDrawer.ReloadCheck();
-            AnimationState selectedState = null;
+            AnimationPlayerState selectedState = null;
             if (type == AnimationStateWrapper.Type.BlendTree1D)
                 selectedState = animationStateWrapper.blendTree1D;
             else if (type == AnimationStateWrapper.Type.BlendTree2D)

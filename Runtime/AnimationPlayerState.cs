@@ -6,21 +6,22 @@ using UnityEngine.Playables;
 
 namespace Animation_Player
 {
-    //@TODO: Rename this, it conflicts with UnityEngine.AnimationState
     [Serializable]
-    public abstract class AnimationState
+    public abstract class AnimationPlayerState
     {
         [SerializeField]
         private string name;
+
         [SerializeField]
         private bool hasUpdatedName;
 
         [SerializeField]
         private SerializedGUID guid;
+
         public SerializedGUID GUID => guid;
 
         public List<AnimationEvent> animationEvents = new List<AnimationEvent>();
-        public double speed = 1d;
+        public double               speed           = 1d;
 
         //pseudo-constructor
         protected void Initialize(string name, string defaultName)
@@ -33,7 +34,7 @@ namespace Animation_Player
 
         public string Name
         {
-            get { return name; }
+            get => name;
             set
             {
                 if (name == value)
@@ -86,11 +87,12 @@ namespace Animation_Player
                     timeLastFrame = timeCurrentFrame - delta;
                 }
             }
+
             foreach (var animationEvent in animationEvents)
             {
-                if(currentWeight < animationEvent.minWeight)
+                if (currentWeight < animationEvent.minWeight)
                     continue;
-                if(animationEvent.mustBeActiveState && !isActiveState)
+                if (animationEvent.mustBeActiveState && !isActiveState)
                     continue;
 
                 var lastFrameBefore = timeLastFrame < animationEvent.time;
@@ -116,10 +118,6 @@ namespace Animation_Player
                                                   List<BlendTreeController2D> all2DControllers, Dictionary<string, float> blendVars);
 
         public virtual void OnWillStartPlaying(PlayableGraph graph, AnimationMixerPlayable stateMixer, int ownIndex, ref Playable ownPlayable) { }
-
-        public abstract void AddAllClipsTo(List<AnimationClip> list);
-
-        public abstract IEnumerable<AnimationClip> GetClips();
 
         public abstract void JumpToRelativeTime(float time, AnimationMixerPlayable stateMixer);
     }

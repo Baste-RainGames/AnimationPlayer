@@ -45,7 +45,7 @@ namespace Animation_Player
             DrawDefaultTransition(animationPlayer);
         }
 
-        private static List<StateTransition> GetTransitionsBetweenStates(AnimationLayer layer, AnimationState selectedState, AnimationState selectedToState) {
+        private static List<StateTransition> GetTransitionsBetweenStates(AnimationLayer layer, AnimationPlayerState selectedState, AnimationPlayerState selectedToState) {
             var allTransitionsBetweenStates = new List<StateTransition>();
             foreach (var transition in layer.transitions)
                 if (transition.FromState == selectedState && transition.ToState == selectedToState)
@@ -54,7 +54,7 @@ namespace Animation_Player
         }
 
         private static void DrawCreateNewTransition(AnimationPlayer animationPlayer, Action<StateTransition> SetSelectedTransition, string[] stateNamesInLayer,
-                                                    string fromStateName, string toStateName, AnimationState selectedState, AnimationLayer layer) {
+                                                    string fromStateName, string toStateName, AnimationPlayerState selectedState, AnimationLayer layer) {
             using (new EditorGUILayout.HorizontalScope()) {
                 GUILayout.FlexibleSpace();
                 if (GUILayout.Button($"Create new transition from {fromStateName}")) {
@@ -78,7 +78,7 @@ namespace Animation_Player
         }
 
         private static readonly List<StateTransition> transitionsFromState = new List<StateTransition>();
-        private static void DrawTransitionSelection(AnimationLayer layer, AnimationState selectedState, string fromStateName,
+        private static void DrawTransitionSelection(AnimationLayer layer, AnimationPlayerState selectedState, string fromStateName,
                                                     StateTransition selectedTransition, Action<StateTransition> SetSelectedTransition)
         {
             transitionsFromState.Clear();
@@ -103,7 +103,7 @@ namespace Animation_Player
                 }
 
                 EditorGUILayout.Space();
-                AnimationState lastToState = null;
+                AnimationPlayerState lastToState = null;
 
                 EditorUtilities.DrawIndented(() => {
                     for (var i = 0; i < transitionsFromState.Count; i++)

@@ -11,7 +11,7 @@ namespace Animation_Player
         private PersistedBool usedModelsFoldout;
         private List<AnimationClip> animationClipsUsed;
         private Dictionary<AnimationClip, bool> clipUsagesFoldedOut;
-        private Dictionary<AnimationClip, List<AnimationState>> clipsUsedInStates;
+        private Dictionary<AnimationClip, List<AnimationPlayerState>> clipsUsedInStates;
         private List<Object> modelsUsed;
         private AnimationPlayer animationPlayer;
         public bool usedClipsNeedsUpdate;
@@ -94,15 +94,15 @@ namespace Animation_Player
             if (clipsUsedInStates != null)
                 clipsUsedInStates.Clear();
             else
-                clipsUsedInStates = new Dictionary<AnimationClip, List<AnimationState>>();
+                clipsUsedInStates = new Dictionary<AnimationClip, List<AnimationPlayerState>>();
 
             foreach (var state in animationPlayer.layers.SelectMany(layer => layer.states))
             {
-                foreach (var clip in state.GetClips().Where(c => c != null))
+                foreach (var clip in GetClips(state).Where(c => c != null))
                 {
                         animationClipsUsed.EnsureContains(clip);
                         if (!clipsUsedInStates.ContainsKey(clip))
-                            clipsUsedInStates[clip] = new List<AnimationState>();
+                            clipsUsedInStates[clip] = new List<AnimationPlayerState>();
                         clipsUsedInStates[clip].Add(state);
                 }
             }
@@ -129,6 +129,32 @@ namespace Animation_Player
             {
                 var model = AssetDatabase.LoadMainAssetAtPath(modelPath);
                 modelsUsed.Add(model);
+            }
+        }
+
+        private static IEnumerable<AnimationClip> GetClips(AnimationPlayerState state)
+        {
+            switch (state)
+            {
+                case BlendTree1D blendTree1D:
+                    foreach (var clip in blendTree1D.blendTree.Select(entry => entry.clip))
+                        yield return clip;
+                    break;
+                case BlendTree2D blendTree2D:
+                    foreach (var clip in blendTree2D.blendTree.Select(entry => entry.clip))
+                        yield return clip;
+                    break;
+                case PlayRandomClip playRandomClip:
+                    foreach (var clip in playRandomClip.clips)
+                        yield return clip;
+                    break;
+                case Sequence sequence:
+                    foreach (var clip in sequence.clips)
+                        yield return clip;
+                    break;
+                case SingleClip singleClip:
+                    yield return singleClip.clip;
+                    break;
             }
         }
 

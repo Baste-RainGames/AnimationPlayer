@@ -22,8 +22,8 @@ namespace Animation_Player
 
         public TransitionData transitionData;
 
-        private AnimationState fromState, toState;
-        public AnimationState FromState
+        private AnimationPlayerState fromState, toState;
+        public AnimationPlayerState FromState
         {
             get => fromState;
             set
@@ -33,7 +33,7 @@ namespace Animation_Player
             }
         }
 
-        public AnimationState ToState
+        public AnimationPlayerState ToState
         {
             get => toState;
             set
@@ -43,7 +43,7 @@ namespace Animation_Player
             }
         }
 
-        public void FetchStates(List<AnimationState> allStates)
+        public void FetchStates(List<AnimationPlayerState> allStates)
         {
             fromState = allStates.Find(state => state.GUID == fromStateGUID);
             toState = allStates.Find(state => state.GUID == toStateGUID);

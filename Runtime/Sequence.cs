@@ -6,7 +6,7 @@ using UnityEngine.Playables;
 
 namespace Animation_Player {
     [Serializable]
-    public class Sequence : AnimationState {
+    public class Sequence : AnimationPlayerState {
         public const string DefaultName = "New Sequence";
 
         public List<AnimationClip> clips;
@@ -56,11 +56,11 @@ namespace Animation_Player {
             return clipPlayable;
         }
 
-        public override void AddAllClipsTo(List<AnimationClip> list) {
+        public virtual void AddAllClipsTo(List<AnimationClip> list) {
             list.AddRange(clips);
         }
 
-        public override IEnumerable<AnimationClip> GetClips() {
+        public virtual IEnumerable<AnimationClip> GetClips() {
             return clips;
         }
 

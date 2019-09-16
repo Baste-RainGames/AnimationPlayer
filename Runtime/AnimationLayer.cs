@@ -11,7 +11,7 @@ namespace Animation_Player
     public class AnimationLayer : ISerializationCallbackReceiver
     {
         //Serialized through ISerializationCallbackReceiver
-        public List<AnimationState> states;
+        public List<AnimationPlayerState> states;
         public List<StateTransition> transitions;
 
         public string name;
@@ -161,13 +161,13 @@ namespace Animation_Player
             return false;
         }
 
-        public AnimationState Play(int state)
+        public AnimationPlayerState Play(int state)
         {
             var (transitionData, transitionName) = FindCorrectTransition(state);
             return Play(state, transitionData, transitionName, true);
         }
 
-        public AnimationState Play(int state, string transition)
+        public AnimationPlayerState Play(int state, string transition)
         {
             var transitionFrom = states[currentPlayedState];
             var transitionTo = states[state];
@@ -184,7 +184,7 @@ namespace Animation_Player
             return Play(state);
         }
 
-        public AnimationState Play(int state, TransitionData transition, string transitionName)
+        public AnimationPlayerState Play(int state, TransitionData transition, string transitionName)
         {
             return Play(state, transition, transitionName, true);
         }
@@ -193,7 +193,7 @@ namespace Animation_Player
             return GetDefaultTransitionFromTo(currentPlayedState, stateToPlay);
         }
 
-        private AnimationState Play(int newState, TransitionData transitionData, string transitionName, bool clearQueuedPlayInstructions)
+        private AnimationPlayerState Play(int newState, TransitionData transitionData, string transitionName, bool clearQueuedPlayInstructions)
         {
             if (clearQueuedPlayInstructions)
                 playInstructionQueue.Clear();
@@ -519,7 +519,7 @@ namespace Animation_Player
         {
             var layer = new AnimationLayer
             {
-                states = new List<AnimationState>(),
+                states = new List<AnimationPlayerState>(),
                 transitions = new List<StateTransition>(),
                 startWeight = 1f
             };
@@ -548,7 +548,7 @@ namespace Animation_Player
             return result;
         }
 
-        public void AddAllPlayingStatesTo(List<AnimationState> results)
+        public void AddAllPlayingStatesTo(List<AnimationPlayerState> results)
         {
             results.Add(states[currentPlayedState]);
 
@@ -607,7 +607,7 @@ namespace Animation_Player
                 aggregateController.AddControllers(blendControllers2D);
         }
 
-        public AnimationState GetCurrentPlayingState()
+        public AnimationPlayerState GetCurrentPlayingState()
         {
             if (states.Count == 0)
                 return null;
@@ -654,7 +654,7 @@ namespace Animation_Player
             runtimePlayables[state] = newPlayable;
         }
 
-        public int AddState(AnimationState state)
+        public int AddState(AnimationPlayerState state)
         {
             if (states.Count == 0) {
                 HandleAddedFirstStateAfterStartup(state);
@@ -711,7 +711,7 @@ namespace Animation_Player
         /// If the first state gets added after Initialize and InitializeLayerBlending has run, we disconnect and destroy the empty state mixer, and then
         /// re-initialize.
         /// </summary>
-        private void HandleAddedFirstStateAfterStartup(AnimationState state)
+        private void HandleAddedFirstStateAfterStartup(AnimationPlayerState state)
         {
             states.Add(state);
 
@@ -805,7 +805,7 @@ namespace Animation_Player
         public void OnAfterDeserialize()
         {
             if (states == null)
-                states = new List<AnimationState>();
+                states = new List<AnimationPlayerState>();
             else
                 states.Clear();
 
@@ -835,7 +835,7 @@ namespace Animation_Player
             states.Sort(CompareListIndices);
         }
 
-        private int CompareListIndices(AnimationState x, AnimationState y)
+        private int CompareListIndices(AnimationPlayerState x, AnimationPlayerState y)
         {
             var xIndex = Array.IndexOf(serializedStateOrder, x.GUID);
             var yIndex = Array.IndexOf(serializedStateOrder, y.GUID);
@@ -940,7 +940,7 @@ namespace Animation_Player
             }
 
             private PlayAtTimeInstruction MovedToTopOfQueue(PlayAtTimeInstruction playAtTime, int currentState, AnimationMixerPlayable stateMixer,
-                                                            List<AnimationState> states) {
+                                                            List<AnimationPlayerState> states) {
                 switch (playAtTime.type) {
                     case QueueStateType.WhenCurrentDone: {
                         var (_, currentStateIsDoneAt) = GetCurrentStateTimeInfo();
@@ -980,16 +980,6 @@ namespace Animation_Player
             }
         }
 
-        public void AddAllClipsInStatesAndTransitionsTo(List<AnimationClip> list)
-        {
-            foreach (var state in states)
-                state.AddAllClipsTo(list);
-            foreach (var transition in transitions) {
-                if (transition.transitionData.clip != null)
-                    list.Add(transition.transitionData.clip);
-            }
-        }
-
         public double GetHowLongStateHasBeenPlaying(int stateIndex)
         {
             if (stateMixer.GetInputWeight(stateIndex) <= 0f)
@@ -1015,5 +1005,58 @@ namespace Animation_Player
             var transition = transitions[transitionIndex];
             return (transition.transitionData, transition.name);
         }
+
+        public void AddAllClipsInStatesAndTransitionsTo(List<AnimationClip> list)
+        {
+            foreach (var state in states)
+                AddAllClipsFromStateTo(state, list);
+            foreach (var transition in transitions) {
+                if (transition.transitionData.clip != null)
+                    list.Add(transition.transitionData.clip);
+            }
+        }
+
+        private void AddAllClipsFromStateTo(AnimationPlayerState state, List<AnimationClip> list)
+        {
+            switch (state)
+            {
+                case BlendTree1D blendTree1D:
+                {
+                    foreach (var clip in blendTree1D.blendTree.Select(entry => entry.clip))
+                        AddClip(clip);
+                    break;
+                }
+                case BlendTree2D blendTree2D:
+                {
+                    foreach (var clip in blendTree2D.blendTree.Select(entry => entry.clip))
+                        AddClip(clip);
+                    break;
+                }
+                case PlayRandomClip playRandomClip:
+                {
+                    foreach (var clip in playRandomClip.clips)
+                        AddClip(clip);
+                    break;
+                }
+                case Sequence sequence:
+                {
+                    foreach (var clip in sequence.clips)
+                        AddClip(clip);
+                    break;
+                }
+                case SingleClip singleClip:
+                {
+                    AddClip(singleClip.clip);
+                    break;
+                }
+            }
+
+            void AddClip(AnimationClip clip)
+            {
+                if (clip != null && !list.Contains(clip))
+                    list.Add(clip);
+            }
+        }
+
     }
 }

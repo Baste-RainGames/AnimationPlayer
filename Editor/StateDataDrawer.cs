@@ -83,7 +83,7 @@ namespace Animation_Player
             }
         }
 
-        public static void DrawStateData(AnimationState state, ref bool markDirty)
+        public static void DrawStateData(AnimationPlayerState state, ref bool markDirty)
         {
             const float labelWidth = 55f;
 

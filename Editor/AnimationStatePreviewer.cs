@@ -12,7 +12,7 @@ namespace Animation_Player
         public bool IsShowingPreview { get; private set; }
 
         private readonly AnimationPlayer animationPlayer;
-        private AnimationState previewedState;
+        private AnimationPlayerState previewedState;
         private Playable previewedPlayable;
         private AnimationMixerPlayable previewedPlayableMixer;
         private PlayableGraph previewGraph;
@@ -57,7 +57,7 @@ namespace Animation_Player
             }
         }
 
-        public void StartPreviewing(AnimationState state)
+        public void StartPreviewing(AnimationPlayerState state)
         {
             IsShowingPreview = true;
             previewedState = state;
@@ -98,7 +98,7 @@ namespace Animation_Player
             Cleanup();
         }
 
-        private void DrawAnimationStatePreview(AnimationState previewedState, bool changedState)
+        private void DrawAnimationStatePreview(AnimationPlayerState previewedState, bool changedState)
         {
             EditorUtilities.Splitter();
 

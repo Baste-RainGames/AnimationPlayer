@@ -11,7 +11,7 @@ namespace Animation_Player
     {
         public const string DefaultName = "New State";
         public AnimationClip clip;
-        private AnimationClipPlayable clipPlayable;
+        private AnimationClipPlayable runtimePlayable;
 
         private SingleClip() { }
 
@@ -29,19 +29,15 @@ namespace Animation_Player
         {
             if (clip == null)
                 clip = new AnimationClip();
-            clipPlayable = AnimationClipPlayable.Create(graph, clip);
+            var clipPlayable = AnimationClipPlayable.Create(graph, clip);
             clipPlayable.SetApplyFootIK(true);
             clipPlayable.SetSpeed(speed);
             return clipPlayable;
         }
 
-        public virtual void AddAllClipsTo(List<AnimationClip> list) {
-            if(clip != null && !list.Contains(clip))
-                list.Add(clip);
-        }
-
-        public virtual IEnumerable<AnimationClip> GetClips() {
-            yield return clip;
+        internal override void SetRuntimePlayable(Playable runtimePlayable)
+        {
+            this.runtimePlayable = (AnimationClipPlayable) runtimePlayable;
         }
 
         public override float Duration => clip != null ? clip.length : 0f;
@@ -49,7 +45,7 @@ namespace Animation_Player
 
         public override void JumpToRelativeTime(float time, AnimationMixerPlayable stateMixer)
         {
-            clipPlayable.SetTime(time * Duration);
+            runtimePlayable.SetTime(time * Duration);
         }
     }
 }

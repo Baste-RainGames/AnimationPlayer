@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
+using UnityEngine.Animations;
+using UnityEngine.Playables;
 
 namespace Animation_Player
 {
@@ -96,15 +98,6 @@ namespace Animation_Player
             return list[UnityEngine.Random.Range(0, list.Count)];
         }
 
-        public static IEnumerable<T> FilterByType<T>(this IEnumerable collection) where T : class
-        {
-            foreach (var element in collection)
-            {
-                if (element is T asT)
-                    yield return asT;
-            }
-        }
-
         public static T EnsureComponent<T>(this GameObject obj) where T : Component
         {
             var t = obj.GetComponent<T>();
@@ -156,24 +149,6 @@ namespace Animation_Player
         {
             if (!list.Contains(element))
                 list.Add(element);
-        }
-
-
-        public static Vector3 Normalized2D(this Vector3 vector) {
-            vector.y = 0;
-            return vector.normalized;
-        }
-
-
-        public static int IndexOf<T>(this IReadOnlyList<T> list, T element) {
-            if(list == null)
-                throw new ArgumentNullException(nameof (list));
-
-            for (int i = 0; i < list.Count; i++) {
-                if (EqualityComparer<T>.Default.Equals(list[i], element))
-                    return i;
-            }
-            return -1;
         }
     }
 }

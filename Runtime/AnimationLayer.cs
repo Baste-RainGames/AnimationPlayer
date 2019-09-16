@@ -86,6 +86,7 @@ namespace Animation_Player
                 stateNameToIdx[state.Name] = i;
 
                 var playable = state.GeneratePlayable(graph, varTo1DBlendControllers, varTo2DBlendControllers, all2DControllers, blendVars);
+                state.SetRuntimePlayable(playable);
                 runtimePlayables[i] = playable;
                 graph.Connect(playable, 0, stateMixer, i);
             }
@@ -633,25 +634,20 @@ namespace Animation_Player
             return blendVars.Keys.Contains(blendVar);
         }
 
-        public void SwapClipOnState(int state, AnimationClip clip, PlayableGraph graph) {
+        public void SwapClipOnState(int state, AnimationClip clip) {
             var animationState = states[state];
-            if (!(animationState is SingleClip)) {
+            if (!(animationState is SingleClip singleClipState)) {
                 Debug.LogError($"Trying to swap the clip on the state {animationState.Name}, " +
                                $"but it is a {animationState.GetType().Name}! Only SingleClipState is supported");
+                return;
             }
 
-            var singleClipState = (SingleClip) animationState;
+            var playable = (AnimationClipPlayable) runtimePlayables[state];
+            PlayableUtilities.ReplaceClipInPlace(ref playable, clip);
+            runtimePlayables[state] = playable;
+
             singleClipState.clip = clip;
-            var newPlayable = singleClipState.GeneratePlayable(graph, varTo1DBlendControllers, varTo2DBlendControllers, all2DControllers, blendVars);
-            var currentPlayable = (AnimationClipPlayable) stateMixer.GetInput(state);
-
-            var oldWeight = stateMixer.GetInputWeight(state);
-            graph.Disconnect(stateMixer, state);
-            currentPlayable.Destroy();
-            stateMixer.ConnectInput(state, newPlayable, 0);
-            stateMixer.SetInputWeight(state, oldWeight);
-
-            runtimePlayables[state] = newPlayable;
+            singleClipState.SetRuntimePlayable(playable);
         }
 
         public int AddState(AnimationPlayerState state)

@@ -10,7 +10,7 @@ namespace Animation_Player {
         public const string DefaultName = "New Sequence";
 
         public List<AnimationClip> clips;
-        private AnimationClipPlayable clipPlayable;
+        private AnimationClipPlayable runtimePlayable;
 
         private Sequence() { }
 
@@ -50,22 +50,19 @@ namespace Animation_Player {
         }
 
         private AnimationClipPlayable GeneratePlayable(PlayableGraph graph, AnimationClip clip) {
-            clipPlayable = AnimationClipPlayable.Create(graph, clip);
+            var clipPlayable = AnimationClipPlayable.Create(graph, clip);
             clipPlayable.SetApplyFootIK(true);
             clipPlayable.SetSpeed(speed);
             return clipPlayable;
         }
 
-        public virtual void AddAllClipsTo(List<AnimationClip> list) {
-            list.AddRange(clips);
-        }
-
-        public virtual IEnumerable<AnimationClip> GetClips() {
-            return clips;
+        internal override void SetRuntimePlayable(Playable runtimePlayable)
+        {
+            this.runtimePlayable = (AnimationClipPlayable) runtimePlayable;
         }
 
         internal void ProgressThroughSequence(ref Playable playable, AnimationMixerPlayable stateMixer) {
-            var currentClipIndex = clips.IndexOf(clipPlayable.GetAnimationClip());
+            var currentClipIndex = clips.IndexOf(runtimePlayable.GetAnimationClip());
 
             ProgressThroughSequenceFrom(currentClipIndex, ref playable, stateMixer);
         }
@@ -74,25 +71,25 @@ namespace Animation_Player {
             if (currentClipIndex == clips.Count - 1)
                 return; // has to change if we start supporting the entire sequence looping instead of just the last clip.
 
-            var currentClipTime = clipPlayable.GetTime();
+            var currentClipTime = runtimePlayable.GetTime();
             var currentClipDuration = clips[currentClipIndex].length;
 
             if (currentClipTime < currentClipDuration)
                 return;
 
             var timeToPlayNextClipAt = currentClipTime - currentClipDuration;
-            SwapPlayedClipTo(clips[currentClipIndex + 1], timeToPlayNextClipAt, stateMixer);
-            playable = clipPlayable;
+            SwapPlayedClipTo(clips[currentClipIndex + 1], timeToPlayNextClipAt);
+            playable = runtimePlayable;
 
             // recurse in case we've got a really long delta time or a really short clip, and have to jump past two clips.
             ProgressThroughSequenceFrom(currentClipIndex + 1, ref playable, stateMixer);
         }
 
         public override void OnWillStartPlaying(PlayableGraph graph, AnimationMixerPlayable stateMixer, int ownIndex, ref Playable ownPlayable) {
-            if (clipPlayable.GetAnimationClip() != clips[0]) {
+            if (runtimePlayable.GetAnimationClip() != clips[0]) {
                 // woo side effects!
                 JumpToRelativeTime(0f, stateMixer);
-                ownPlayable = clipPlayable;
+                ownPlayable = runtimePlayable;
             }
         }
 
@@ -104,39 +101,17 @@ namespace Animation_Player {
                 return;
             }
 
-            if (clipPlayable.GetAnimationClip() != clipToUse) {
-                SwapPlayedClipTo(clipToUse, timeToPlayClipAt, stateMixer);
+            if (runtimePlayable.GetAnimationClip() != clipToUse) {
+                SwapPlayedClipTo(clipToUse, timeToPlayClipAt);
             }
             else {
-                clipPlayable.SetTime(timeToPlayClipAt);
+                runtimePlayable.SetTime(timeToPlayClipAt);
             }
         }
 
-        private void SwapPlayedClipTo(AnimationClip clipToUse, double timeToPlayClipAt, AnimationMixerPlayable stateMixer) {
-            // We can't swap a clip on an animation clip playable, so we have to hot-swap with a new animation clip playable.
-            var graph      = clipPlayable.GetGraph();
-
-            var inputIndex = -1;
-            for (int i = 0; i < stateMixer.GetInputCount(); i++) {
-                if (stateMixer.GetInput(i).Equals(clipPlayable)) {
-                    inputIndex = i;
-                    break;
-                }
-            }
-
-            if (inputIndex == -1) {
-                Debug.LogError("This doesn't work like I think it does!");
-                return;
-            }
-
-            var oldWeight = stateMixer.GetInputWeight(inputIndex);
-            stateMixer.DisconnectInput(inputIndex);
-            clipPlayable.Destroy();
-            clipPlayable = GeneratePlayable(graph, clipToUse);
-            clipPlayable.SetTime(timeToPlayClipAt);
-
-            stateMixer.ConnectInput(inputIndex, clipPlayable, 0);
-            stateMixer.SetInputWeight(inputIndex, oldWeight);
+        private void SwapPlayedClipTo(AnimationClip clipToUse, double timeToPlayClipAt) {
+            PlayableUtilities.ReplaceClipInPlace(ref runtimePlayable, clipToUse);
+            runtimePlayable.SetTime(timeToPlayClipAt);
         }
 
         private (AnimationClip clip, double timeToPlayClipAt) FindClipAndTimeAtRelativeTime(float time) {

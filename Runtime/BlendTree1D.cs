@@ -15,7 +15,7 @@ namespace Animation_Player
         public string blendVariable;
         public List<BlendTreeEntry1D> blendTree;
         public bool compensateForDifferentDurations = true;
-        private AnimationMixerPlayable treeMixer;
+        private AnimationMixerPlayable runtimePlayable;
 
         private BlendTree1D() { }
 
@@ -33,7 +33,7 @@ namespace Animation_Player
                                                   Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers,
                                                   List<BlendTreeController2D> all2DControllers, Dictionary<string, float> blendVars)
         {
-            treeMixer = AnimationMixerPlayable.Create(graph, blendTree.Count, true);
+            var treeMixer = AnimationMixerPlayable.Create(graph, blendTree.Count, true);
             if (blendTree.Count == 0)
                 return treeMixer;
 
@@ -62,15 +62,9 @@ namespace Animation_Player
             return treeMixer;
         }
 
-        public virtual void AddAllClipsTo(List<AnimationClip> list) {
-            foreach (var entry in blendTree) {
-                if(entry.clip != null && !list.Contains(entry.clip))
-                    list.Add(entry.clip);
-            }
-        }
-
-        public virtual IEnumerable<AnimationClip> GetClips() {
-            return blendTree.Select(entry => entry.clip);
+        internal override void SetRuntimePlayable(Playable runtimePlayable)
+        {
+            this.runtimePlayable = (AnimationMixerPlayable) runtimePlayable;
         }
 
         public override float Duration
@@ -104,10 +98,10 @@ namespace Animation_Player
         public override void JumpToRelativeTime(float time, AnimationMixerPlayable stateMixer)
         {
             float unNormalizedTime = time * Duration;
-            treeMixer.SetTime(unNormalizedTime);
-            for (int i = 0; i < treeMixer.GetInputCount(); i++)
+            runtimePlayable.SetTime(unNormalizedTime);
+            for (int i = 0; i < runtimePlayable.GetInputCount(); i++)
             {
-                treeMixer.GetInput(i).SetTime(unNormalizedTime);
+                runtimePlayable.GetInput(i).SetTime(unNormalizedTime);
             }
         }
     }

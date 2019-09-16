@@ -773,7 +773,7 @@ namespace Animation_Player
             if (!foundIndices)
                 return;
 
-            layers[layerIndex].SwapClipOnState(stateIndex, clip, graph);
+            layers[layerIndex].SwapClipOnState(stateIndex, clip);
         }
 
 

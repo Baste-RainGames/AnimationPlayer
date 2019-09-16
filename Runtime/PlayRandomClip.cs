@@ -12,7 +12,7 @@ namespace Animation_Player
         public const string DefaultName = "New Random State";
         public List<AnimationClip> clips = new List<AnimationClip>();
         private int playedClip;
-        private Playable playable;
+        private Playable runtimePlayable;
 
         private PlayRandomClip() { }
 
@@ -23,18 +23,34 @@ namespace Animation_Player
             return state;
         }
 
-        // Maybe I should be less of a dick and not write code like this?
-        public override float Duration => (clips?.Count ?? 0) == 0 ? 0f : (clips[0]?.length ?? 0f);
-        public override bool Loops => (clips?.Count ?? 0) == 0 ? false : (clips[0]?.isLooping ?? false);
+        public override float Duration
+        {
+            get
+            {
+                if (clips == null || clips.Count == 0 || clips[0] == null)
+                    return 0f;
+                return clips[0].length;
+            }
+        }
+
+        public override bool Loops
+        {
+            get
+            {
+                if (clips == null || clips.Count == 0 || clips[0] == null)
+                    return false;
+                return clips[0].isLooping;
+            }
+        }
 
         public override Playable GeneratePlayable(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
                                                   Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers,
                                                   List<BlendTreeController2D> all2DControllers, Dictionary<string, float> blendVars)
         {
             playedClip = clips.GetRandomIdx();
-            playable = GeneratePlayableFor(graph, playedClip);
-            return playable;
+            return GeneratePlayableFor(graph, playedClip);
         }
+
 
         private Playable GeneratePlayableFor(PlayableGraph graph, int clipIdx)
         {
@@ -44,6 +60,11 @@ namespace Animation_Player
             clipPlayable.SetApplyFootIK(true);
             clipPlayable.SetSpeed(speed);
             return clipPlayable;
+        }
+
+        internal override void SetRuntimePlayable(Playable runtimePlayable)
+        {
+            this.runtimePlayable = runtimePlayable;
         }
 
         public override void OnWillStartPlaying(PlayableGraph graph, AnimationMixerPlayable stateMixer, int ownIndex, ref Playable ownPlayable)
@@ -57,39 +78,15 @@ namespace Animation_Player
                 return;
 
             playedClip = wantedClip;
-            var newPlayable = GeneratePlayableFor(graph, playedClip);
-            var oldPlayable = ownPlayable;
-            var oldWeight = stateMixer.GetInputWeight(ownIndex);
 
-            //@TODO: What does these lines do? were they a test for if this could be done instead of swapping clips? Does it _work_?
-            var asClipPlayable = (AnimationClipPlayable) oldPlayable;
-            asClipPlayable.SetAnimatedProperties(clips[wantedClip]);
-
-            graph.Disconnect(stateMixer, ownIndex);
-            stateMixer.ConnectInput(ownIndex, newPlayable, 0);
-            stateMixer.SetInputWeight(ownIndex, oldWeight);
-
-            oldPlayable.Destroy();
-            ownPlayable = newPlayable;
-            playable = ownPlayable;
-        }
-
-        public virtual void AddAllClipsTo(List<AnimationClip> list)
-        {
-            foreach (var clip in clips)
-            {
-                if (clip != null && !list.Contains(clip))
-                    list.Add(clip);
-            }
-        }
-
-        public virtual IEnumerable<AnimationClip> GetClips() {
-            return clips;
+            var clipPlayable = (AnimationClipPlayable) ownPlayable;
+            PlayableUtilities.ReplaceClipInPlace(ref clipPlayable, clips[wantedClip]);
+            ownPlayable = clipPlayable;
         }
 
         public override void JumpToRelativeTime(float time, AnimationMixerPlayable stateMixer)
         {
-            playable.SetTime(time * Duration);
+            runtimePlayable.SetTime(time * Duration);
         }
     }
 }

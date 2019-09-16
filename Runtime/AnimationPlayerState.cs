@@ -117,6 +117,8 @@ namespace Animation_Player
                                                   Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers,
                                                   List<BlendTreeController2D> all2DControllers, Dictionary<string, float> blendVars);
 
+        internal abstract void SetRuntimePlayable(Playable runtimePlayable);
+
         public virtual void OnWillStartPlaying(PlayableGraph graph, AnimationMixerPlayable stateMixer, int ownIndex, ref Playable ownPlayable) { }
 
         public abstract void JumpToRelativeTime(float time, AnimationMixerPlayable stateMixer);

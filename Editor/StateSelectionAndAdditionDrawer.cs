@@ -125,14 +125,14 @@ namespace Animation_Player
                     {
                         DragAndDrop.AcceptDrag();
 
-                        var animationClips = DragAndDrop.objectReferences.FilterByType<AnimationClip>().ToList();
-                        foreach (var obj in DragAndDrop.objectReferences.FilterByType<GameObject>())
+                        var animationClips = DragAndDrop.objectReferences.OfType<AnimationClip>().ToList();
+                        foreach (var obj in DragAndDrop.objectReferences.OfType<GameObject>())
                         {
                             var assetPath = AssetDatabase.GetAssetPath(obj);
                             if (!(AssetImporter.GetAtPath(assetPath) is ModelImporter))
                                 return;
 
-                            animationClips.AddRange(AssetDatabase.LoadAllAssetsAtPath(assetPath).FilterByType<AnimationClip>().
+                            animationClips.AddRange(AssetDatabase.LoadAllAssetsAtPath(assetPath).OfType<AnimationClip>().
                                                                   Where(clip => (clip.hideFlags & HideFlags.HideInHierarchy) == 0));
                         }
 

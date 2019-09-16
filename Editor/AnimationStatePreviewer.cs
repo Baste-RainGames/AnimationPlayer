@@ -72,7 +72,7 @@ namespace Animation_Player
             blendVarControllers.Clear();
             Dictionary<string, float> blendVars = new Dictionary<string, float>();
             previewedPlayableMixer = AnimationMixerPlayable.Create(previewGraph, 1);
-            previewedPlayable = state.GeneratePlayable(previewGraph, previewControllers1D, previewControllers2D, all2DControllers , blendVars);
+            previewedPlayable = state.Initialize(previewGraph, previewControllers1D, previewControllers2D, all2DControllers , blendVars, null);
             previewedPlayableMixer.AddInput(previewedPlayable, 0, 1f);
             animOutput.SetSourcePlayable(previewedPlayableMixer);
             previewGraph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
@@ -242,7 +242,7 @@ namespace Animation_Player
                 else if (state is PlayRandomClip randomClip)
                     clip = randomClip.clips[0];
                 else if (state is SingleClip singleClip)
-                    clip = singleClip.clip;
+                    clip = singleClip.assignedClip;
                 else
                     throw new System.Exception("Unknown type");
 

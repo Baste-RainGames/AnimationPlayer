@@ -119,11 +119,11 @@ namespace Animation_Player
 
         private static void DrawSingleClipState(SingleClip state, ref bool markDirty, float labelWidth)
         {
-            var oldClip = state.clip;
-            state.clip = EditorUtilities.ObjectField("Clip", state.clip, labelWidth);
-            if (state.clip != oldClip)
+            var oldClip = state.assignedClip;
+            state.assignedClip = EditorUtilities.ObjectField("Clip", state.assignedClip, labelWidth);
+            if (state.assignedClip != oldClip)
             {
-                state.OnClipAssigned(state.clip);
+                state.OnClipAssigned(state.assignedClip);
                 markDirty = true;
             }
         }

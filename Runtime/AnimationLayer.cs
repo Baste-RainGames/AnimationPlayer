@@ -25,6 +25,7 @@ namespace Animation_Player
         private bool firstFrame = true;
         private bool anyStatesHasAnimationEvents;
         private TransitionData defaultTransition;
+        private List<ClipSwapCollection> clipSwapCollections;
 
         private AnimationLayerMixerPlayable layerMixer; //only use for re-initting!
         private int layerIndex; //only use for re-initting!
@@ -53,9 +54,10 @@ namespace Animation_Player
 
         private PlayAtTimeInstructionQueue playInstructionQueue;
 
-        public void InitializeSelf(PlayableGraph graph, TransitionData defaultTransition)
+        public void InitializeSelf(PlayableGraph graph, TransitionData defaultTransition, List<ClipSwapCollection> clipSwapCollections)
         {
             this.defaultTransition = defaultTransition;
+            this.clipSwapCollections = clipSwapCollections;
             playInstructionQueue = new PlayAtTimeInstructionQueue(this);
 
             containingGraph = graph;
@@ -85,8 +87,7 @@ namespace Animation_Player
 
                 stateNameToIdx[state.Name] = i;
 
-                var playable = state.GeneratePlayable(graph, varTo1DBlendControllers, varTo2DBlendControllers, all2DControllers, blendVars);
-                state.SetRuntimePlayable(playable);
+                var playable = state.Initialize(graph, varTo1DBlendControllers, varTo2DBlendControllers, all2DControllers, blendVars, clipSwapCollections);
                 runtimePlayables[i] = playable;
                 graph.Connect(playable, 0, stateMixer, i);
             }
@@ -635,12 +636,7 @@ namespace Animation_Player
                 return;
             }
 
-            var playable = (AnimationClipPlayable) runtimePlayables[state];
-            PlayableUtilities.ReplaceClipInPlace(ref playable, clip);
-            runtimePlayables[state] = playable;
-
-            singleClipState.clip = clip;
-            singleClipState.SetRuntimePlayable(playable);
+            runtimePlayables[state] = singleClipState.SwapClipTo(clip);
         }
 
         public int AddState(AnimationPlayerState state)
@@ -653,7 +649,7 @@ namespace Animation_Player
             states.Add(state);
             if (state.animationEvents.Count > 0)
                 anyStatesHasAnimationEvents = true;
-            var playable = state.GeneratePlayable(containingGraph, varTo1DBlendControllers, varTo2DBlendControllers, all2DControllers, blendVars);
+            var playable = state.Initialize(containingGraph, varTo1DBlendControllers, varTo2DBlendControllers, all2DControllers, blendVars, clipSwapCollections);
 
             var indexOfNew = states.Count - 1;
             stateNameToIdx[state.Name] = indexOfNew;
@@ -710,7 +706,7 @@ namespace Animation_Player
 
             stateMixer.Destroy();
 
-            InitializeSelf(containingGraph, defaultTransition);
+            InitializeSelf(containingGraph, defaultTransition, clipSwapCollections);
 
             if(layerMixer.IsValid())
                 InitializeLayerBlending(containingGraph, layerIndex, layerMixer);
@@ -732,6 +728,7 @@ namespace Animation_Player
         private List<Sequence> serializedSequences = new List<Sequence>();
         [SerializeField]
         private SerializedGUID[] serializedStateOrder;
+
         public void OnBeforeSerialize()
         {
             if (serializedSingleClipStates == null)
@@ -1032,7 +1029,7 @@ namespace Animation_Player
                 }
                 case SingleClip singleClip:
                 {
-                    AddClip(singleClip.clip);
+                    AddClip(singleClip.assignedClip);
                     break;
                 }
             }

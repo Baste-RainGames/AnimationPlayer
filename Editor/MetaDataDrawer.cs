@@ -153,7 +153,7 @@ namespace Animation_Player
                         yield return clip;
                     break;
                 case SingleClip singleClip:
-                    yield return singleClip.clip;
+                    yield return singleClip.assignedClip;
                     break;
             }
         }

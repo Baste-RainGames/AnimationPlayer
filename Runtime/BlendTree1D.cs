@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
@@ -43,8 +42,8 @@ namespace Animation_Player
             for (int i = 0; i < blendTree.Count; i++)
             {
                 var blendTreeEntry = blendTree[i];
-                var clip = blendTreeEntry.clip;
-                if(clip == null)
+                var clip = GetClipToUseFor(blendTreeEntry.clip);
+                if (clip == null)
                     clip = new AnimationClip();
                 var clipPlayable = AnimationClipPlayable.Create(graph, clip);
                 clipPlayable.SetApplyFootIK(true);
@@ -62,7 +61,7 @@ namespace Animation_Player
             return treeMixer;
         }
 
-        internal override void SetRuntimePlayable(Playable runtimePlayable)
+        protected override void SetRuntimePlayable(Playable runtimePlayable)
         {
             this.runtimePlayable = (AnimationMixerPlayable) runtimePlayable;
         }
@@ -74,7 +73,8 @@ namespace Animation_Player
                 var longest = 0f;
                 foreach (var blendTreeEntry in blendTree)
                 {
-                    var clipLength = blendTreeEntry.clip == null ? 0f : blendTreeEntry.clip.length;
+                    var clip = GetClipToUseFor(blendTreeEntry.clip);
+                    var clipLength = clip == null ? 0f : clip.length;
                     if (clipLength > longest)
                         longest = clipLength;
                 }
@@ -88,7 +88,8 @@ namespace Animation_Player
             get
             {
                 foreach (var entry in blendTree) {
-                    if (entry != null && entry.clip != null && entry.clip.isLooping)
+                    var clip = GetClipToUseFor(entry.clip);
+                    if (clip != null && clip.isLooping)
                         return true;
                 }
                 return false;

@@ -21,6 +21,11 @@ namespace Animation_Player
         public AnimationLayer[] layers;
         public TransitionData defaultTransition;
 
+        /// <summary>
+        /// Note that this collection is shared by all states at initialization, so if you replace it, the states are still referencing the old one.
+        /// </summary>
+        public List<ClipSwapCollection> clipSwapCollections;
+
         //Runtime fields:
         private PlayableGraph graph;
         private Playable rootPlayable;
@@ -70,7 +75,7 @@ namespace Animation_Player
             AnimationPlayableOutput animOutput = AnimationPlayableOutput.Create(graph, $"{name}_animation_player", OutputAnimator);
 
             for (var i = 0; i < layers.Length; i++)
-                layers[i].InitializeSelf(graph, defaultTransition);
+                layers[i].InitializeSelf(graph, defaultTransition, clipSwapCollections);
 
             if (layers.Length <= 1)
             {

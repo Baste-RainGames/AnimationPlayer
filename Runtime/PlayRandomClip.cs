@@ -10,9 +10,20 @@ namespace Animation_Player
     public class PlayRandomClip : AnimationPlayerState
     {
         public const string DefaultName = "New Random State";
-        public List<AnimationClip> clips = new List<AnimationClip>();
         private int playedClip;
         private Playable runtimePlayable;
+
+        public  List<AnimationClip> clips = new List<AnimationClip>();
+        private ClipSwapHandler _clipsToUse;
+        private ClipSwapHandler ClipsToUse
+        {
+            get
+            {
+                if (_clipsToUse.clips != clips)
+                    _clipsToUse = new ClipSwapHandler(this, clips);
+                return _clipsToUse;
+            }
+        }
 
         private PlayRandomClip() { }
 
@@ -27,9 +38,9 @@ namespace Animation_Player
         {
             get
             {
-                if (clips == null || clips.Count == 0 || clips[0] == null)
+                if (clips.Count == 0)
                     return 0f;
-                return clips[0].length;
+                return ClipsToUse[playedClip].length;
             }
         }
 
@@ -37,9 +48,9 @@ namespace Animation_Player
         {
             get
             {
-                if (clips == null || clips.Count == 0 || clips[0] == null)
+                if (clips.Count == 0)
                     return false;
-                return clips[0].isLooping;
+                return ClipsToUse[playedClip].isLooping;
             }
         }
 
@@ -55,14 +66,13 @@ namespace Animation_Player
         private Playable GeneratePlayableFor(PlayableGraph graph, int clipIdx)
         {
             playedClip = clipIdx;
-            var clip = clips[playedClip];
-            AnimationClipPlayable clipPlayable = AnimationClipPlayable.Create(graph, clip);
+            var clipPlayable = AnimationClipPlayable.Create(graph, ClipsToUse[playedClip]);
             clipPlayable.SetApplyFootIK(true);
             clipPlayable.SetSpeed(speed);
             return clipPlayable;
         }
 
-        internal override void SetRuntimePlayable(Playable runtimePlayable)
+        protected override void SetRuntimePlayable(Playable runtimePlayable)
         {
             this.runtimePlayable = runtimePlayable;
         }
@@ -80,7 +90,7 @@ namespace Animation_Player
             playedClip = wantedClip;
 
             var clipPlayable = (AnimationClipPlayable) ownPlayable;
-            PlayableUtilities.ReplaceClipInPlace(ref clipPlayable, clips[wantedClip]);
+            PlayableUtilities.ReplaceClipInPlace(ref clipPlayable, ClipsToUse[wantedClip]);
             ownPlayable = clipPlayable;
         }
 

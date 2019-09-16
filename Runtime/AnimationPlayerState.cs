@@ -16,11 +16,12 @@ namespace Animation_Player
 
         [SerializeField]
         private SerializedGUID guid;
-
         public SerializedGUID GUID => guid;
 
         public List<AnimationEvent> animationEvents = new List<AnimationEvent>();
         public double               speed           = 1d;
+
+        private List<ClipSwapCollection> clipSwapCollections;
 
         //pseudo-constructor
         protected void Initialize(string name, string defaultName)
@@ -104,6 +105,20 @@ namespace Animation_Player
             }
         }
 
+        protected AnimationClip GetClipToUseFor(AnimationClip originalClip)
+        {
+            if (clipSwapCollections != null)
+            {
+                foreach (var clipSwapCollection in clipSwapCollections)
+                {
+                    if (clipSwapCollection.TryGetSwapFor(originalClip, out var swappedClip))
+                        return swappedClip;
+                }
+            }
+
+            return originalClip;
+        }
+
         public abstract float Duration { get; }
 
         public abstract bool Loops { get; }
@@ -113,14 +128,76 @@ namespace Animation_Player
             return $"{name} ({GetType().Name})";
         }
 
-        public abstract Playable GeneratePlayable(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
-                                                  Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers,
-                                                  List<BlendTreeController2D> all2DControllers, Dictionary<string, float> blendVars);
+        public Playable Initialize(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
+                                   Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers,
+                                   List<BlendTreeController2D> all2DControllers, Dictionary<string, float> blendVars,
+                                   List<ClipSwapCollection> clipSwapCollections)
+        {
+            this.clipSwapCollections = clipSwapCollections;
+            var playable = GeneratePlayable(graph, varTo1DBlendControllers, varTo2DBlendControllers, all2DControllers, blendVars);
+            SetRuntimePlayable(playable);
+            return playable;
+        }
 
-        internal abstract void SetRuntimePlayable(Playable runtimePlayable);
+        public abstract Playable GeneratePlayable(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
+                                                       Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers,
+                                                       List<BlendTreeController2D> all2DControllers, Dictionary<string, float> blendVars);
+        protected abstract void SetRuntimePlayable(Playable runtimePlayable);
 
         public virtual void OnWillStartPlaying(ref Playable ownPlayable) { }
 
         public abstract void JumpToRelativeTime(float time);
+
+        protected struct ClipSwapHandler
+        {
+            public readonly List<AnimationClip>  clips;
+            private readonly AnimationPlayerState state;
+
+            public ClipSwapHandler(AnimationPlayerState state, List<AnimationClip> clips)
+            {
+                this.state = state;
+                this.clips = clips;
+            }
+
+            public AnimationClip this[int index] => state.GetClipToUseFor(clips[index]);
+            public int Count => clips.Count;
+
+            public int IndexOf(AnimationClip animationClip)
+            {
+                for (int i = 0; i < clips.Count; i++)
+                    if (state.GetClipToUseFor(clips[i]) == animationClip)
+                        return i;
+                return -1;
+            }
+
+            public ClipSwapEnumerator GetEnumerator()
+            {
+                return new ClipSwapEnumerator(clips, state);
+            }
+
+            public struct ClipSwapEnumerator
+            {
+                private List<AnimationClip> clips;
+                private AnimationPlayerState state;
+
+                private int index;
+
+                public ClipSwapEnumerator(List<AnimationClip> clips, AnimationPlayerState state)
+                {
+                    this.state = state;
+                    this.clips = clips;
+                    index = 0;
+                }
+
+                public bool MoveNext()
+                {
+                    index++;
+                    return index < clips.Count;
+                }
+
+                public AnimationClip Current => state.GetClipToUseFor(clips[index]);
+            }
+
+        }
     }
 }

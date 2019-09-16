@@ -35,9 +35,9 @@ namespace Animation_Player
             if (blendTree.Count == 0)
                 return treeMixer;
 
-            Action<float> setVar1 = val => blendVars[blendVariable] = val;
-            Action<float> setVar2 = val => blendVars[blendVariable2] = val;
-            var controller = new BlendTreeController2D(blendVariable, blendVariable2, treeMixer, blendTree.Count, setVar1, setVar2);
+            void SetVar1(float val) => blendVars[blendVariable] = val;
+            void SetVar2(float val) => blendVars[blendVariable2] = val;
+            var controller = new BlendTreeController2D(blendVariable, blendVariable2, treeMixer, blendTree.Count, SetVar1, SetVar2);
             all2DControllers.Add(controller);
             varTo2DBlendControllers.GetOrAdd(blendVariable).Add(controller);
             varTo2DBlendControllers.GetOrAdd(blendVariable2).Add(controller);
@@ -45,7 +45,7 @@ namespace Animation_Player
             for (int j = 0; j < blendTree.Count; j++)
             {
                 var blendTreeEntry = blendTree[j];
-                var clipPlayable = AnimationClipPlayable.Create(graph, blendTreeEntry.clip);
+                var clipPlayable = AnimationClipPlayable.Create(graph, GetClipToUseFor(blendTreeEntry.clip));
                 clipPlayable.SetApplyFootIK(true);
                 clipPlayable.SetSpeed(speed);
                 graph.Connect(clipPlayable, 0, treeMixer, j);
@@ -59,7 +59,7 @@ namespace Animation_Player
             return treeMixer;
         }
 
-        internal override void SetRuntimePlayable(Playable runtimePlayable)
+        protected override void SetRuntimePlayable(Playable runtimePlayable)
         {
             this.runtimePlayable = (AnimationMixerPlayable) runtimePlayable;
         }
@@ -69,9 +69,10 @@ namespace Animation_Player
             get
             {
                 var longest = 0f;
-                foreach (var blendTreeEntry in blendTree)
+                foreach (var entry in blendTree)
                 {
-                    var clipLength = blendTreeEntry.clip == null ? 0f : blendTreeEntry.clip.length;
+                    var clip = GetClipToUseFor(entry.clip);
+                    var clipLength = clip == null ? 0f : clip.length;
                     if (clipLength > longest)
                         longest = clipLength;
                 }
@@ -85,7 +86,8 @@ namespace Animation_Player
             {
                 foreach (var entry in blendTree)
                 {
-                    if (entry.clip != null && entry.clip.isLooping)
+                    var clip = GetClipToUseFor(entry.clip);
+                    if (clip != null && clip.isLooping)
                         return true;
                 }
                 return false;
@@ -94,7 +96,7 @@ namespace Animation_Player
 
         public override void JumpToRelativeTime(float time)
         {
-            float unNormalizedTime = time * Duration;
+            var unNormalizedTime = time * Duration;
             runtimePlayable.SetTime(unNormalizedTime);
             for (int i = 0; i < runtimePlayable.GetInputCount(); i++)
             {

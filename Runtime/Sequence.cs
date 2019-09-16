@@ -9,7 +9,18 @@ namespace Animation_Player {
     public class Sequence : AnimationPlayerState {
         public const string DefaultName = "New Sequence";
 
-        public List<AnimationClip> clips;
+        public List<AnimationClip> clips = new List<AnimationClip>();
+        private ClipSwapHandler _clipsToUse;
+        private ClipSwapHandler ClipsToUse
+        {
+            get
+            {
+                if (_clipsToUse.clips != clips)
+                    _clipsToUse = new ClipSwapHandler(this, clips);
+                return _clipsToUse;
+            }
+        }
+
         private AnimationClipPlayable runtimePlayable;
 
         private Sequence() { }
@@ -24,14 +35,23 @@ namespace Animation_Player {
         public override float Duration {
             get {
                 var duration = 0f;
-                foreach (var clip in clips)
+                foreach (var clip in ClipsToUse)
                     if (clip != null)
                         duration += clip.length;
                 return duration;
             }
         }
 
-        public override bool Loops => clips.Count > 0 && clips[clips.Count - 1] != null && clips[clips.Count - 1].isLooping;
+        public override bool Loops
+        {
+            get
+            {
+                foreach (var clip in ClipsToUse)
+                    if (clip != null && clip.isLooping)
+                        return true;
+                return false;
+            }
+        }
 
         public override Playable GeneratePlayable(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
                                                   Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers,
@@ -45,39 +65,41 @@ namespace Animation_Player {
                     clips[i] = new AnimationClip();
             }
 
-            return GeneratePlayable(graph, clips[0]);
-        }
-
-        private AnimationClipPlayable GeneratePlayable(PlayableGraph graph, AnimationClip clip) {
-            var clipPlayable = AnimationClipPlayable.Create(graph, clip);
+            var clipPlayable = AnimationClipPlayable.Create(graph, ClipsToUse[0]);
             clipPlayable.SetApplyFootIK(true);
             clipPlayable.SetSpeed(speed);
             return clipPlayable;
         }
 
-        internal override void SetRuntimePlayable(Playable runtimePlayable)
+        protected override void SetRuntimePlayable(Playable runtimePlayable)
         {
             this.runtimePlayable = (AnimationClipPlayable) runtimePlayable;
         }
 
         internal void ProgressThroughSequence(ref Playable playable) {
-            var currentClipIndex = clips.IndexOf(runtimePlayable.GetAnimationClip());
+            var currentClipIndex = ClipsToUse.IndexOf(runtimePlayable.GetAnimationClip());
+
+            if (currentClipIndex == -1)
+            {
+                Debug.LogError("Couldn't find the current played clip in a sequence's clips! Did a swap happen behind it's back?");
+                return;
+            }
 
             ProgressThroughSequenceFrom(currentClipIndex, ref playable);
         }
 
         private void ProgressThroughSequenceFrom(int currentClipIndex, ref Playable playable) {
-            if (currentClipIndex == clips.Count - 1)
+            if (currentClipIndex == ClipsToUse.Count - 1)
                 return; // has to change if we start supporting the entire sequence looping instead of just the last clip.
 
             var currentClipTime = runtimePlayable.GetTime();
-            var currentClipDuration = clips[currentClipIndex].length;
+            var currentClipDuration = ClipsToUse[currentClipIndex].length;
 
             if (currentClipTime < currentClipDuration)
                 return;
 
             var timeToPlayNextClipAt = currentClipTime - currentClipDuration;
-            SwapPlayedClipTo(clips[currentClipIndex + 1], timeToPlayNextClipAt);
+            SwapPlayedClipTo(ClipsToUse[currentClipIndex + 1], timeToPlayNextClipAt);
             playable = runtimePlayable;
 
             // recurse in case we've got a really long delta time or a really short clip, and have to jump past two clips.
@@ -85,7 +107,7 @@ namespace Animation_Player {
         }
 
         public override void OnWillStartPlaying(ref Playable ownPlayable) {
-            if (runtimePlayable.GetAnimationClip() != clips[0]) {
+            if (runtimePlayable.GetAnimationClip() != ClipsToUse[0]) {
                 // woo side effects!
                 JumpToRelativeTime(0f);
                 ownPlayable = runtimePlayable;
@@ -117,7 +139,7 @@ namespace Animation_Player {
             var targetTime = time * (double) Duration;
             var durationOfEarlierClips = 0d;
 
-            foreach (var clip in clips) {
+            foreach (var clip in ClipsToUse) {
                 if (durationOfEarlierClips + clip.length >= targetTime) {
                     var timeToPlayClipAt = durationOfEarlierClips - targetTime;
                     return (clip, timeToPlayClipAt);

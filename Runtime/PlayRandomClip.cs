@@ -83,14 +83,28 @@ namespace Animation_Player
 
             playedClip = wantedClip;
 
-            var clipPlayable = (AnimationClipPlayable) ownPlayable;
-            PlayableUtilities.ReplaceClipInPlace(ref clipPlayable, ClipsToUse[wantedClip]);
-            ownPlayable = clipPlayable;
+            var asClipPlayable = (AnimationClipPlayable) ownPlayable;
+            PlayableUtilities.ReplaceClipInPlace(ref asClipPlayable, ClipsToUse[wantedClip]);
+            ownPlayable = asClipPlayable;
         }
 
-        public override void JumpToRelativeTime(ref Playable runtimePlayable, float time)
+        public override void JumpToRelativeTime(ref Playable ownPlayable, float time)
         {
-            runtimePlayable.SetTime(time * Duration);
+            ownPlayable.SetTime(time * Duration);
+        }
+
+        public override void OnClipSwapsChanged(ref Playable ownPlayable)
+        {
+            var asClipPlayable = (AnimationClipPlayable) ownPlayable;
+
+            var shouldBePlaying = ClipsToUse[playedClip];
+            var isPlaying = asClipPlayable.GetAnimationClip();
+
+            if (shouldBePlaying != isPlaying)
+            {
+                PlayableUtilities.ReplaceClipInPlace(ref asClipPlayable, shouldBePlaying);
+                ownPlayable = asClipPlayable;
+            }
         }
     }
 }

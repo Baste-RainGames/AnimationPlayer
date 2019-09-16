@@ -143,9 +143,9 @@ namespace Animation_Player
 
         public virtual void OnWillStartPlaying(ref Playable ownPlayable) { }
 
-        public abstract void JumpToRelativeTime(ref Playable runtimePlayable, float time);
+        public abstract void JumpToRelativeTime(ref Playable ownPlayable, float time);
 
-//        public abstract (bool playableChanged, Playable newPlayable) OnClipSwapsChanged();
+        public abstract void OnClipSwapsChanged(ref Playable ownPlayable);
 
         protected struct ClipSwapHandler
         {

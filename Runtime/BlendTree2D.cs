@@ -88,13 +88,29 @@ namespace Animation_Player
             }
         }
 
-        public override void JumpToRelativeTime(ref Playable runtimePlayable, float time)
+        public override void JumpToRelativeTime(ref Playable ownPlayable, float time)
         {
             var unNormalizedTime = time * Duration;
-            runtimePlayable.SetTime(unNormalizedTime);
-            for (int i = 0; i < runtimePlayable.GetInputCount(); i++)
+            ownPlayable.SetTime(unNormalizedTime);
+            for (int i = 0; i < ownPlayable.GetInputCount(); i++)
             {
-                runtimePlayable.GetInput(i).SetTime(unNormalizedTime);
+                ownPlayable.GetInput(i).SetTime(unNormalizedTime);
+            }
+        }
+
+        public override void OnClipSwapsChanged(ref Playable ownPlayable)
+        {
+            var asMixer = (AnimationMixerPlayable) ownPlayable;
+            var inputCount = asMixer.GetInputCount();
+
+            for (int i = 0; i < inputCount; i++)
+            {
+                var clipPlayable = (AnimationClipPlayable) asMixer.GetInput(i);
+                var shouldPlay = GetClipToUseFor(blendTree[i].clip);
+                var isPlaying = clipPlayable.GetAnimationClip();
+
+                if (isPlaying != shouldPlay)
+                    PlayableUtilities.ReplaceClipInPlace(ref clipPlayable, shouldPlay);
             }
         }
     }

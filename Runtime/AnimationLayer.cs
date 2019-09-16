@@ -993,12 +993,8 @@ namespace Animation_Player
         {
             for (var i = 0; i < states.Count; i++)
             {
-//                var state = states[i];
-//                var (playableChanged, newPlayable) = state.OnClipSwapsChanged();
-//                if (playableChanged)
-//                {
-//                    runtimePlayables[i] = newPlayable;
-//                }
+                var state = states[i];
+                state.OnClipSwapsChanged(ref runtimePlayables[i]);
             }
         }
 

@@ -52,17 +52,28 @@ namespace Animation_Player
             }
         }
 
-        public override void JumpToRelativeTime(ref Playable runtimePlayable, float time)
+        public override void JumpToRelativeTime(ref Playable ownPlayable, float time)
         {
-            runtimePlayable.SetTime(time * Duration);
+            ownPlayable.SetTime(time * Duration);
         }
 
-        public void SwapClipTo(ref Playable runtimePlayable, AnimationClip animationClip)
+        public override void OnClipSwapsChanged(ref Playable ownPlayable)
+        {
+            var asClipPlayable = (AnimationClipPlayable) ownPlayable;
+            var clipToUse = GetClipToUseFor(clip);
+
+            if (asClipPlayable.GetAnimationClip() != clipToUse)
+            {
+                SwapClipTo(ref ownPlayable, clipToUse);
+            }
+        }
+
+        public void SwapClipTo(ref Playable ownPlayable, AnimationClip animationClip)
         {
             clip = animationClip;
-            var asClipPlayable = (AnimationClipPlayable) runtimePlayable;
+            var asClipPlayable = (AnimationClipPlayable) ownPlayable;
             PlayableUtilities.ReplaceClipInPlace(ref asClipPlayable, GetClipToUseFor(animationClip));
-            runtimePlayable = asClipPlayable;
+            ownPlayable = asClipPlayable;
         }
     }
 }

@@ -16,7 +16,6 @@ namespace Animation_Player {
 
         public static Sequence Create(string name) {
             var state = new Sequence();
-            state.Name = name;
             state.Initialize(name, DefaultName);
             state.clips = new List<AnimationClip>();
             return state;
@@ -61,13 +60,13 @@ namespace Animation_Player {
             this.runtimePlayable = (AnimationClipPlayable) runtimePlayable;
         }
 
-        internal void ProgressThroughSequence(ref Playable playable, AnimationMixerPlayable stateMixer) {
+        internal void ProgressThroughSequence(ref Playable playable) {
             var currentClipIndex = clips.IndexOf(runtimePlayable.GetAnimationClip());
 
-            ProgressThroughSequenceFrom(currentClipIndex, ref playable, stateMixer);
+            ProgressThroughSequenceFrom(currentClipIndex, ref playable);
         }
 
-        private void ProgressThroughSequenceFrom(int currentClipIndex, ref Playable playable, AnimationMixerPlayable stateMixer) {
+        private void ProgressThroughSequenceFrom(int currentClipIndex, ref Playable playable) {
             if (currentClipIndex == clips.Count - 1)
                 return; // has to change if we start supporting the entire sequence looping instead of just the last clip.
 
@@ -82,18 +81,18 @@ namespace Animation_Player {
             playable = runtimePlayable;
 
             // recurse in case we've got a really long delta time or a really short clip, and have to jump past two clips.
-            ProgressThroughSequenceFrom(currentClipIndex + 1, ref playable, stateMixer);
+            ProgressThroughSequenceFrom(currentClipIndex + 1, ref playable);
         }
 
-        public override void OnWillStartPlaying(PlayableGraph graph, AnimationMixerPlayable stateMixer, int ownIndex, ref Playable ownPlayable) {
+        public override void OnWillStartPlaying(ref Playable ownPlayable) {
             if (runtimePlayable.GetAnimationClip() != clips[0]) {
                 // woo side effects!
-                JumpToRelativeTime(0f, stateMixer);
+                JumpToRelativeTime(0f);
                 ownPlayable = runtimePlayable;
             }
         }
 
-        public override void JumpToRelativeTime(float time, AnimationMixerPlayable stateMixer) {
+        public override void JumpToRelativeTime(float time) {
             var (clipToUse, timeToPlayClipAt) = FindClipAndTimeAtRelativeTime(time);
 
             if (clipToUse == null) {

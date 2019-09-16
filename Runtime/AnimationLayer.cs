@@ -218,7 +218,7 @@ namespace Animation_Player
             else
                 StartTimedTransition();
 
-            states[newState].OnWillStartPlaying(containingGraph, stateMixer, newState, ref runtimePlayables[newState]);
+            states[newState].OnWillStartPlaying(ref runtimePlayables[newState]);
 
             return states[newState];
 
@@ -264,8 +264,8 @@ namespace Animation_Player
 
                 if (!isCurrentlyPlaying) {
                     runtimePlayables[newState].SetTime(0f);
-                    //Makes animation events set to time 0 play. @TODO: Think about this; what happens if the next Time.deltaTime is lower than this one?
-                    timeLastFrame[newState] = -Time.deltaTime;
+                    //This makes animation events set to time 0 play, by simulating that the frame jumped forwards a second.
+                    timeLastFrame[newState] = -1f;
                 }
                 else if (!states[newState].Loops) {
                     if (transitionData.duration <= 0f) {
@@ -339,7 +339,7 @@ namespace Animation_Player
 
             ClearFinishedTransitionStates();
 
-            states[currentPlayedState].JumpToRelativeTime(time, stateMixer);
+            states[currentPlayedState].JumpToRelativeTime(time);
         }
 
         public void Update()
@@ -353,9 +353,8 @@ namespace Animation_Player
                 HandleAnimationEvents();
             HandleTransitions();
             HandleQueuedInstructions();
-            for (int i = 0; i < all2DControllers.Count; i++) {
+            for (int i = 0; i < all2DControllers.Count; i++)
                 all2DControllers[i].Update();
-            }
             firstFrame = false;
         }
 
@@ -363,7 +362,7 @@ namespace Animation_Player
             for (int i = 0; i < states.Count; i++) {
                 if (states[i] is Sequence sequence && stateMixer.GetInputWeight(i) > 0) {
                     var playable = runtimePlayables[i];
-                    sequence.ProgressThroughSequence(ref playable, stateMixer);
+                    sequence.ProgressThroughSequence(ref playable);
                     runtimePlayables[i] = playable;
                 }
             }
@@ -531,21 +530,18 @@ namespace Animation_Player
         {
             blendVars[var] = value;
 
-            List<BlendTreeController1D> blendControllers1D;
-            if (varTo1DBlendControllers.TryGetValue(var, out blendControllers1D))
+            if (varTo1DBlendControllers.TryGetValue(var, out var blendControllers1D))
                 foreach (var controller in blendControllers1D)
                     controller.SetValue(value);
 
-            List<BlendTreeController2D> blendControllers2D;
-            if (varTo2DBlendControllers.TryGetValue(var, out blendControllers2D))
+            if (varTo2DBlendControllers.TryGetValue(var, out var blendControllers2D))
                 foreach (var controller in blendControllers2D)
                     controller.SetValue(var, value);
         }
 
         public float GetBlendVar(string var)
         {
-            float result = 0f;
-            blendVars.TryGetValue(var, out result);
+            blendVars.TryGetValue(var, out var result);
             return result;
         }
 
@@ -573,7 +569,6 @@ namespace Animation_Player
             {
                 if (i == currentPlayedState)
                     return;
-                var state = states[i];
                 if (stateMixer.GetInputWeight(i) > 0f)
                 {
                     results.Add(i);
@@ -599,12 +594,10 @@ namespace Animation_Player
 
         public void AddTreesMatchingBlendVar(BlendVarController aggregateController, string blendVar)
         {
-            List<BlendTreeController1D> blendControllers1D;
-            if (varTo1DBlendControllers.TryGetValue(blendVar, out blendControllers1D))
+            if (varTo1DBlendControllers.TryGetValue(blendVar, out var blendControllers1D))
                 aggregateController.AddControllers(blendControllers1D);
 
-            List<BlendTreeController2D> blendControllers2D;
-            if (varTo2DBlendControllers.TryGetValue(blendVar, out blendControllers2D))
+            if (varTo2DBlendControllers.TryGetValue(blendVar, out var blendControllers2D))
                 aggregateController.AddControllers(blendControllers2D);
         }
 
@@ -872,10 +865,7 @@ namespace Animation_Player
             }
 
             public bool ShouldPlay() {
-                var shouldPlay = Time.time >= isDoneTime;
-                if (shouldPlay)
-                    return true;
-                return shouldPlay;
+                return Time.time >= isDoneTime;
             }
         }
 

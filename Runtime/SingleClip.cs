@@ -43,7 +43,7 @@ namespace Animation_Player
         public override float Duration => clip != null ? clip.length : 0f;
         public override bool Loops => clip != null && clip.isLooping;
 
-        public override void JumpToRelativeTime(float time, AnimationMixerPlayable stateMixer)
+        public override void JumpToRelativeTime(float time)
         {
             runtimePlayable.SetTime(time * Duration);
         }

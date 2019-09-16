@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Animations;
 using UnityEngine.Playables;
 
 namespace Animation_Player
@@ -74,6 +73,7 @@ namespace Animation_Player
             if (Loops)
             {
                 var delta = timeCurrentFrame - timeLastFrame;
+                // @TODO, bug This means that clips set to play on the last frame of the state won't play.
                 timeCurrentFrame %= Duration;
 
                 if (firstFrame)
@@ -119,8 +119,8 @@ namespace Animation_Player
 
         internal abstract void SetRuntimePlayable(Playable runtimePlayable);
 
-        public virtual void OnWillStartPlaying(PlayableGraph graph, AnimationMixerPlayable stateMixer, int ownIndex, ref Playable ownPlayable) { }
+        public virtual void OnWillStartPlaying(ref Playable ownPlayable) { }
 
-        public abstract void JumpToRelativeTime(float time, AnimationMixerPlayable stateMixer);
+        public abstract void JumpToRelativeTime(float time);
     }
 }

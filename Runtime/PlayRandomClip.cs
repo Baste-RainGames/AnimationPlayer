@@ -67,7 +67,7 @@ namespace Animation_Player
             this.runtimePlayable = runtimePlayable;
         }
 
-        public override void OnWillStartPlaying(PlayableGraph graph, AnimationMixerPlayable stateMixer, int ownIndex, ref Playable ownPlayable)
+        public override void OnWillStartPlaying(ref Playable ownPlayable)
         {
             //this happens if we're looping, and were already partially playing when the state were started. In that case, don't snap to a different random choice.
             if (ownPlayable.GetTime() > 0f)
@@ -84,7 +84,7 @@ namespace Animation_Player
             ownPlayable = clipPlayable;
         }
 
-        public override void JumpToRelativeTime(float time, AnimationMixerPlayable stateMixer)
+        public override void JumpToRelativeTime(float time)
         {
             runtimePlayable.SetTime(time * Duration);
         }

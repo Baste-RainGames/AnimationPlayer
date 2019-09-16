@@ -92,7 +92,7 @@ namespace Animation_Player
             }
         }
 
-        public override void JumpToRelativeTime(float time, AnimationMixerPlayable stateMixer)
+        public override void JumpToRelativeTime(float time)
         {
             float unNormalizedTime = time * Duration;
             runtimePlayable.SetTime(unNormalizedTime);

@@ -136,7 +136,7 @@ namespace Animation_Player
                     previewedPlayable.SetTime(manualModeTime);
                     previewGraph.Evaluate();
                     if (previewedState is Sequence sequence) {
-                        sequence.ProgressThroughSequence(ref previewedPlayable, previewedPlayableMixer);
+                        sequence.ProgressThroughSequence(ref previewedPlayable);
                     }
                 }
             }
@@ -148,7 +148,7 @@ namespace Animation_Player
 
                 previewGraph.Evaluate(deltaTime);
                 if (previewedState is Sequence sequence) {
-                    sequence.ProgressThroughSequence(ref previewedPlayable, previewedPlayableMixer);
+                    sequence.ProgressThroughSequence(ref previewedPlayable);
                 }
                 var evaluatedTime = previewedPlayable.GetTime();
                 if (evaluatedTime > previewedState.Duration) {

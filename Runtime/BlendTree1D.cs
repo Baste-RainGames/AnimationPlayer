@@ -15,6 +15,8 @@ namespace Animation_Player
         public List<BlendTreeEntry1D> blendTree;
         public bool compensateForDifferentDurations = true;
 
+        private BlendTreeController1D controller;
+
         private BlendTree1D() { }
 
         public static BlendTree1D Create(string name)
@@ -52,10 +54,10 @@ namespace Animation_Player
                 innerPlayables[i] = clipPlayable;
             }
 
-            var blendController = new BlendTreeController1D(treeMixer, innerPlayables, thresholds, compensateForDifferentDurations,
+            controller = new BlendTreeController1D(treeMixer, innerPlayables, thresholds, compensateForDifferentDurations,
                                                             val => blendVars[blendVariable] = val);
-            varTo1DBlendControllers.GetOrAdd(blendVariable).Add(blendController);
-            blendController.SetInitialValue(0);
+            varTo1DBlendControllers.GetOrAdd(blendVariable).Add(controller);
+            controller.SetInitialValue(0);
 
             return treeMixer;
         }
@@ -111,8 +113,10 @@ namespace Animation_Player
                 var shouldPlay = GetClipToUseFor(blendTree[i].clip);
                 var isPlaying = clipPlayable.GetAnimationClip();
 
-                if (isPlaying != shouldPlay)
+                if (isPlaying != shouldPlay) {
                     PlayableUtilities.ReplaceClipInPlace(ref clipPlayable, shouldPlay);
+                    controller.PlayableChanged(i, clipPlayable);
+                }
             }
         }
     }

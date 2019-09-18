@@ -126,5 +126,9 @@ namespace Animation_Player
             public float threshold;
 //            public float defaultSpeed;
         }
+
+        public void PlayableChanged(int index, AnimationClipPlayable newPlayable) {
+            runtimeData[index].playable = newPlayable;
+        }
     }
 }

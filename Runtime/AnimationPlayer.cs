@@ -921,6 +921,7 @@ namespace Animation_Player
                 {
                     found = true;
                     changed = active != clipSwapCollection.active;
+                    clipSwapCollection.active = active;
                 }
             }
 

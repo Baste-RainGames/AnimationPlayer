@@ -64,7 +64,8 @@ namespace Animation_Player
 
             if (asClipPlayable.GetAnimationClip() != clipToUse)
             {
-                SwapClipTo(ref ownPlayable, clipToUse);
+                PlayableUtilities.ReplaceClipInPlace(ref asClipPlayable, clipToUse);
+                ownPlayable = asClipPlayable;
             }
         }
 

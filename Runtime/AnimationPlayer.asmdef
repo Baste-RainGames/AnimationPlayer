@@ -1,7 +1,8 @@
 {
     "name": "AnimationPlayer",
     "references": [
-        "Unity.PlayableGraphVisualizer"
+        "Unity.PlayableGraphVisualizer",
+        "PlayerLoopInterface"
     ],
     "optionalUnityReferences": [],
     "includePlatforms": [],

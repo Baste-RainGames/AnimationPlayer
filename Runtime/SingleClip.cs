@@ -24,7 +24,7 @@ namespace Animation_Player
 
         public override Playable GeneratePlayable(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
                                                   Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers,
-                                                  List<BlendTreeController2D> all2DControllers, Dictionary<string, float> blendVars)
+                                                  List<BlendTreeController2D> all2DControllers)
         {
             if (clip == null)
                 clip = new AnimationClip();
@@ -68,6 +68,8 @@ namespace Animation_Player
                 ownPlayable = asClipPlayable;
             }
         }
+
+        public override void RegisterUsedBlendVarsIn(Dictionary<string, float> blendVariableValues) { }
 
         public void SwapClipTo(ref Playable ownPlayable, AnimationClip animationClip)
         {

@@ -7,16 +7,13 @@ namespace Animation_Player
 {
     public class BlendTreeController1D
     {
-        private readonly Action<float> UpdateValueOnMainController;
         private readonly AnimationMixerPlayable mixer;
         private readonly BlendTreeData[] runtimeData;
         private readonly bool compensateForDifferentDurations;
 
         private float lastValue;
-        public float CurrentValue => lastValue;
 
-        public BlendTreeController1D(AnimationMixerPlayable mixer, AnimationClipPlayable[] playables, float[] thresholds, bool compensateForDifferentDurations,
-                                     Action<float> UpdateValueOnMainController)
+        public BlendTreeController1D(AnimationMixerPlayable mixer, AnimationClipPlayable[] playables, float[] thresholds, bool compensateForDifferentDurations)
         {
             if(thresholds.Length != playables.Length)
                 throw new Exception("Thresholds and playables doesn't match!");
@@ -24,7 +21,6 @@ namespace Animation_Player
                 if (thresholds[i] >= thresholds[i + 1])
                     throw new Exception($"The thresholds on the blend tree should be be strictly increasing!");
 
-            this.UpdateValueOnMainController = UpdateValueOnMainController;
             this.compensateForDifferentDurations = compensateForDifferentDurations;
             this.mixer = mixer;
             runtimeData = new BlendTreeData[thresholds.Length];
@@ -37,7 +33,8 @@ namespace Animation_Player
                     duration = playables[i].GetAnimationClip().length
                 };
             }
-            if(compensateForDifferentDurations)
+
+            if (compensateForDifferentDurations)
                 CompensateForDurations(0, 0);
         }
 
@@ -50,7 +47,6 @@ namespace Animation_Player
         {
             if (value == lastValue)
                 return;
-            UpdateValueOnMainController(value);
             lastValue = value;
 
             int idxOfLastLowerThanVal = -1;

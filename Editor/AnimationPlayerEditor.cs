@@ -43,7 +43,7 @@ namespace Animation_Player
 
         private string[][] allStateNames;
 
-        private static bool stylesCreated = false;
+        private static bool stylesCreated;
         private static GUIStyle editLayerStyle;
         private static GUIStyle editLayerButton_Background;
         private static GUIStyle editLayerButton_NotSelected;
@@ -59,6 +59,7 @@ namespace Animation_Player
 
         private bool stateNamesNeedsUpdate = true;
         private bool transitionsNeedsUpdate = true;
+        private bool drawAssignedClips;
 
         public void MarkDirty()
         {
@@ -503,11 +504,14 @@ namespace Animation_Player
                     EditorGUILayout.BeginHorizontal();
                     {
                         EditorGUILayout.LabelField(blendVar, GUILayout.Width(maxWidth));
-                        EditorGUILayout.LabelField(animationPlayer.GetBlendVar(blendVar, (int) selectedLayer).ToString());
+                        EditorGUILayout.LabelField(animationPlayer.GetBlendVar(blendVar).ToString());
                     }
                     EditorGUILayout.EndHorizontal();
                 }
             });
+
+            EditorUtilities.Splitter();
+            drawAssignedClips = EditorGUILayout.Toggle("Draw assigned clips", drawAssignedClips);
             EditorUtilities.Splitter();
 
             if (!animationPlayer.gameObject.scene.IsValid())
@@ -519,16 +523,40 @@ namespace Animation_Player
             EditorGUILayout.LabelField("Playing clip " + animationPlayer.GetPlayingState(SelectedLayer));
             for (int i = 0; i < animationPlayer.GetStateCount(SelectedLayer); i++)
             {
+                var state = animationPlayer.layers[SelectedLayer].states[i];
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    EditorGUILayout.LabelField($"Current weigth for state \"{animationPlayer.layers[SelectedLayer].states[i].Name}\": {animationPlayer.GetStateWeight(i, SelectedLayer)}");
+                    EditorGUILayout.LabelField($"Current weight for state \"{state.Name}\": {animationPlayer.GetStateWeight(i, SelectedLayer)}");
+
                     if (GUILayout.Button("Play it!"))
-                    {
                         animationPlayer.Play(i, SelectedLayer);
+                }
+
+                using (new EditorGUI.IndentLevelScope())
+                {
+                    if (state is SingleClip singleClip)
+                    {
+                        EditorGUILayout.LabelField($"default clip: {ClipName(singleClip.clip)}");
+                        var (clip, weight) = animationPlayer.layers[selectedLayer].GetCurrentActualClipAndWeight(state);
+                        if (clip != singleClip.clip)
+                            EditorGUILayout.LabelField($"overriden clip: {ClipName(clip)}, weight: {weight}");
+                    }
+
+                    if (state is BlendTree1D bt1d)
+                    {
+                        for (int j = 0; j < bt1d.blendTree.Count; j++)
+                        {
+                            EditorGUILayout.LabelField($"assigned {ClipName(bt1d.blendTree[j].clip)}");
+                            var (clip, weight) = animationPlayer.layers[selectedLayer].GetCurrentActualClipAndWeight(state, j);
+                            if (clip != bt1d.blendTree[j].clip)
+                                EditorGUILayout.LabelField($"overriden clip: {ClipName(clip)}, weight: {weight}");
+                        }
                     }
                 }
             }
         }
+
+        private string ClipName(AnimationClip clip) => clip == null ? "null" : clip.name;
 
         //Undo can remove layers, but the selected bounds are not undone, so do that manually
         private void CheckSelectionBounds()
@@ -575,10 +603,8 @@ namespace Animation_Player
             return Application.isPlaying || (previewer != null && previewer.IsShowingPreview) || DragAndDrop.objectReferences.Length > 0;
         }
 
-        private void OnDestroy()
-        {
-            if(previewer != null)
-                previewer.Cleanup();
+        private void OnDestroy() {
+            previewer?.Cleanup();
         }
     }
 }

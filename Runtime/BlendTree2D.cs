@@ -28,15 +28,15 @@ namespace Animation_Player
 
         public override Playable GeneratePlayable(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
                                                   Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers,
-                                                  List<BlendTreeController2D> all2DControllers, Dictionary<string, float> blendVars)
+                                                  List<BlendTreeController2D> all2DControllers)
         {
             var treeMixer = AnimationMixerPlayable.Create(graph, blendTree.Count, true);
+            treeMixer.SetPropagateSetTime(true);
+
             if (blendTree.Count == 0)
                 return treeMixer;
 
-            void SetVar1(float val) => blendVars[blendVariable] = val;
-            void SetVar2(float val) => blendVars[blendVariable2] = val;
-            var controller = new BlendTreeController2D(blendVariable, blendVariable2, treeMixer, blendTree.Count, SetVar1, SetVar2);
+            var controller = new BlendTreeController2D(blendVariable, blendVariable2, treeMixer, blendTree.Count);
             all2DControllers.Add(controller);
             varTo2DBlendControllers.GetOrAdd(blendVariable).Add(controller);
             varTo2DBlendControllers.GetOrAdd(blendVariable2).Add(controller);
@@ -112,6 +112,13 @@ namespace Animation_Player
                 if (isPlaying != shouldPlay)
                     PlayableUtilities.ReplaceClipInPlace(ref clipPlayable, shouldPlay);
             }
+        }
+
+        public override void RegisterUsedBlendVarsIn(Dictionary<string, float> blendVariableValues) {
+            if (!blendVariableValues.ContainsKey(blendVariable))
+                blendVariableValues[blendVariable] = 0;
+            if (!blendVariableValues.ContainsKey(blendVariable2))
+                blendVariableValues[blendVariable2] = 0;
         }
     }
 }

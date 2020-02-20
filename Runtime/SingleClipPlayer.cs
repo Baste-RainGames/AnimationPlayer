@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
@@ -7,8 +8,8 @@ namespace Animation_Player {
     /// <summary>
     /// A very simplified animation player, which only plays a single clip.
     ///
-    /// You'd want to use this over the animation player as it builds a simpler graph, and because it destroys it's graph and disables the animator when it's
-    /// done.
+    /// You'd want to use this over the animation player as it builds a simpler graph,
+    /// and because it destroys it's graph and disables it's animator when done.
     /// </summary>
     public class SingleClipPlayer : MonoBehaviour, IAnimationClipSource {
 
@@ -51,6 +52,12 @@ namespace Animation_Player {
             else {
                 clipPlayable.SetTime(0);
             }
+        }
+
+        public async Task PlayAsync() {
+            Play();
+            while (isPlaying)
+                await Task.Yield();
         }
 
         private void Update() {

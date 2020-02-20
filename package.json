@@ -1,6 +1,6 @@
 {
   "name": "com.baste.animationplayer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "displayName": "AnimationPlayer",
   "description": "Tool for playing animations in Unity",
   "unity" : "2018.4",
@@ -8,6 +8,9 @@
     "name": "Baste Nesse Buanes",
     "email": "baste@rain-games.com",
     "url": "https://github.com/Baste-RainGames/AnimationPlayer"
+  },
+  "dependencies" : {
+      "com.baste.playerloopinterface": "1.0.0"
   },
   "samples": [
     {

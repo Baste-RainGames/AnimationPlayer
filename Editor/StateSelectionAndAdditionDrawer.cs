@@ -107,7 +107,13 @@ namespace Animation_Player
 
         private static void DoDragAndDrop(AnimationPlayer animationPlayer, PersistedInt selectedLayer, PersistedInt selectedState, AnimationPlayerEditor editor)
         {
-            var dragAndDropRect = EditorUtilities.ReserveRect(GUILayout.Height(83f));
+            const int numButtons = 5;
+            const float spacePerButton = 20f;
+            const float border = 3f;
+
+            Debug.Log(DragAndDrop.objectReferences.PrettyPrint());
+
+            var dragAndDropRect = EditorUtilities.ReserveRect(GUILayout.Height((numButtons * spacePerButton) + border));
             Event evt = Event.current;
 
             GUI.Box(dragAndDropRect, "Drag clips here to add\nthem to the player!", dragAndDropBoxStyle);

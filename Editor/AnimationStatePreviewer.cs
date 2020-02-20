@@ -23,7 +23,9 @@ namespace Animation_Player
         private readonly Dictionary<string, List<BlendTreeController1D>> previewControllers1D = new Dictionary<string, List<BlendTreeController1D>>();
         private readonly Dictionary<string, List<BlendTreeController2D>> previewControllers2D = new Dictionary<string, List<BlendTreeController2D>>();
         private readonly List<BlendTreeController2D> all2DControllers = new List<BlendTreeController2D>();
-        private readonly List<BlendVarController> blendVarControllers = new List<BlendVarController>();
+
+        private (string blendVar, float min, float max, float current)[] blendVars;
+
         private bool swapToManual;
 
         public AnimationStatePreviewer(AnimationPlayer player)
@@ -69,10 +71,8 @@ namespace Animation_Player
             previewControllers1D.Clear();
             previewControllers2D.Clear();
             all2DControllers.Clear();
-            blendVarControllers.Clear();
-            Dictionary<string, float> blendVars = new Dictionary<string, float>();
             previewedPlayableMixer = AnimationMixerPlayable.Create(previewGraph, 1);
-            previewedPlayable = state.Initialize(previewGraph, previewControllers1D, previewControllers2D, all2DControllers , blendVars, null);
+            previewedPlayable = state.Initialize(previewGraph, previewControllers1D, previewControllers2D, all2DControllers, null);
             previewedPlayableMixer.AddInput(previewedPlayable, 0, 1f);
             animOutput.SetSourcePlayable(previewedPlayableMixer);
             previewGraph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
@@ -80,15 +80,26 @@ namespace Animation_Player
             previewGraph.GetRootPlayable(0).SetPropagateSetTime(true);
             automaticModeTime = Time.time;
 
-            foreach (var blendVar in blendVars.Keys)
-            {
-                var controller = new BlendVarController(blendVar);
-                foreach (var kvp in previewControllers1D.Where(kvp => kvp.Key == blendVar))
-                    controller.AddControllers(kvp.Value);
-                foreach (var kvp in previewControllers2D.Where(kvp => kvp.Key == blendVar))
-                    controller.AddControllers(kvp.Value);
+            if (state is BlendTree1D bt1d) {
+                var min = bt1d.blendTree.Min(entry => entry.threshold);
+                var max = bt1d.blendTree.Max(entry => entry.threshold);
+                blendVars = new [] {
+                    (bt1d.blendVariable, min, max, Mathf.Clamp(0, min, max))
+                };
+            }
+            else if (state is BlendTree2D bt2d) {
+                var min1 = bt2d.blendTree.Min(entry => entry.threshold1);
+                var max1 = bt2d.blendTree.Max(entry => entry.threshold1);
+                var min2 = bt2d.blendTree.Min(entry => entry.threshold2);
+                var max2 = bt2d.blendTree.Max(entry => entry.threshold2);
 
-                blendVarControllers.Add(controller);
+                blendVars = new [] {
+                    (bt2d.blendVariable,  min1, max1, Mathf.Clamp(0, min1, max1)),
+                    (bt2d.blendVariable2, min2, max2, Mathf.Clamp(0, min2, max2))
+                };
+            }
+            else {
+                blendVars = new (string blendVar, float min, float max, float current)[0];
             }
         }
 
@@ -151,16 +162,8 @@ namespace Animation_Player
                     sequence.ProgressThroughSequence(ref previewedPlayable);
                 }
                 var evaluatedTime = previewedPlayable.GetTime();
-                if (evaluatedTime > previewedState.Duration) {
-                    evaluatedTime %= previewedState.Duration;
-                    previewedPlayable.SetTime(evaluatedTime);
-                }
-                else if (evaluatedTime < 0 && previewedState.speed < 0) {
-                    evaluatedTime = previewedState.Duration + evaluatedTime;
-                    previewedPlayable.SetTime(evaluatedTime);
-                }
 
-                var oldTime = (float) evaluatedTime;
+                var oldTime = (float) (evaluatedTime % previewedState.Duration);
                 var newTime = EditorGUILayout.Slider(oldTime, 0f, previewedState.Duration);
                 if (newTime != oldTime)
                 {
@@ -187,20 +190,26 @@ namespace Animation_Player
                 EditorGUILayout.EndHorizontal();
             }
 
-            if (blendVarControllers.Count > 0)
+            if (blendVars.Length > 0)
             {
                 EditorUtilities.Splitter();
                 EditorGUILayout.LabelField($"Blend vars for {previewedState.Name}");
-                foreach (var controller in blendVarControllers)
-                {
-                    var label = controller.BlendVar;
-                    var oldVal = controller.GetBlendVar();
-                    var newVal = EditorGUILayout.Slider(label, oldVal, controller.MinValue, controller.MaxValue);
-                    if (oldVal != newVal)
-                    {
-                        controller.SetBlendVar(newVal);
+                for (var i = 0; i < blendVars.Length; i++) {
+                    var (name, min, max, current) = blendVars[i];
+
+                    var newVal = EditorGUILayout.Slider(name, current, min, max);
+
+                    if (current != newVal) {
+                        blendVars[i] = (name, min, max, newVal);
+                        if (previewControllers1D.TryGetValue(name, out var controllersForVar1D))
+                            foreach (var controller in controllersForVar1D)
+                                controller.SetValue(newVal);
+                        if (previewControllers2D.TryGetValue(name, out var controllersForVar2D))
+                            foreach (var controller in controllersForVar2D)
+                                controller.SetValue(name, newVal);
                     }
                 }
+
                 EditorUtilities.Splitter();
             }
 

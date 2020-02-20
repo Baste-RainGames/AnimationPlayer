@@ -13,7 +13,7 @@ namespace Animation_Player
 
         public string blendVariable;
         public List<BlendTreeEntry1D> blendTree;
-        public bool compensateForDifferentDurations = true;
+        public bool compensateForDifferentDurations = true; // @TODO: this should be setable from the editor, no?
 
         private BlendTreeController1D controller;
 
@@ -31,11 +31,14 @@ namespace Animation_Player
 
         public override Playable GeneratePlayable(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
                                                   Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers,
-                                                  List<BlendTreeController2D> all2DControllers, Dictionary<string, float> blendVars)
+                                                  List<BlendTreeController2D> all2DControllers)
         {
             var treeMixer = AnimationMixerPlayable.Create(graph, blendTree.Count, true);
+            treeMixer.SetPropagateSetTime(true);
+
             if (blendTree.Count == 0)
                 return treeMixer;
+
 
             float[] thresholds = new float[blendTree.Count];
 
@@ -52,10 +55,10 @@ namespace Animation_Player
                 graph.Connect(clipPlayable, 0, treeMixer, i);
                 thresholds[i] = blendTreeEntry.threshold;
                 innerPlayables[i] = clipPlayable;
+
             }
 
-            controller = new BlendTreeController1D(treeMixer, innerPlayables, thresholds, compensateForDifferentDurations,
-                                                            val => blendVars[blendVariable] = val);
+            controller = new BlendTreeController1D(treeMixer, innerPlayables, thresholds, compensateForDifferentDurations);
             varTo1DBlendControllers.GetOrAdd(blendVariable).Add(controller);
             controller.SetInitialValue(0);
 
@@ -118,6 +121,11 @@ namespace Animation_Player
                     controller.PlayableChanged(i, clipPlayable);
                 }
             }
+        }
+
+        public override void RegisterUsedBlendVarsIn(Dictionary<string, float> blendVariableValues) {
+            if (!blendVariableValues.ContainsKey(blendVariable))
+                blendVariableValues[blendVariable] = 0;
         }
     }
 }

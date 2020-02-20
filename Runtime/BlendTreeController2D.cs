@@ -1,5 +1,4 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
 
@@ -22,9 +21,6 @@ namespace Animation_Player
         private float currentSetValue1, currentSetValue2;
         private Vector2 currentBlendVector;
 
-        public float CurrentValue1 => currentSetValue1;
-        public float CurrentValue2 => currentSetValue2;
-
         private readonly AnimationMixerPlayable treeMixer;
 
         private readonly Vector2[] thresholds;
@@ -33,13 +29,9 @@ namespace Animation_Player
         private float[,] squareDistanceBetweenThresholds;
         private Vector2[,] vectorsBetweenThresholds;
 
-        private Action<float> UpdateValue1OnMainController;
-        private Action<float> UpdateValue2OnMainController;
-
         private bool shouldRecalculate;
 
-        public BlendTreeController2D(string blendVar1, string blendVar2, AnimationMixerPlayable treeMixer, int numClips,
-                                     Action<float> UpdateValue1OnMainController, Action<float> UpdateValue2OnMainController)
+        public BlendTreeController2D(string blendVar1, string blendVar2, AnimationMixerPlayable treeMixer, int numClips)
         {
             this.blendVar1 = blendVar1;
             this.blendVar2 = blendVar2;
@@ -48,8 +40,6 @@ namespace Animation_Player
             motionInfluences = new float[numClips];
             squareDistanceBetweenThresholds = new float[numClips, numClips];
             vectorsBetweenThresholds = new Vector2[numClips, numClips];
-            this.UpdateValue1OnMainController = UpdateValue1OnMainController;
-            this.UpdateValue2OnMainController = UpdateValue2OnMainController;
         }
 
         public void AddThresholdsForClip(int clipIdx, float threshold, float threshold2)
@@ -99,7 +89,6 @@ namespace Animation_Player
         public void SetValue1(float value)
         {
             currentSetValue1 = Mathf.Clamp(value, minVal1, maxVal1);
-            UpdateValue1OnMainController(value);
 
             var diff = currentSetValue1 - currentBlendVector.x;
             shouldRecalculate |= diff < changeThreshold1Neg || diff > changeThreshold1Pos;
@@ -108,7 +97,6 @@ namespace Animation_Player
         public void SetValue2(float value)
         {
             currentSetValue2 = Mathf.Clamp(value, minVal2, maxVal2);
-            UpdateValue2OnMainController(value);
 
             var diff = currentSetValue2 - currentBlendVector.y;
             shouldRecalculate |= diff < changeThreshold2Neg || diff > changeThreshold2Pos;
@@ -178,10 +166,5 @@ namespace Animation_Player
             var val = dotProd / magSqr;
             return 1f - val;
         }
-
-        public float GetMinValForVar1() => minVal1;
-        public float GetMaxValForVar1() => maxVal1;
-        public float GetMinValForVar2() => minVal2;
-        public float GetMaxValForVar2() => maxVal2;
     }
 }

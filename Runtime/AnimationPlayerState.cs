@@ -129,17 +129,17 @@ namespace Animation_Player
         }
 
         public Playable Initialize(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
-                                   Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers,
-                                   List<BlendTreeController2D> all2DControllers, Dictionary<string, float> blendVars,
-                                   List<ClipSwapCollection> clipSwapCollections)
+            Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers,
+            List<BlendTreeController2D> all2DControllers,
+            List<ClipSwapCollection> clipSwapCollections)
         {
             this.clipSwapCollections = clipSwapCollections;
-            return GeneratePlayable(graph, varTo1DBlendControllers, varTo2DBlendControllers, all2DControllers, blendVars);
+            return GeneratePlayable(graph, varTo1DBlendControllers, varTo2DBlendControllers, all2DControllers);
         }
 
         public abstract Playable GeneratePlayable(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
                                                        Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers,
-                                                       List<BlendTreeController2D> all2DControllers, Dictionary<string, float> blendVars);
+                                                       List<BlendTreeController2D> all2DControllers);
 
         public virtual void OnWillStartPlaying(ref Playable ownPlayable) { }
 
@@ -197,5 +197,7 @@ namespace Animation_Player
                 public AnimationClip Current => state.GetClipToUseFor(clips[index]);
             }
         }
+
+        public abstract void RegisterUsedBlendVarsIn(Dictionary<string, float> blendVariableValues);
     }
 }

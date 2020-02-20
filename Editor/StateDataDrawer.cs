@@ -280,21 +280,38 @@ namespace Animation_Player
 
         private static void DrawSequence(Sequence state, ref bool markDirty)
         {
-            EditorGUILayout.HelpBox("The clips in the sequence are played one by one. The final one will loop if it's set to loop.", MessageType.None);
+            var oldLoopMode = state.loopMode;
+            state.loopMode = (SequenceLoopMode) EditorGUILayout.EnumPopup("Loop Mode", state.loopMode);
+            if (state.loopMode != oldLoopMode)
+                markDirty = true;
+
+            if (state.loopMode == SequenceLoopMode.LoopLastClipIfItLoops)
+                EditorGUILayout.HelpBox("The clips in the sequence are played one by one. The final one will loop if it's set to loop.", MessageType.None);
+            else
+                EditorGUILayout.HelpBox("The clips in the sequence are played one by one, looping after the last one is finished", MessageType.None);
 
             EditorGUILayout.LabelField("Sequence");
             EditorGUI.indentLevel++;
+            var toRemove = -1;
+            var old = EditorGUIUtility.labelWidth;
+            EditorGUIUtility.labelWidth = 60f;
             for (var i = 0; i < state.clips.Count; i++)
             {
                 var oldClip = state.clips[i];
+                using (new EditorGUILayout.HorizontalScope()) {
+                    state.clips[i] = EditorUtilities.ObjectField("Clip", oldClip);
+                    if (GUILayout.Button("-", GUILayout.Width(20f))) {
+                        toRemove = i;
+                    }
+                }
 
-                state.clips[i] = EditorUtilities.ObjectField("Clip", oldClip, 150f, 200f);
                 if (state.clips[i] != oldClip)
                 {
                     state.OnClipAssigned(state.clips[i]);
                     markDirty = true;
                 }
             }
+            EditorGUIUtility.labelWidth = old;
             EditorGUI.indentLevel--;
 
             EditorGUI.indentLevel--;
@@ -309,6 +326,11 @@ namespace Animation_Player
 
             GUILayout.FlexibleSpace();
             EditorGUILayout.EndHorizontal();
+
+            if (toRemove != -1) {
+                state.clips.RemoveAt(toRemove);
+                markDirty = true;
+            }
         }
 
         private static void DrawSelectRandomState(PlayRandomClip state, ref bool markDirty)

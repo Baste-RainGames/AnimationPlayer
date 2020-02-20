@@ -26,6 +26,7 @@ namespace Animation_Player
         private bool anyStatesHasAnimationEvents;
         private TransitionData defaultTransition;
         private List<ClipSwapCollection> clipSwapCollections;
+        private int numberOfStateChanges;
 
         private AnimationLayerMixerPlayable layerMixer; //only use for re-initting!
         private int layerIndex; //only use for re-initting!
@@ -46,15 +47,14 @@ namespace Animation_Player
 
         private readonly Dictionary<string, int> stateNameToIdx = new Dictionary<string, int>(StringComparer.InvariantCulture);
 
-        //@TODO: string key is slow
-        private readonly Dictionary<string, float> blendVars = new Dictionary<string, float>();
         private readonly Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers = new Dictionary<string, List<BlendTreeController1D>>();
         private readonly Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers = new Dictionary<string, List<BlendTreeController2D>>();
         private readonly List<BlendTreeController2D> all2DControllers = new List<BlendTreeController2D>();
 
         private PlayAtTimeInstructionQueue playInstructionQueue;
 
-        public void InitializeSelf(PlayableGraph graph, TransitionData defaultTransition, List<ClipSwapCollection> clipSwapCollections)
+        public void InitializeSelf(PlayableGraph graph, TransitionData defaultTransition, List<ClipSwapCollection> clipSwapCollections,
+                                   Dictionary<string, float> blendVariableValues)
         {
             this.defaultTransition = defaultTransition;
             this.clipSwapCollections = clipSwapCollections;
@@ -78,7 +78,6 @@ namespace Animation_Player
             stateMixer.SetInputWeight(0, 1f);
             currentPlayedState = 0;
 
-            // Add the statess to the graph
             for (int i = 0; i < states.Count; i++)
             {
                 var state = states[i];
@@ -87,9 +86,11 @@ namespace Animation_Player
 
                 stateNameToIdx[state.Name] = i;
 
-                var playable = state.Initialize(graph, varTo1DBlendControllers, varTo2DBlendControllers, all2DControllers, blendVars, clipSwapCollections);
+                var playable = state.Initialize(graph, varTo1DBlendControllers, varTo2DBlendControllers, all2DControllers, clipSwapCollections);
                 runtimePlayables[i] = playable;
                 graph.Connect(playable, 0, stateMixer, i);
+
+                state.RegisterUsedBlendVarsIn(blendVariableValues);
             }
 
             activeWhenBlendStarted = new List<bool>(states.Count);
@@ -197,9 +198,6 @@ namespace Animation_Player
 
         private AnimationPlayerState Play(int newState, TransitionData transitionData, string transitionName, bool clearQueuedPlayInstructions)
         {
-            if (clearQueuedPlayInstructions)
-                playInstructionQueue.Clear();
-
             if (newState < 0 || newState >= states.Count)
             {
                 Debug.LogError($"Trying to play out of bounds clip {newState}! There are {states.Count} clips in the animation player");
@@ -211,6 +209,11 @@ namespace Animation_Player
                 Debug.LogError("Trying to play an animationCurve based transition, but the transition curve is null!");
                 return null;
             }
+
+            if (clearQueuedPlayInstructions)
+                playInstructionQueue.Clear();
+
+            numberOfStateChanges++;
 
             if (transitionData.duration <= 0f)
                 DoInstantTransition();
@@ -249,6 +252,8 @@ namespace Animation_Player
                     stateMixer.SetInputWeight(i, 0);
                 stateMixer.SetInputWeight(transitionStateindex, 1);
 
+                transitionState.SetTime(0); // Fix for a bug where this is set to some other value on startup (for example 0.333 in one test?)
+
                 transitioning = true;
                 transitionStartTime = Time.time;
                 currentTransitionData = transitionData;
@@ -281,7 +286,7 @@ namespace Animation_Player
                         // Later, when the copy's weight hits zero, we discard it.
 
                         var original = runtimePlayables[newState];
-                        var copy = states[newState].GeneratePlayable(containingGraph, varTo1DBlendControllers, varTo2DBlendControllers, all2DControllers, blendVars);
+                        var copy = states[newState].GeneratePlayable(containingGraph, varTo1DBlendControllers, varTo2DBlendControllers, all2DControllers);
                         var copyIndex = stateMixer.GetInputCount();
                         stateMixer.SetInputCount(copyIndex + 1);
 
@@ -343,7 +348,26 @@ namespace Animation_Player
             states[currentPlayedState].JumpToRelativeTime(ref runtimePlayables[currentPlayedState], time);
         }
 
-        public void Update()
+        internal void UpdateBlendVariables(Dictionary<string, float> blendVariableValues, HashSet<string> updated) {
+            foreach (var blendVar in updated)
+                SetBlendVar(blendVar, blendVariableValues[blendVar]);
+
+            foreach (var controller in all2DControllers)
+                controller.Update();
+
+            void SetBlendVar(string var, float value)
+            {
+                if (varTo1DBlendControllers.TryGetValue(var, out var blendControllers1D))
+                    foreach (var controller in blendControllers1D)
+                        controller.SetValue(value);
+
+                if (varTo2DBlendControllers.TryGetValue(var, out var blendControllers2D))
+                    foreach (var controller in blendControllers2D)
+                        controller.SetValue(var, value);
+            }
+        }
+
+        internal void Update()
         {
             if (states.Count == 0)
                 return;
@@ -354,8 +378,7 @@ namespace Animation_Player
                 HandleAnimationEvents();
             HandleTransitions();
             HandleQueuedInstructions();
-            for (int i = 0; i < all2DControllers.Count; i++)
-                all2DControllers[i].Update();
+
             firstFrame = false;
         }
 
@@ -395,9 +418,8 @@ namespace Animation_Player
 
             if (currentTransitionData.type == TransitionType.Clip)
             {
-                if (lerpVal < 1) {
+                if (lerpVal < 1)
                     return;
-                }
 
                 for (int i = 0; i < stateMixer.GetInputCount(); i++)
                     stateMixer.SetInputWeight(i, 0);
@@ -527,25 +549,6 @@ namespace Animation_Player
             return layer;
         }
 
-        public void SetBlendVar(string var, float value)
-        {
-            blendVars[var] = value;
-
-            if (varTo1DBlendControllers.TryGetValue(var, out var blendControllers1D))
-                foreach (var controller in blendControllers1D)
-                    controller.SetValue(value);
-
-            if (varTo2DBlendControllers.TryGetValue(var, out var blendControllers2D))
-                foreach (var controller in blendControllers2D)
-                    controller.SetValue(var, value);
-        }
-
-        public float GetBlendVar(string var)
-        {
-            blendVars.TryGetValue(var, out var result);
-            return result;
-        }
-
         public void AddAllPlayingStatesTo(List<AnimationPlayerState> results)
         {
             results.Add(states[currentPlayedState]);
@@ -593,15 +596,6 @@ namespace Animation_Player
             }
         }
 
-        public void AddTreesMatchingBlendVar(BlendVarController aggregateController, string blendVar)
-        {
-            if (varTo1DBlendControllers.TryGetValue(blendVar, out var blendControllers1D))
-                aggregateController.AddControllers(blendControllers1D);
-
-            if (varTo2DBlendControllers.TryGetValue(blendVar, out var blendControllers2D))
-                aggregateController.AddControllers(blendControllers2D);
-        }
-
         public AnimationPlayerState GetCurrentPlayingState()
         {
             if (states.Count == 0)
@@ -615,19 +609,6 @@ namespace Animation_Player
             return currentPlayedState;
         }
 
-        public void AddAllBlendVarsTo(List<string> result)
-        {
-            foreach (var key in blendVars.Keys)
-            {
-                result.Add(key);
-            }
-        }
-
-        public bool HasBlendTreeUsingBlendVar(string blendVar)
-        {
-            return blendVars.Keys.Contains(blendVar);
-        }
-
         public void SwapClipOnState(int state, AnimationClip clip) {
             var animationState = states[state];
             if (!(animationState is SingleClip singleClipState)) {
@@ -639,17 +620,18 @@ namespace Animation_Player
             singleClipState.SwapClipTo(ref runtimePlayables[state], clip);
         }
 
-        public int AddState(AnimationPlayerState state)
+        public int AddState(AnimationPlayerState state, Dictionary<string, float> blendVariableValues)
         {
             if (states.Count == 0) {
-                HandleAddedFirstStateAfterStartup(state);
+                state.RegisterUsedBlendVarsIn(blendVariableValues);
+                HandleAddedFirstStateAfterStartup(state, blendVariableValues);
                 return 0;
             }
 
             states.Add(state);
             if (state.animationEvents.Count > 0)
                 anyStatesHasAnimationEvents = true;
-            var playable = state.Initialize(containingGraph, varTo1DBlendControllers, varTo2DBlendControllers, all2DControllers, blendVars, clipSwapCollections);
+            var playable = state.Initialize(containingGraph, varTo1DBlendControllers, varTo2DBlendControllers, all2DControllers, clipSwapCollections);
 
             var indexOfNew = states.Count - 1;
             stateNameToIdx[state.Name] = indexOfNew;
@@ -696,7 +678,7 @@ namespace Animation_Player
         /// If the first state gets added after Initialize and InitializeLayerBlending has run, we disconnect and destroy the empty state mixer, and then
         /// re-initialize.
         /// </summary>
-        private void HandleAddedFirstStateAfterStartup(AnimationPlayerState state)
+        private void HandleAddedFirstStateAfterStartup(AnimationPlayerState state, Dictionary<string, float> blendVariableValues)
         {
             states.Add(state);
 
@@ -706,7 +688,7 @@ namespace Animation_Player
 
             stateMixer.Destroy();
 
-            InitializeSelf(containingGraph, defaultTransition, clipSwapCollections);
+            InitializeSelf(containingGraph, defaultTransition, clipSwapCollections, blendVariableValues);
 
             if(layerMixer.IsValid())
                 InitializeLayerBlending(containingGraph, layerIndex, layerMixer);
@@ -971,6 +953,38 @@ namespace Animation_Player
             return stateMixer.GetInput(stateIndex).GetTime();
         }
 
+        public (AnimationClip, float) GetCurrentActualClipAndWeight(AnimationPlayerState state, int clipIndex = 0)
+        {
+            var stateIndex = states.IndexOf(state);
+            if (stateIndex == -1)
+            {
+                Debug.LogError($"The state {state} is not on this layer!");
+                return (null, -1);
+            }
+
+            return GetCurrentActualClipAndWeight(stateIndex, clipIndex);
+        }
+
+        public (AnimationClip, float) GetCurrentActualClipAndWeight(int stateIndex, int clipIndex = 0)
+        {
+            var playable = runtimePlayables[stateIndex];
+            switch (states[stateIndex]) {
+                case SingleClip _:
+                case PlayRandomClip _:
+                case Sequence _: {
+                    var acp = (AnimationClipPlayable) playable;
+                    return (acp.GetAnimationClip(), 1f);
+                }
+                case BlendTree1D _:
+                case BlendTree2D _: {
+                    var animationClipPlayable = (AnimationClipPlayable) playable.GetInput(clipIndex);
+                    return (animationClipPlayable.GetAnimationClip(), playable.GetInputWeight(clipIndex));
+                }
+            }
+
+            return (null, -1f);
+        }
+
         public double GetNormalizedStateProgress(int stateIndex)
         {
             if (stateMixer.GetInputWeight(stateIndex) <= 0f)
@@ -1006,6 +1020,10 @@ namespace Animation_Player
                 if (transition.transitionData.clip != null)
                     list.Add(transition.transitionData.clip);
             }
+        }
+
+        public int GetNumberOfStateChanges() {
+            return numberOfStateChanges;
         }
 
         private void AddAllClipsFromStateTo(AnimationPlayerState state, List<AnimationClip> list)
@@ -1048,6 +1066,53 @@ namespace Animation_Player
                 if (clip != null && !list.Contains(clip))
                     list.Add(clip);
             }
+        }
+
+        public bool TryGetMinAndMaxValuesForBlendVar(string variable, out float minVal, out float maxVal) {
+            var hasSet = false;
+            minVal = Mathf.Infinity;
+            maxVal = Mathf.NegativeInfinity;
+
+            // @TODO cache this in startup and on adding states
+            foreach (var state in states) {
+                switch (state) {
+                    case BlendTree1D bt1d: {
+                        if (bt1d.blendVariable == variable)
+                        {
+                            hasSet = true;
+                            foreach (var entry in bt1d.blendTree)
+                            {
+                                minVal = Mathf.Min(entry.threshold, minVal);
+                                maxVal = Mathf.Max(entry.threshold, maxVal);
+                            }
+                        }
+
+                        break;
+                    }
+                    case BlendTree2D bt2d:
+                        if (bt2d.blendVariable == variable)
+                        {
+                            hasSet = true;
+                            foreach (var entry in bt2d.blendTree)
+                            {
+                                minVal = Mathf.Min(entry.threshold1, minVal);
+                                maxVal = Mathf.Max(entry.threshold1, maxVal);
+                            }
+                        }
+                        if (bt2d.blendVariable2 == variable)
+                        {
+                            hasSet = true;
+                            foreach (var entry in bt2d.blendTree)
+                            {
+                                minVal = Mathf.Min(entry.threshold2, minVal);
+                                maxVal = Mathf.Max(entry.threshold2, maxVal);
+                            }
+                        }
+                        break;
+                }
+            }
+
+            return hasSet;
         }
     }
 }

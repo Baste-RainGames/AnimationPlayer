@@ -3,7 +3,11 @@
  */
 
 using UnityEngine;
+#if UNITY_2019_1_OR_NEWER
+using UnityEngine.Animations;
+#else
 using UnityEngine.Experimental.Animations;
+#endif
 
 namespace Animation_Player {
     public struct TwoBoneIKJob : IAnimationJob {

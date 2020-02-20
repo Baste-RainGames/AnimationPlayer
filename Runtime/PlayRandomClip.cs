@@ -55,7 +55,7 @@ namespace Animation_Player
 
         public override Playable GeneratePlayable(PlayableGraph graph, Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers,
                                                   Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers,
-                                                  List<BlendTreeController2D> all2DControllers, Dictionary<string, float> blendVars)
+                                                  List<BlendTreeController2D> all2DControllers)
         {
             playedClip = clips.GetRandomIdx();
             return GeneratePlayableFor(graph, playedClip);
@@ -106,5 +106,7 @@ namespace Animation_Player
                 ownPlayable = asClipPlayable;
             }
         }
+
+        public override void RegisterUsedBlendVarsIn(Dictionary<string, float> blendVariableValues) { }
     }
 }

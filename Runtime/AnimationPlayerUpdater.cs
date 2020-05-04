@@ -9,7 +9,7 @@ namespace Animation_Player {
 
         [RuntimeInitializeOnLoadMethod]
         public static void Initialize() {
-            PlayerLoopInterface.InsertSystemAfter(typeof(AnimationPlayerUpdater), Update, typeof(UnityEngine.Experimental.PlayerLoop.Update));
+            PlayerLoopInterface.InsertSystemAfter(typeof(AnimationPlayerUpdater), Update, typeof(UnityEngine.PlayerLoop.Update));
         }
 
         private static void Update() {

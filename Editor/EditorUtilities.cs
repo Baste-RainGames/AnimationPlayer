@@ -148,13 +148,13 @@ namespace Animation_Player
 
         public static bool AreYouSureButton(string text, string areYouSureText, string uniqueID, float timeout, params GUILayoutOption[] options)
         {
-            if (areYouSureStyleNullGuard == null)
+            if (areYouSureStyleNullGuard == null || areYouSureStyle == null)
             {
                 /* Unity persists GUIStyle objects between assembly reloads, but fails to persist their data.
                  * So we need a object field to make sure the data's regenerated.
                  */
                 areYouSureStyleNullGuard = new object();
-                var buttonTexture = GetReadableCopyOf(GUI.skin.button.normal.background);
+                var buttonTexture = GUI.skin.button.normal == null ? GetReadableCopyOf(GUI.skin.button.normal.scaledBackgrounds[0]) : GetReadableCopyOf(GUI.skin.button.normal.background);
                 var pixels = buttonTexture.GetPixels();
                 for (var i = 0; i < pixels.Length; i++)
                     pixels[i] *= new Color(1f, 0f, 0f, 1f);

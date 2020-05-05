@@ -9,7 +9,11 @@ namespace Animation_Player {
 
         [RuntimeInitializeOnLoadMethod]
         public static void Initialize() {
+#if UNITY_2019_3_OR_NEWER
             PlayerLoopInterface.InsertSystemAfter(typeof(AnimationPlayerUpdater), Update, typeof(UnityEngine.PlayerLoop.Update));
+#else
+            PlayerLoopInterface.InsertSystemAfter(typeof(AnimationPlayerUpdater), Update, typeof(UnityEngine.Experimental.PlayerLoop.Update));
+#endif
         }
 
         private static void Update() {

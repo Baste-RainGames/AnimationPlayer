@@ -154,7 +154,7 @@ namespace Animation_Player
                  * So we need a object field to make sure the data's regenerated.
                  */
                 areYouSureStyleNullGuard = new object();
-                var buttonTexture = GUI.skin.button.normal == null ? GetReadableCopyOf(GUI.skin.button.normal.scaledBackgrounds[0]) : GetReadableCopyOf(GUI.skin.button.normal.background);
+                var buttonTexture = GUI.skin.button.normal.background == null ? GetReadableCopyOf(GUI.skin.button.normal.scaledBackgrounds[0]) : GetReadableCopyOf(GUI.skin.button.normal.background);
                 var pixels = buttonTexture.GetPixels();
                 for (var i = 0; i < pixels.Length; i++)
                     pixels[i] *= new Color(1f, 0f, 0f, 1f);

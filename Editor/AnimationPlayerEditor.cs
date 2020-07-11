@@ -182,6 +182,9 @@ namespace Animation_Player
 
         public override void OnInspectorGUI()
         {
+            if (Application.isPlaying && animationPlayer.CullCheckingActive)
+                EditorGUILayout.LabelField($"Is culled: {animationPlayer.IsCulled}");
+
             HandleInitialization(true);
 
             if (animationPlayer.layers == null || animationPlayer.layers.Length == 0)

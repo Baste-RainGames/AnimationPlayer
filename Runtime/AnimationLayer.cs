@@ -210,6 +210,9 @@ namespace Animation_Player
                 return null;
             }
 
+            foreach (var animationEvent in states[currentPlayedState].animationEvents)
+                animationEvent.ClearRegisteredForCurrentState();
+
             if (clearQueuedPlayInstructions)
                 playInstructionQueue.Clear();
 
@@ -348,7 +351,7 @@ namespace Animation_Player
             states[currentPlayedState].JumpToRelativeTime(ref runtimePlayables[currentPlayedState], time);
         }
 
-        internal void UpdateBlendVariables(Dictionary<string, float> blendVariableValues, HashSet<string> updated) {
+        internal void UpdateBlendVariables(Dictionary<string, float> blendVariableValues, List<string> updated) {
             foreach (var blendVar in updated)
                 SetBlendVar(blendVar, blendVariableValues[blendVar]);
 
@@ -386,20 +389,25 @@ namespace Animation_Player
             for (int i = 0; i < states.Count; i++) {
                 if (states[i] is Sequence sequence && stateMixer.GetInputWeight(i) > 0) {
                     var playable = runtimePlayables[i];
-                    sequence.ProgressThroughSequence(ref playable);
+                    var timeLastFrameCopy = timeLastFrame[i];
+                    sequence.ProgressThroughSequence(ref playable, ref timeLastFrameCopy);
                     runtimePlayables[i] = playable;
+                    timeLastFrame[i] = timeLastFrameCopy;
                 }
             }
         }
 
         private void HandleAnimationEvents()
         {
-            //@TODO This is kinda broken for sequences. For sequences we want events when (or just before) the sequence changes.
-
             for (int i = 0; i < states.Count; i++)
             {
                 //This line eats about 1.2% of all cpu time, with 580+ calls per frame
                 var time = stateMixer.GetInput(i).GetTime();
+                var time2 = runtimePlayables[i].GetTime();
+                if (time != time2) {
+                    Debug.LogError($"two different times; {time:f4} and {time2:f4}");
+                }
+
                 if (currentPlayedState == i || stateMixer.GetInputWeight(i) > 0f)
                 {
                     states[i].HandleAnimationEvents(timeLastFrame[i], time, stateMixer.GetInputWeight(i), firstFrame, currentPlayedState == i);

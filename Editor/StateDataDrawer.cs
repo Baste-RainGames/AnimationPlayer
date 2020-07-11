@@ -285,8 +285,8 @@ namespace Animation_Player
             if (state.loopMode != oldLoopMode)
                 markDirty = true;
 
-            if (state.loopMode == SequenceLoopMode.LoopLastClipIfItLoops)
-                EditorGUILayout.HelpBox("The clips in the sequence are played one by one. The final one will loop if it's set to loop.", MessageType.None);
+            if (state.loopMode == SequenceLoopMode.DontLoop)
+                EditorGUILayout.HelpBox("The clips in the sequence are played one by one. The final one will loop if it's set to loop (but won't get any animation events after the first time it plays).", MessageType.None);
             else
                 EditorGUILayout.HelpBox("The clips in the sequence are played one by one, looping after the last one is finished", MessageType.None);
 

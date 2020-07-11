@@ -23,16 +23,29 @@ namespace Animation_Player {
         public float minWeight = .5f;
 
         private readonly List<Action> registeredActions = new List<Action>();
+        private readonly List<Action> registeredActionsForCurrentState = new List<Action>();
 
         public void RegisterListener(Action listener)
         {
             registeredActions.Add(listener);
         }
 
+        public void ClearRegisteredForCurrentState()
+        {
+            registeredActionsForCurrentState.Clear();
+        }
+
         public void InvokeRegisteredListeners()
         {
             foreach (var action in registeredActions)
                 action();
+            foreach (var action in registeredActionsForCurrentState)
+                action();
+        }
+
+        public void RegisterListenerForCurrentState(Action listener)
+        {
+            registeredActionsForCurrentState.Add(listener);
         }
     }
 }

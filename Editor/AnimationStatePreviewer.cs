@@ -147,7 +147,8 @@ namespace Animation_Player
                     previewedPlayable.SetTime(manualModeTime);
                     previewGraph.Evaluate();
                     if (previewedState is Sequence sequence) {
-                        sequence.ProgressThroughSequence(ref previewedPlayable);
+                        double discard = 0f;
+                        sequence.ProgressThroughSequence(ref previewedPlayable, ref discard);
                     }
                 }
             }
@@ -159,7 +160,8 @@ namespace Animation_Player
 
                 previewGraph.Evaluate(deltaTime);
                 if (previewedState is Sequence sequence) {
-                    sequence.ProgressThroughSequence(ref previewedPlayable);
+                    double discard = 0f;
+                    sequence.ProgressThroughSequence(ref previewedPlayable, ref discard);
                 }
                 var evaluatedTime = previewedPlayable.GetTime();
 

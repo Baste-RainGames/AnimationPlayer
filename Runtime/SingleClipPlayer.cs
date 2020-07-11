@@ -19,14 +19,13 @@ namespace Animation_Player {
         private string graphName;
         private string outputName;
         private Animator animator;
-        private bool isPlaying;
         private PlayableGraph graph;
         private AnimationClipPlayable clipPlayable;
-        private float clipLength;
+
+        public bool IsPlaying { get; private set; }
 
         private void Awake() {
             animator = gameObject.EnsureComponent<Animator>();
-            clipLength = clip != null ? clip.length : 0f;
             graphName = $"Playable Graph {name}";
             outputName = $"Playable Graph {name} output";
         }
@@ -37,12 +36,16 @@ namespace Animation_Player {
         }
 
         public void Play() {
-            if (!isPlaying) {
-                isPlaying = true;
+            if (clipPlayable.IsValid() && clipPlayable.GetPlayState() == PlayState.Paused) {
+                clipPlayable.Play();
+            }
+            else if (!IsPlaying) {
+                IsPlaying = true;
                 animator.enabled = true;
                 graph = PlayableGraph.Create(graphName);
                 var animOutput = AnimationPlayableOutput.Create(graph, outputName , animator);
                 clipPlayable = AnimationClipPlayable.Create(graph, clip != null ? clip : new AnimationClip());
+                clipPlayable.SetDuration(clip.length);
 
                 animOutput.SetSourcePlayable(clipPlayable);
 
@@ -56,25 +59,40 @@ namespace Animation_Player {
 
         public async Task PlayAsync() {
             Play();
-            while (isPlaying)
+            while (IsPlaying)
                 await Task.Yield();
         }
 
         private void Update() {
-            if (!isPlaying)
+            if (!IsPlaying)
                 return;
 
-            if (clipPlayable.GetTime() >= clipLength) {
+            if (clipPlayable.IsDone()) {
                 Stop();
             }
         }
 
         public void Stop() {
-            if (isPlaying) {
+            if (IsPlaying) {
                 graph.Stop();
                 graph.Destroy();
                 animator.enabled = false;
-                isPlaying = false;
+                IsPlaying = false;
+            }
+        }
+
+        public void Pause() {
+            clipPlayable.Pause();
+        }
+
+        public void SetToNormalizedTime(float time) {
+            if (IsPlaying) {
+                var duration = clipPlayable.GetDuration();
+                clipPlayable.SetTime(time * duration);
+            }
+            else {
+                Debug.LogWarning("Calling SetToNormalizedTime on a SingleClipPlayer that's not playing. That's not neccessary, SingleClipPlayers " +
+                                 "always start their clips at time 0");
             }
         }
 

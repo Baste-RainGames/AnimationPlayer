@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Assertions;
 using UnityEngine.Playables;
-
+using UnityEngine.Profiling;
 using Debug = UnityEngine.Debug;
 using UObject = UnityEngine.Object;
 
@@ -17,7 +17,8 @@ namespace Animation_Player
         private const int lastVersion = 2;
         [SerializeField, HideInInspector]
         private int versionNumber;
-        [SerializeField] private bool showInVisualizer;
+        [SerializeField]
+        private bool showInVisualizer;
 
         public static int DefaultState => 0;
 
@@ -34,8 +35,24 @@ namespace Animation_Player
         private Playable rootPlayable;
         private string visualizerClientName;
 
+        private Renderer[] childRenderersForVisibilityChecks;
+
+        private bool _cullCheckingActive;
+        public bool CullCheckingActive {
+            get => _cullCheckingActive;
+            set {
+                if (_cullCheckingActive != value) {
+                    _cullCheckingActive = true;
+                    if (value)
+                        childRenderersForVisibilityChecks = GetComponentsInChildren<Renderer>();
+                    else
+                        childRenderersForVisibilityChecks = null;
+                }
+            }
+        }
+
         private Dictionary<string, float> blendVariableValues = new Dictionary<string, float>();
-        private HashSet<string> blendVariablesUpdatedThisFrame = new HashSet<string>();
+        private List<string> blendVariablesUpdatedThisFrame = new List<string>();
 
         public Animator OutputAnimator { get; private set; }
 
@@ -108,6 +125,30 @@ namespace Animation_Player
             SetVizualizerName(name + " AnimationPlayer", true);
         }
 
+        public bool IsCulled {
+            get {
+                if (!Application.isPlaying)
+                    return false;
+
+                if (!CullCheckingActive) {
+                    Debug.LogError($"Asking AnimationPlayer {name} if it's culled before first activating cull checking (CullCheckingActive = true", gameObject);
+                    return false;
+                }
+
+                if (OutputAnimator == null || OutputAnimator.cullingMode != AnimatorCullingMode.CullCompletely)
+                    return false;
+
+                if (childRenderersForVisibilityChecks.Length == 0)
+                    Debug.LogWarning($"Asking AnimationPlayer {name} if it's culled, but no renderer children were found", gameObject);
+
+                foreach (var rend in childRenderersForVisibilityChecks)
+                    if (rend.isVisible)
+                        return false;
+
+                return true;
+            }
+        }
+
         public void AddLayer(int index, AnimationLayerType type, float weight, AvatarMask mask = null) {
             AnimationLayer newLayer = new AnimationLayer();
             newLayer.type = type;
@@ -147,14 +188,18 @@ namespace Animation_Player
         // Called from AnimationPlayerUpdater, after Update has been called on other scripts
         internal void UpdateSelf()
         {
+            Profiler.BeginSample("Update blend variables");
             if (blendVariablesUpdatedThisFrame.Count > 0) {
                 foreach (var layer in layers)
                     layer.UpdateBlendVariables(blendVariableValues, blendVariablesUpdatedThisFrame);
                 blendVariablesUpdatedThisFrame.Clear();
             }
+            Profiler.EndSample();
 
+            Profiler.BeginSample("Update layers");
             foreach (var layer in layers)
                 layer.Update();
+            Profiler.EndSample();
         }
 
         private void OnDestroy()
@@ -512,7 +557,7 @@ namespace Animation_Player
             AssertBlendVariableDefined(variable, nameof(SetBlendVar));
 
             blendVariableValues[variable] = value;
-            blendVariablesUpdatedThisFrame.Add(variable);
+            blendVariablesUpdatedThisFrame.EnsureContains(variable);
         }
 
         /// <summary>
@@ -604,7 +649,7 @@ namespace Animation_Player
                     return i;
             }
 
-            AssertionFailure($"Layer {layers[layer].name} doesn't have a state named {stateName}");
+            AssertionFailure($"Layer {layers[layer].name} doesn't have a state named {stateName}. It has the states {layers[layer].states.PrettyPrint(s => s.Name)}");
             return -1;
         }
 
@@ -661,6 +706,89 @@ namespace Animation_Player
 
             if (!registeredAny)
                 Debug.LogError($"Trying to register the event {targetEvent} on AnimationPlayer {name}, but it doesn't exist!", gameObject);
+        }
+
+        /// <summary>
+        /// Register a listener for an animation event on the currently played state. When the state changes, the event is dropped.
+        /// Usefull to play an animation, and then react to an event once.
+        /// </summary>
+        /// <param name="targetEvent">Event to listen to.</param>
+        /// <param name="listener">Action to be called when targetEvent fires.</param>
+        public void RegisterAnimationEventListenerForCurrentState(string targetEvent, Action listener)
+        {
+            bool registeredAny = false;
+            foreach (var layer in layers)
+            foreach (var animationEvent in layer.GetCurrentPlayingState().animationEvents)
+            {
+                if (animationEvent.name == targetEvent)
+                {
+                    animationEvent.RegisterListenerForCurrentState(listener);
+                    registeredAny = true;
+                }
+            }
+
+            if (!registeredAny) {
+                var eventDebugString = layers.PrettyPrint(true, l => $"{l.GetCurrentPlayingState().Name} with events " +
+                                                                     $"{l.GetCurrentPlayingState().animationEvents.PrettyPrint(ae => ae.name)}");
+
+                Debug.LogError($"Trying to register the event {targetEvent} for the current state on AnimationPlayer {name}, but no state with that event " +
+                               $"is playing on any layers! States playing are {eventDebugString}", gameObject);
+            }
+        }
+
+        /// <summary>
+        /// Check how long it is before a certain event will fire. This only works if the current played state has the event, it doesn't try to
+        /// do calculations on states that are fading out but has events that can fire even if they're not the active state.
+        /// </summary>
+        /// <param name="targetEvent">Event to check for</param>
+        /// <returns>If the event will fire, and how long it is until the event will fire if it will.</returns>
+        public (bool willFire, double timeUntilWillFire) TimeUntilEvent(string targetEvent)
+        {
+            var minTime = double.MaxValue;
+            var foundEvent = false;
+            var foundEventPassed = false;
+
+            foreach (var layer in layers)
+            {
+                var playingState = layer.GetCurrentPlayingState();
+                foreach (var animationEvent in playingState.animationEvents)
+                {
+                    if (animationEvent.name == targetEvent)
+                    {
+                        var eventTime = animationEvent.time;
+                        var currentTime = layer.GetHowLongStateHasBeenPlaying(layer.GetIndexOfPlayingState());
+
+                        if (playingState.Loops)
+                            currentTime = currentTime % playingState.Duration;
+
+                        if (currentTime > eventTime) {
+                            if (!foundEvent) {
+                                foundEvent = true;
+                                foundEventPassed = true;
+                            }
+                        }
+                        else {
+                            foundEvent = true;
+                            foundEventPassed = false;
+
+                            var timeUntilEvent = eventTime - currentTime;
+                            if (timeUntilEvent < minTime) {
+                                minTime = timeUntilEvent;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!foundEvent) {
+                AssertionFailure($"Couldn't find event {targetEvent} in any of the playing states! Playing states are " +
+                                 $"{layers.PrettyPrint(l => l.GetCurrentPlayingState().Name)}");
+                return (false, 0);
+            }
+
+            if (foundEventPassed)
+                return (false, 0);
+            return (true, minTime);
         }
 
         /// <summary>
@@ -934,9 +1062,9 @@ namespace Animation_Player
         private void AssertionFailure(string userMessage)
         {
             if (Debugger.IsAttached)
-                throw new AssertionException("AnimationPlayer Assertion Failure", userMessage);
+                throw new AssertionException("AnimationPlayer Assertion Failure: ", userMessage);
             if (Assert.raiseExceptions)
-                throw new AssertionException("AnimationPlayer Assertion Failure", userMessage);
+                throw new AssertionException("AnimationPlayer Assertion Failure: ", userMessage);
 
             Debug.LogAssertion(userMessage);
         }

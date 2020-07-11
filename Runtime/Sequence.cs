@@ -47,13 +47,14 @@ namespace Animation_Player {
         {
             get
             {
-                if (loopMode == SequenceLoopMode.LoopSequence) {
+                if (loopMode == SequenceLoopMode.LoopEntireSequence) {
                     return true;
                 }
                 else {
-                    if (ClipsToUse.Count == 0)
-                        return false;
-                    return ClipsToUse[ClipsToUse.Count - 1].isLooping;
+                    // if (ClipsToUse.Count == 0)
+                    //     return false;
+                    // return ClipsToUse[ClipsToUse.Count - 1].isLooping;
+                    return false;
                 }
             }
         }
@@ -77,28 +78,46 @@ namespace Animation_Player {
             return clipPlayable;
         }
 
-        internal void ProgressThroughSequence(ref Playable playable)
+        internal void ProgressThroughSequence(ref Playable playable, ref double timeLastFrame)
         {
             var asACPlayable = (AnimationClipPlayable) playable;
 
-            ProgressThroughSequenceFrom(indexOfPlayedClip, ref asACPlayable);
+            ProgressThroughSequenceFrom(indexOfPlayedClip, ref asACPlayable, ref timeLastFrame);
             playable = asACPlayable;
         }
 
-        private void ProgressThroughSequenceFrom(int currentClipIndex, ref AnimationClipPlayable runtimePlayable) {
+        private void ProgressThroughSequenceFrom(int currentClipIndex, ref AnimationClipPlayable runtimePlayable, ref double timeLastFrame) {
             var currentClipTime = runtimePlayable.GetTime();
             var currentClipDuration = ClipsToUse[currentClipIndex].length;
 
             if (currentClipTime < currentClipDuration)
                 return;
 
+            if (indexOfPlayedClip == ClipsToUse.Count - 1 && loopMode == SequenceLoopMode.DontLoop)
+                return;
+
             indexOfPlayedClip = (currentClipIndex + 1) % ClipsToUse.Count;
 
             var timeToPlayNextClipAt = currentClipTime - currentClipDuration;
+            timeLastFrame -= currentClipDuration;
             SwapPlayedClipTo(ref runtimePlayable, ClipsToUse[indexOfPlayedClip], timeToPlayNextClipAt);
 
             // recurse in case we've got a really long delta time or a really short clip, and have to jump past two clips.
-            ProgressThroughSequenceFrom(indexOfPlayedClip, ref runtimePlayable);
+            ProgressThroughSequenceFrom(indexOfPlayedClip, ref runtimePlayable, ref timeLastFrame);
+        }
+
+        protected override (double timeLastFrame, double timeCurrentFrame) ModifyTimesForAnimationEvents(double timeLastFrame, double timeCurrentFrame) {
+            var timePassedInPlayedClips = 0d;
+            for (int i = 0; i < indexOfPlayedClip; i++)
+                timePassedInPlayedClips += ClipsToUse[i].length;
+
+
+            var newLastFrame    = timeLastFrame + timePassedInPlayedClips;
+            var newCurrentFrame = timeCurrentFrame + timePassedInPlayedClips;
+
+            // Debug.Log($"({timeLastFrame}, {timeCurrentFrame}) => ({newLastFrame}, {newCurrentFrame})");
+
+            return (newLastFrame, newCurrentFrame);
         }
 
         public override void OnWillStartPlaying(ref Playable ownPlayable) {
@@ -171,7 +190,7 @@ namespace Animation_Player {
     }
 
     public enum SequenceLoopMode {
-        LoopLastClipIfItLoops,
-        LoopSequence,
+        DontLoop,
+        LoopEntireSequence,
     }
 }

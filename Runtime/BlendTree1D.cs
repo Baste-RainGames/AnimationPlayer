@@ -34,6 +34,7 @@ namespace Animation_Player
                                                   List<BlendTreeController2D> all2DControllers)
         {
             var treeMixer = AnimationMixerPlayable.Create(graph, blendTree.Count, true);
+            treeMixer.SetSpeed(speed);
             treeMixer.SetPropagateSetTime(true);
 
             if (blendTree.Count == 0)
@@ -51,7 +52,7 @@ namespace Animation_Player
                     clip = new AnimationClip();
                 var clipPlayable = AnimationClipPlayable.Create(graph, clip);
                 clipPlayable.SetApplyFootIK(true);
-                clipPlayable.SetSpeed(speed);
+                // clipPlayable.SetSpeed(speed);
                 graph.Connect(clipPlayable, 0, treeMixer, i);
                 thresholds[i] = blendTreeEntry.threshold;
                 innerPlayables[i] = clipPlayable;

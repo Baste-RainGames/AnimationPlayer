@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace Animation_Player
@@ -8,11 +7,14 @@ namespace Animation_Player
     public class AnimationStateCollection : ScriptableObject
     {
 
-        public List<Animation_Player.AnimationStateWrapper> animStates;
+        public List<AnimationStateWrapper> animStates;
+        private string[] displayNames;
 
         public string[] GetDisplayNames()
         {
-            string[] displayNames = new string[animStates.Count];
+            if (displayNames == null || displayNames.Length != animStates.Count)
+                displayNames = new string[animStates.Count];
+
             for (int i = 0; i < animStates.Count; i++)
             {
                 if (animStates[i] == null)
@@ -35,7 +37,7 @@ namespace Animation_Player
             return -1;
         }
 
-        public Animation_Player.AnimationStateWrapper GetAnimationState(int index)
+        public AnimationStateWrapper GetAnimationState(int index)
         {
             if (animStates.Count == 0 || index >= animStates.Count)
             {
@@ -43,13 +45,5 @@ namespace Animation_Player
             }
             return animStates[index];
         }
-
-        //[System.Serializable]
-        //public class AnimStateWithDisplayName
-        //{
-        //    public Animation_Player.AnimationStateScriptableObject stateObject;
-        //    public string displayName;
-        //}
-
     }
 }

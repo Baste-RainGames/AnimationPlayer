@@ -71,38 +71,49 @@ namespace Animation_Player
 
         public void HandleAnimationEvents(double timeLastFrame, double timeCurrentFrame, float currentWeight, bool firstFrame, bool isActiveState)
         {
+            (timeLastFrame, timeCurrentFrame) = ModifyTimesForAnimationEvents(timeLastFrame, timeCurrentFrame);
+
+            if (firstFrame)
+                timeLastFrame = -1f; //Otherwise animation events set to time 0 wold not fire when the AnimationPlayer starts.
+
             if (Loops)
             {
-                var delta = timeCurrentFrame - timeLastFrame;
-                // @TODO, bug This means that clips set to play on the last frame of the state won't play.
-                timeCurrentFrame %= Duration;
+                var newTimeLastFrame    = timeLastFrame % Duration;
+                var newTimeCurrentFrame = timeCurrentFrame % Duration;
 
-                if (firstFrame)
-                {
-                    //Otherwise animation events set to time 0 wold not fire when the AnimationPlayer starts.
-                    timeLastFrame = -1f;
+                var hasLooped = timeCurrentFrame < timeLastFrame;
+                if (hasLooped) {
+                    // catch events between time last frame and end of state
+                    HandleAnimationEventsBetween(newTimeLastFrame, Duration + 1f, currentWeight, isActiveState);
+
+                    // catch events between the start of the state and the current frame
+                    newTimeLastFrame = -1f;
                 }
-                else
-                {
-                    //This moves the time last frame to before time 0 if we looped, which makes the code under easier.
-                    timeLastFrame = timeCurrentFrame - delta;
-                }
+
+                timeLastFrame = newTimeLastFrame;
+                timeCurrentFrame = newTimeCurrentFrame;
             }
 
-            foreach (var animationEvent in animationEvents)
-            {
+            HandleAnimationEventsBetween(timeLastFrame, timeCurrentFrame, currentWeight, isActiveState);
+        }
+
+        private void HandleAnimationEventsBetween(double start, double end, float currentWeight, bool isActiveState) {
+            foreach (var animationEvent in animationEvents) {
                 if (currentWeight < animationEvent.minWeight)
                     continue;
                 if (animationEvent.mustBeActiveState && !isActiveState)
                     continue;
 
-                var lastFrameBefore = timeLastFrame < animationEvent.time;
-                var currentFrameAfter = timeCurrentFrame >= animationEvent.time;
-                if (lastFrameBefore && currentFrameAfter)
-                {
+                var lastFrameBefore = start < animationEvent.time;
+                var currentFrameAfter = end >= animationEvent.time;
+                if (lastFrameBefore && currentFrameAfter) {
                     animationEvent.InvokeRegisteredListeners();
                 }
             }
+        }
+
+        protected virtual (double timeLastFrame, double timeCurrentFrame) ModifyTimesForAnimationEvents(double timeLastFrame, double timeCurrentFrame) {
+            return (timeLastFrame, timeCurrentFrame);
         }
 
         protected AnimationClip GetClipToUseFor(AnimationClip originalClip)
@@ -185,7 +196,7 @@ namespace Animation_Player
                 {
                     this.state = state;
                     this.clips = clips;
-                    index = 0;
+                    index = -1;
                 }
 
                 public bool MoveNext()

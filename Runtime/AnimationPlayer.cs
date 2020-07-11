@@ -1061,12 +1061,7 @@ namespace Animation_Player
         [Conditional("UNITY_ASSERTIONS")]
         private void AssertionFailure(string userMessage)
         {
-            if (Debugger.IsAttached)
-                throw new AssertionException("AnimationPlayer Assertion Failure: ", userMessage);
-            if (Assert.raiseExceptions)
-                throw new AssertionException("AnimationPlayer Assertion Failure: ", userMessage);
-
-            Debug.LogAssertion(userMessage);
+            throw new AssertionException("AnimationPlayer Assertion Failure: ", userMessage);
         }
 
         [Conditional("UNITY_ASSERTIONS")]

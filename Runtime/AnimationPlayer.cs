@@ -60,6 +60,18 @@ namespace Animation_Player
         private float currentIKLookAtWeight;
         private Vector3 currentIKLookAtPosition;
 
+        private void OnValidate()
+        {
+            if (layers == null || layers.Length == 0)
+            {
+                layers = new AnimationLayer[1];
+                layers[0] = AnimationLayer.CreateLayer();
+
+                if (defaultTransition == default)
+                    defaultTransition = TransitionData.Linear(.1f); //default shouldn't be snap
+            }
+        }
+
         private void Awake()
         {
             if(hasAwoken)

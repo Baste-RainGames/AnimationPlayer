@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Animation_Player
 {
-    [CustomEditor(typeof(AnimationPlayer))]
+    // [CustomEditor(typeof(AnimationPlayer))]
     public class AnimationPlayerEditor : Editor
     {
         private AnimationPlayer animationPlayer;

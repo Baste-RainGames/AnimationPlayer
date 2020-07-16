@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UXML xmlns="UnityEngine.UIElements"
+      xmlns:editor="UnityEditor.UIElements">
+
+    <VisualElement class="layerRoot">
+        <Style src="AnimationPlayer.uss" />
+
+        <Label name="Layer Label"/>
+    </VisualElement>
+
+</UXML>

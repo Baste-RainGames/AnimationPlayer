@@ -15,7 +15,7 @@ namespace Animation_Player
         public List<StateTransition> transitions;
 
         public string name;
-        public float startWeight;
+        public float startWeight = 1f;
         public AvatarMask mask;
         public AnimationLayerType type = AnimationLayerType.Override;
 

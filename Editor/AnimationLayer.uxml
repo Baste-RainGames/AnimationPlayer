@@ -5,7 +5,20 @@
     <VisualElement class="layerRoot">
         <Style src="AnimationPlayer.uss" />
 
-        <Label name="Layer Label"/>
+        <Box>
+            <TextField label="Layer Name" name ="Layer Name"/>
+
+            <VisualElement name="State Dropdown Placeholder"/>
+
+            
+
+            <Box name="Selected State">
+                <Label text="Selected State Goes Here!"/>
+            </Box>
+
+        </Box>
+
+
     </VisualElement>
 
 </UXML>

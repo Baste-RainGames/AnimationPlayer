@@ -18,7 +18,6 @@ public class NewAnimationPlayerEditor : Editor {
     private VisualTreeAsset layerTemplate;
     private VisualElement editorRootElement;
     private VisualElement rootHackForUndo;
-    private TextField layerNameField;
     private int selectedLayer;
 
     private void OnEnable()
@@ -99,19 +98,16 @@ public class NewAnimationPlayerEditor : Editor {
         layersDropdown = new PopupField<VisualElement>(
             choices: visualElementsForLayers,
             defaultIndex: selectedLayer,
-            formatSelectedValueCallback: ve => ve.Q<Label>().text,
-            formatListItemCallback: ve => ve.Q<Label>().text
+            formatSelectedValueCallback: ve => ((SerializedProperty) ve.userData).FindPropertyRelative("name").stringValue,
+            formatListItemCallback:      ve => ((SerializedProperty) ve.userData).FindPropertyRelative("name").stringValue
         );
 
         layersDropdown.RegisterValueChangedCallback(LayerDropdownChanged);
 
         topBar.Q("Layer Dropdown Placeholder").RemoveFromHierarchy();
-
         topBar.Insert(0, layersDropdown);
-        topBar.Q<Button>("Add Layer").clickable = new Clickable(AddLayer);
+        topBar.Q<Button>("Add Layer")   .clickable = new Clickable(AddLayer);
         topBar.Q<Button>("Remove Layer").clickable = new Clickable(RemoveLayer);
-
-        layerNameField = topBar.Q<TextField>("Layer Name");
     }
 
     private void RemoveLayer()
@@ -132,7 +128,6 @@ public class NewAnimationPlayerEditor : Editor {
     {
         if (visualElementsForLayers.Count == 0)
         {
-            layerNameField.Unbind();
             selectedLayer = -1;
             return;
         }
@@ -141,8 +136,6 @@ public class NewAnimationPlayerEditor : Editor {
 
         layersContainer.Clear();
         layersContainer.Add(visualElementsForLayers[selectedLayer]);
-
-        layerNameField.BindProperty(layers.GetArrayElementAtIndex(index).FindPropertyRelative("name"));
     }
 
     private void AddLayer()
@@ -167,7 +160,12 @@ public class NewAnimationPlayerEditor : Editor {
     private VisualElement CreateLayerVisualElement(int i)
     {
         var layerElement = layerTemplate.CloneTree();
-        layerElement.Q<Label>("Layer Label").text = layers.GetArrayElementAtIndex(i).FindPropertyRelative("name").stringValue;
+        var layerProp = layers.GetArrayElementAtIndex(i);
+
+        layerElement.userData = layerProp;
+
+        var layerNameField = layerElement.Q<TextField>("Layer Name");
+        layerNameField.BindProperty(layerProp.FindPropertyRelative("name"));
 
         return layerElement;
     }

@@ -7,5 +7,9 @@
 }
 
 .topBar__element {
+    flex: 1;
+}
 
+.topBar__layerName {
+    flex: 2;
 }

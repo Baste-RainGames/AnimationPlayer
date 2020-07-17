@@ -19,8 +19,8 @@ namespace Animation_Player
         public AvatarMask mask;
         public AnimationLayerType type = AnimationLayerType.Override;
 
-        private PlayableGraph containingGraph;
         public AnimationMixerPlayable stateMixer { get; private set; }
+        private PlayableGraph containingGraph;
         private int currentPlayedState;
         private bool firstFrame = true;
         private bool anyStatesHasAnimationEvents;

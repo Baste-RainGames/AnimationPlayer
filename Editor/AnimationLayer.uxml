@@ -2,21 +2,27 @@
 <UXML xmlns="UnityEngine.UIElements"
       xmlns:editor="UnityEditor.UIElements">
 
-    <VisualElement class="layerRoot">
+    <VisualElement class="animationLayer">
         <Style src="AnimationPlayer.uss" />
 
-        <Box>
-            <TextField label="Layer Name" name ="Layer Name"/>
+        <Box class="animationLayer__subSection">
+            <TextField name ="Layer Name" label="Layer Name"/>
+            <editor:EnumField name="Layer Type" label="Layer Type" />
+            <Slider name="Layer Weight" label="Layer Weight" low-value="0" high-value="1"/>
+            <editor:ObjectField name="Avatar Mask" label="Avatar Mask" />
 
             <VisualElement name="State Dropdown Placeholder"/>
-
-            
-
-            <Box name="Selected State">
-                <Label text="Selected State Goes Here!"/>
-            </Box>
-
         </Box>
+
+        <Box class="animationLayer__selectStateSection animationLayer__subSection">
+            <Label text="Select state" class="animationLayer__selectStateSection__entry"/>
+            <Label text="Add state" class="animationLayer__selectStateSection__entry"/>
+        </Box>
+
+        <Box class="animationLayer__subSection">
+            <Label text="Selected State Goes Here!"/>
+        </Box>
+
 
 
     </VisualElement>

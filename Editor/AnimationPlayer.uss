@@ -1,9 +1,6 @@
-.layerRoot {
-
-}
-
 .topBar {
     flex-direction: row;
+    padding-bottom: 5px;
 }
 
 .topBar__element {
@@ -13,3 +10,20 @@
 .topBar__layerName {
     flex: 2;
 }
+
+.animationLayer {
+
+}
+
+.animationLayer__subSection {
+    margin: 2px 0 2px 0;
+}
+
+.animationLayer__selectStateSection {
+    flex-direction: row;
+}
+
+.animationLayer__selectStateSection__entry {
+    width: 50%;
+}
+

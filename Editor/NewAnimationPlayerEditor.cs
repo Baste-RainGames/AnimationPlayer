@@ -98,8 +98,8 @@ public class NewAnimationPlayerEditor : Editor {
         layersDropdown = new PopupField<VisualElement>(
             choices: visualElementsForLayers,
             defaultIndex: selectedLayer,
-            formatSelectedValueCallback: ve => ((SerializedProperty) ve.userData).FindPropertyRelative("name").stringValue,
-            formatListItemCallback:      ve => ((SerializedProperty) ve.userData).FindPropertyRelative("name").stringValue
+            formatSelectedValueCallback: GetDropdownName,
+            formatListItemCallback:      GetDropdownName
         );
 
         layersDropdown.RegisterValueChangedCallback(LayerDropdownChanged);
@@ -108,15 +108,27 @@ public class NewAnimationPlayerEditor : Editor {
         topBar.Insert(0, layersDropdown);
         topBar.Q<Button>("Add Layer")   .clickable = new Clickable(AddLayer);
         topBar.Q<Button>("Remove Layer").clickable = new Clickable(RemoveLayer);
+
+        string GetDropdownName(VisualElement ve)
+        {
+            var attachedProp = ((SerializedProperty) ve.userData);
+            return attachedProp.FindPropertyRelative("name").stringValue;
+        }
     }
 
     private void RemoveLayer()
     {
-        layersContainer.Remove(visualElementsForLayers[selectedLayer]);
         visualElementsForLayers.RemoveAt(selectedLayer);
         layers.DeleteArrayElementAtIndex(selectedLayer);
-        selectedLayer--;
-        layersDropdown.index = selectedLayer;
+        serializedObject.ApplyModifiedProperties();
+
+        for (int i = 0; i < visualElementsForLayers.Count; i++)
+        {
+            // the serialized property just has the path, so they need to also be shifted back to not point at the wrong indices
+            visualElementsForLayers[i].userData = layers.GetArrayElementAtIndex(i);
+        }
+
+        SetSelectedLayer(selectedLayer);
     }
 
     private void LayerDropdownChanged(ChangeEvent<VisualElement> evt)
@@ -146,7 +158,6 @@ public class NewAnimationPlayerEditor : Editor {
         var newLayerVisualElement = CreateLayerVisualElement(layers.arraySize - 1);
         layersContainer.Add(newLayerVisualElement);
         visualElementsForLayers.Add(newLayerVisualElement);
-        layersDropdown.value = newLayerVisualElement;
         serializedObject.ApplyModifiedProperties();
 
         SetSelectedLayer(layers.arraySize - 1);
@@ -155,6 +166,7 @@ public class NewAnimationPlayerEditor : Editor {
     private void InitializeNewLayer(SerializedProperty layerProp)
     {
         layerProp.FindPropertyRelative(nameof(AnimationLayer.name)).stringValue = $"Layer {layers.arraySize}";
+        layerProp.FindPropertyRelative(nameof(AnimationLayer.startWeight)).floatValue = 1f;
     }
 
     private VisualElement CreateLayerVisualElement(int i)
@@ -164,10 +176,19 @@ public class NewAnimationPlayerEditor : Editor {
 
         layerElement.userData = layerProp;
 
-        var layerNameField = layerElement.Q<TextField>("Layer Name");
-        layerNameField.BindProperty(layerProp.FindPropertyRelative("name"));
+        layerElement.Q<ObjectField>("Avatar Mask").objectType = typeof(AvatarMask);
+
+        Bind<TextField>("Layer Name", nameof(AnimationLayer.name));
+        Bind<Slider>("Layer Weight", nameof(AnimationLayer.startWeight));
+        Bind<ObjectField>("Avatar Mask", nameof(AnimationLayer.mask));
+        Bind<EnumField>("Layer Type", nameof(AnimationLayer.type));
 
         return layerElement;
+
+        void Bind<T>(string elementName, string propName) where T : VisualElement, IBindable
+        {
+            layerElement.Q<T>(elementName).BindProperty(layerProp.FindPropertyRelative(propName));
+        }
     }
 }
 }

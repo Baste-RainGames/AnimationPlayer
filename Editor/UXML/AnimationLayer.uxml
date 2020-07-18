@@ -18,8 +18,8 @@
             <Button name="Add State" text="Add State" class="animationLayer__selectStateSection__entry" />
         </Box>
 
-        <Box class="animationLayer__subSection">
-            <Label text="Selected State Goes Here!"/>
+        <Box name="States Parent" class="animationLayer__subSection">
+            <Label name="No States" text="No states in layer"/>
         </Box>
 
 

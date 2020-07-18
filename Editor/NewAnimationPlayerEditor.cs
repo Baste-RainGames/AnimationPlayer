@@ -9,14 +9,16 @@ using UnityEngine.UIElements;
 namespace Animation_Player {
 [CustomEditor(typeof(AnimationPlayer))]
 public class NewAnimationPlayerEditor : Editor {
-    private const string rootUXMLPath = "Packages/com.baste.animationplayer/Editor/AnimationPlayer.uxml";
-    private const string layerUXMLPath = "Packages/com.baste.animationplayer/Editor/AnimationLayer.uxml";
+    private const string rootUXMLPath = "Packages/com.baste.animationplayer/Editor/UXML/AnimationPlayer.uxml";
+    private const string layerUXMLPath = "Packages/com.baste.animationplayer/Editor/UXML/AnimationLayer.uxml";
+    private const string singleClipPath = "Packages/com.baste.animationplayer/Editor/UXML/SingleClipState.uxml";
 
     private SerializedProperty layers;
     private VisualElement layersContainer;
     private List<VisualElement> visualElementsForLayers;
     private PopupField<VisualElement> layersDropdown;
     private VisualTreeAsset layerTemplate;
+    private VisualTreeAsset singleClipTemplate;
     private VisualElement editorRootElement;
     private VisualElement rootHackForUndo;
     private int selectedLayer;
@@ -72,8 +74,11 @@ public class NewAnimationPlayerEditor : Editor {
 
     private void CreateGUI(VisualElement container)
     {
+        editorRootElement  = CloneVisualTreeAsset(rootUXMLPath).CloneTree();
+        layerTemplate      = CloneVisualTreeAsset(layerUXMLPath);
+        singleClipTemplate = CloneVisualTreeAsset(singleClipPath);
+
         serializedObject.Update();
-        editorRootElement = CloneVisualTreeAsset(rootUXMLPath).CloneTree();
 
         CreateLayers();
         FillTopBar();
@@ -85,15 +90,14 @@ public class NewAnimationPlayerEditor : Editor {
 
     private static VisualTreeAsset CloneVisualTreeAsset(string assetPath)
     {
-        var rootTemplate = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(assetPath);
-        Assert.IsNotNull(rootTemplate, $"no uxml asset at path {rootUXMLPath}");
-        return rootTemplate;
+        var template = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(assetPath);
+        Assert.IsNotNull(template, $"no uxml asset at path {assetPath}");
+        return template;
     }
 
     private void CreateLayers()
     {
         layersContainer = editorRootElement.Q<VisualElement>("Layers Container");
-        layerTemplate = CloneVisualTreeAsset(layerUXMLPath);
         visualElementsForLayers = new List<VisualElement>();
         for (int i = 0; i < layers.arraySize; i++)
         {
@@ -181,10 +185,10 @@ public class NewAnimationPlayerEditor : Editor {
         layerProp.FindPropertyRelative(nameof(AnimationLayer.startWeight)).floatValue = 1f;
     }
 
-    private VisualElement CreateLayerVisualElement(int i)
+    private VisualElement CreateLayerVisualElement(int layerIndex)
     {
         var layerElement = layerTemplate.CloneTree();
-        var layerProp = layers.GetArrayElementAtIndex(i);
+        var layerProp = layers.GetArrayElementAtIndex(layerIndex);
 
         layerElement.userData = layerProp;
 
@@ -197,12 +201,42 @@ public class NewAnimationPlayerEditor : Editor {
 
         layerElement.Q<Button>("Add State").clickable = new Clickable(evt => AddStateClicked(layerElement));
 
+        var statesParent = layerElement.Q<VisualElement>("States Parent");
+
+        var singleClips = layerProp.FindPropertyRelative("serializedSingleClipStates");
+        var anyStates = singleClips.arraySize > 0;
+
+
+        for (int i = 0; i < singleClips.arraySize; i++)
+            statesParent.Add(CreateSingleClipStateVisualElement(singleClips.GetArrayElementAtIndex(i)));
+
+        if (anyStates)
+            statesParent.Q<Label>("No States").style.display = DisplayStyle.None;
+
         return layerElement;
 
         void Bind<T>(string elementName, string propName) where T : VisualElement, IBindable
         {
             layerElement.Q<T>(elementName).BindProperty(layerProp.FindPropertyRelative(propName));
         }
+    }
+
+    private VisualElement CreateSingleClipStateVisualElement(SerializedProperty singleClipStateProp)
+    {
+        var singleClipElement = singleClipTemplate.CloneTree();
+        AddSharedPropertiesForAnimationStates(singleClipStateProp, singleClipElement);
+
+        var clipField = singleClipElement.Q<ObjectField>("Clip");
+        clipField.objectType = typeof(AnimationClip);
+        clipField.BindProperty(singleClipStateProp.FindPropertyRelative("clip"));
+
+        return singleClipElement;
+    }
+
+    private void AddSharedPropertiesForAnimationStates(SerializedProperty stateProp, VisualElement stateElement)
+    {
+        stateElement.Q<TextField>("State Name").BindProperty(stateProp.FindPropertyRelative("name"));
+        stateElement.Q<DoubleField>("State Speed").BindProperty(stateProp.FindPropertyRelative("speed"));
     }
 
     // The layer element is passed instead of the user data, as the user data is the layer prop that gets regenerated as layers are deleted
@@ -244,7 +278,7 @@ public class NewAnimationPlayerEditor : Editor {
 
         void HandleSharedProps()
         {
-            stateProp.FindPropertyRelative("speed").floatValue = 1f;
+            stateProp.FindPropertyRelative("speed").doubleValue = 1d;
             stateProp.FindPropertyRelative("name").stringValue = $"New {ObjectNames.NicifyVariableName(stateType.Name)}";
         }
 

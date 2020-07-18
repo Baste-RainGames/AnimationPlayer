@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UXML xmlns="UnityEngine.UIElements"
+      xmlns:editor="UnityEditor.UIElements">
+
+    <TextField name ="State Name" label="Name"/>
+    <editor:DoubleField name="State Speed" label="Speed"/>
+
+</UXML>

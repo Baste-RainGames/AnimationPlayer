@@ -10,13 +10,12 @@
             <editor:EnumField name="Layer Type" label="Layer Type" />
             <Slider name="Layer Weight" label="Layer Weight" low-value="0" high-value="1"/>
             <editor:ObjectField name="Avatar Mask" label="Avatar Mask" />
-
-            <VisualElement name="State Dropdown Placeholder"/>
         </Box>
 
         <Box class="animationLayer__selectStateSection animationLayer__subSection">
             <Label text="Select state" class="animationLayer__selectStateSection__entry"/>
-            <Label text="Add state" class="animationLayer__selectStateSection__entry"/>
+
+            <Button name="Add State" text="Add State" class="animationLayer__selectStateSection__entry" />
         </Box>
 
         <Box class="animationLayer__subSection">

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -19,6 +20,7 @@ public class NewAnimationPlayerEditor : Editor {
     private VisualElement editorRootElement;
     private VisualElement rootHackForUndo;
     private int selectedLayer;
+    private List<Type> allStateTypes;
 
     private void OnEnable()
     {
@@ -29,6 +31,15 @@ public class NewAnimationPlayerEditor : Editor {
             InitializeNewAnimationPlayer();
 
         Undo.undoRedoPerformed += OnUndo;
+
+        allStateTypes = new List<Type>
+        {
+            typeof(SingleClip),
+            typeof(BlendTree1D),
+            typeof(BlendTree2D),
+            typeof(Sequence),
+            typeof(PlayRandomClip)
+        };
     }
 
     private void InitializeNewAnimationPlayer()
@@ -102,6 +113,7 @@ public class NewAnimationPlayerEditor : Editor {
             formatListItemCallback:      GetDropdownName
         );
 
+        layersDropdown.AddToClassList("topBar__element");
         layersDropdown.RegisterValueChangedCallback(LayerDropdownChanged);
 
         topBar.Q("Layer Dropdown Placeholder").RemoveFromHierarchy();
@@ -183,6 +195,8 @@ public class NewAnimationPlayerEditor : Editor {
         Bind<ObjectField>("Avatar Mask", nameof(AnimationLayer.mask));
         Bind<EnumField>("Layer Type", nameof(AnimationLayer.type));
 
+        layerElement.Q<Button>("Add State").clickable = new Clickable(evt => AddStateClicked(layerElement));
+
         return layerElement;
 
         void Bind<T>(string elementName, string propName) where T : VisualElement, IBindable
@@ -190,5 +204,57 @@ public class NewAnimationPlayerEditor : Editor {
             layerElement.Q<T>(elementName).BindProperty(layerProp.FindPropertyRelative(propName));
         }
     }
+
+    // The layer element is passed instead of the user data, as the user data is the layer prop that gets regenerated as layers are deleted
+    private void AddStateClicked(TemplateContainer layerElement)
+    {
+        var gm = new GenericMenu();
+        gm.allowDuplicateNames = true;
+        foreach (var stateType in allStateTypes)
+            gm.AddItem(new GUIContent(stateType.Name), false, () => StateSelected((SerializedProperty) layerElement.userData, stateType));
+        gm.ShowAsContext();
+    }
+
+    private void StateSelected(SerializedProperty layer, Type stateType)
+    {
+        SerializedProperty stateProp;
+        var serializedOrder = AppendArray(layer, "serializedStateOrder");
+
+        if (stateType == typeof(SingleClip))
+        {
+            stateProp = AppendArray(layer, "serializedSingleClipStates");
+        }
+        else
+        {
+            Debug.LogError($"Adding state of type {stateType.Name} not implemented!");
+            return;
+        }
+
+        HandleSharedProps();
+        HandleGUIDOfNewState();
+
+        layer.serializedObject.ApplyModifiedProperties();
+
+        SerializedProperty AppendArray(SerializedProperty prop, string arrayPropName)
+        {
+            var arrayProp = prop.FindPropertyRelative(arrayPropName);
+            arrayProp.arraySize++;
+            return arrayProp.GetArrayElementAtIndex(arrayProp.arraySize - 1);
+        }
+
+        void HandleSharedProps()
+        {
+            stateProp.FindPropertyRelative("speed").floatValue = 1f;
+            stateProp.FindPropertyRelative("name").stringValue = $"New {ObjectNames.NicifyVariableName(stateType.Name)}";
+        }
+
+        void HandleGUIDOfNewState()
+        {
+            var guid = SerializedGUID.Create().GUID.ToString();
+            stateProp.FindPropertyRelative("guid").FindPropertyRelative("guidSerialized").stringValue = guid;
+            serializedOrder.FindPropertyRelative("guidSerialized").stringValue = guid;
+        }
+    }
+
 }
 }

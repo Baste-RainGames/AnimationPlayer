@@ -12,8 +12,8 @@
             <editor:ObjectField name="Avatar Mask" label="Avatar Mask" />
         </Box>
 
-        <Box class="animationLayer__selectStateSection animationLayer__subSection">
-            <Button name="Add State" text="Add State" class="animationLayer__selectStateSection__entry" />
+        <Box class="animationLayer__addAndSearchStatesSection animationLayer__subSection">
+            <Button name="Add State" text="Add State" class="animationLayer__addAndSearchStatesSection__entry" />
         </Box>
 
         <Box name="States Parent" class="animationLayer__subSection">

@@ -19,12 +19,12 @@
     margin: 2px 0 2px 0;
 }
 
-.animationLayer__selectStateSection {
+.animationLayer__addAndSearchStatesSection {
     flex-direction: row;
     justify-content: center;
 }
 
-.animationLayer__selectStateSection__entry {
+.animationLayer__addAndSearchStatesSection__entry {
     padding: 0 10px 0 10px;
 }
 

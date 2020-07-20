@@ -217,7 +217,7 @@ namespace Animation_Player
                 {
                     clip = clip
                 };
-                newState.blendTree.Add(newEntry);
+                newState.entries.Add(newEntry);
             }
 
             layer.states.Add(newState);

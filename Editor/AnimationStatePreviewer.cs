@@ -81,8 +81,8 @@ namespace Animation_Player
             automaticModeTime = Time.time;
 
             if (state is BlendTree1D bt1d) {
-                var min = bt1d.blendTree.Min(entry => entry.threshold);
-                var max = bt1d.blendTree.Max(entry => entry.threshold);
+                var min = bt1d.entries.Min(entry => entry.threshold);
+                var max = bt1d.entries.Max(entry => entry.threshold);
                 blendVars = new [] {
                     (bt1d.blendVariable, min, max, Mathf.Clamp(0, min, max))
                 };
@@ -247,7 +247,7 @@ namespace Animation_Player
 
                 AnimationClip clip;
                 if (state is BlendTree1D blendTree1D)
-                    clip = blendTree1D.blendTree[0].clip;
+                    clip = blendTree1D.entries[0].clip;
                 else if (state is BlendTree2D blendTree2D)
                     clip = blendTree2D.blendTree[0].clip;
                 else if (state is PlayRandomClip randomClip)

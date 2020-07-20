@@ -137,7 +137,7 @@ namespace Animation_Player
             switch (state)
             {
                 case BlendTree1D blendTree1D:
-                    foreach (var clip in blendTree1D.blendTree.Select(entry => entry.clip))
+                    foreach (var clip in blendTree1D.entries.Select(entry => entry.clip))
                         yield return clip;
                     break;
                 case BlendTree2D blendTree2D:

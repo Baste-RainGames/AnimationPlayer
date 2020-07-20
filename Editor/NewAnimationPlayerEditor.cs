@@ -6,19 +6,24 @@ using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.UIElements;
 
-namespace Animation_Player {
-[CustomEditor(typeof(AnimationPlayer))]
-public class NewAnimationPlayerEditor : Editor {
+namespace Animation_Player
+{
+// [CustomEditor(typeof(AnimationPlayer))]
+public class NewAnimationPlayerEditor : Editor
+{
     private const string rootUXMLPath = "Packages/com.baste.animationplayer/Editor/UXML/AnimationPlayer.uxml";
     private const string layerUXMLPath = "Packages/com.baste.animationplayer/Editor/UXML/AnimationLayer.uxml";
     private const string singleClipPath = "Packages/com.baste.animationplayer/Editor/UXML/SingleClipState.uxml";
+    private const string blendTree1DPath = "Packages/com.baste.animationplayer/Editor/UXML/BlendTree1D.uxml";
 
     private SerializedProperty layers;
     private VisualElement layersContainer;
+    private VisualElement topBar;
     private List<VisualElement> visualElementsForLayers;
     private PopupField<VisualElement> layersDropdown;
     private VisualTreeAsset layerTemplate;
     private VisualTreeAsset singleClipTemplate;
+    private VisualTreeAsset blendTree1DTemplate;
     private VisualElement editorRootElement;
     private VisualElement rootHackForUndo;
     private int selectedLayer;
@@ -49,6 +54,7 @@ public class NewAnimationPlayerEditor : Editor {
         layers.arraySize = 1;
         var baseLayer = layers.GetArrayElementAtIndex(0);
         baseLayer.FindPropertyRelative("name").stringValue = "Base Layer";
+        baseLayer.FindPropertyRelative("startWeight").floatValue = 1f;
         var defaultTransition = serializedObject.FindProperty("defaultTransition");
         defaultTransition.FindPropertyRelative("duration").floatValue = .1f;
         serializedObject.ApplyModifiedProperties();
@@ -74,9 +80,10 @@ public class NewAnimationPlayerEditor : Editor {
 
     private void CreateGUI(VisualElement container)
     {
-        editorRootElement  = CloneVisualTreeAsset(rootUXMLPath).CloneTree();
-        layerTemplate      = CloneVisualTreeAsset(layerUXMLPath);
+        editorRootElement = CloneVisualTreeAsset(rootUXMLPath).CloneTree();
+        layerTemplate = CloneVisualTreeAsset(layerUXMLPath);
         singleClipTemplate = CloneVisualTreeAsset(singleClipPath);
+        blendTree1DTemplate = CloneVisualTreeAsset(blendTree1DPath);
 
         serializedObject.Update();
 
@@ -108,13 +115,13 @@ public class NewAnimationPlayerEditor : Editor {
 
     private void FillTopBar()
     {
-        var topBar = editorRootElement.Q<VisualElement>(className: "topBar");
+        topBar = editorRootElement.Q<VisualElement>(className: "topBar");
 
         layersDropdown = new PopupField<VisualElement>(
             choices: visualElementsForLayers,
             defaultIndex: selectedLayer,
             formatSelectedValueCallback: GetDropdownName,
-            formatListItemCallback:      GetDropdownName
+            formatListItemCallback: GetDropdownName
         );
 
         layersDropdown.AddToClassList("topBar__element");
@@ -122,8 +129,11 @@ public class NewAnimationPlayerEditor : Editor {
 
         topBar.Q("Layer Dropdown Placeholder").RemoveFromHierarchy();
         topBar.Insert(0, layersDropdown);
-        topBar.Q<Button>("Add Layer")   .clickable = new Clickable(AddLayer);
-        topBar.Q<Button>("Remove Layer").clickable = new Clickable(RemoveLayer);
+        topBar.Q<Button>("Add Layer").clickable = new Clickable(AddLayer);
+
+        var removeLayerButton = topBar.Q<Button>("Remove Layer");
+        removeLayerButton.clickable = new Clickable(RemoveLayer);
+        removeLayerButton.visible = layers.arraySize > 1;
 
         string GetDropdownName(VisualElement ve)
         {
@@ -134,6 +144,9 @@ public class NewAnimationPlayerEditor : Editor {
 
     private void RemoveLayer()
     {
+        if (layers.arraySize == 1)
+            return;
+
         visualElementsForLayers.RemoveAt(selectedLayer);
         layers.DeleteArrayElementAtIndex(selectedLayer);
         serializedObject.ApplyModifiedProperties();
@@ -144,15 +157,11 @@ public class NewAnimationPlayerEditor : Editor {
             visualElementsForLayers[i].userData = layers.GetArrayElementAtIndex(i);
         }
 
+        topBar.Q<Button>("Remove Layer").visible = layers.arraySize > 1;
         SetSelectedLayer(selectedLayer);
     }
 
-    private void LayerDropdownChanged(ChangeEvent<VisualElement> evt)
-    {
-        SetSelectedLayer(visualElementsForLayers.IndexOf(evt.newValue));
-    }
-
-    private void SetSelectedLayer(int index)
+    private void SetSelectedLayer(int newLayer)
     {
         if (visualElementsForLayers.Count == 0)
         {
@@ -160,8 +169,17 @@ public class NewAnimationPlayerEditor : Editor {
             return;
         }
 
-        selectedLayer = Mathf.Clamp(index, 0, visualElementsForLayers.Count - 1);
+        newLayer = Mathf.Clamp(newLayer, 0, visualElementsForLayers.Count - 1);
+        // Pass this through the dropdown to sync the dropdown display
+        if (newLayer != layersDropdown.index)
+            layersDropdown.index = newLayer;
+        else
+            LayerDropdownChanged(ChangeEvent<VisualElement>.GetPooled(visualElementsForLayers[selectedLayer], visualElementsForLayers[newLayer]));
+    }
 
+    private void LayerDropdownChanged(ChangeEvent<VisualElement> evt)
+    {
+        selectedLayer = visualElementsForLayers.IndexOf(evt.newValue);
         layersContainer.Clear();
         layersContainer.Add(visualElementsForLayers[selectedLayer]);
     }
@@ -176,6 +194,7 @@ public class NewAnimationPlayerEditor : Editor {
         visualElementsForLayers.Add(newLayerVisualElement);
         serializedObject.ApplyModifiedProperties();
 
+        topBar.Q<Button>("Remove Layer").visible = layers.arraySize > 1;
         SetSelectedLayer(layers.arraySize - 1);
     }
 
@@ -199,18 +218,24 @@ public class NewAnimationPlayerEditor : Editor {
         Bind<ObjectField>("Avatar Mask", nameof(AnimationLayer.mask));
         Bind<EnumField>("Layer Type", nameof(AnimationLayer.type));
 
-        layerElement.Q<Button>("Add State").clickable = new Clickable(evt => AddStateClicked(layerElement));
+        layerElement.Q<Button>("Add State").clickable = new Clickable(AddStateClicked);
 
         var statesParent = layerElement.Q<VisualElement>("States Parent");
+        var singleClipsParent = statesParent.Q<VisualElement>("Single Clip States");
+        var blendTrees1DParent = statesParent.Q<VisualElement>("1D Blend Trees");
 
         var singleClips = layerProp.FindPropertyRelative("serializedSingleClipStates");
-        var anyStates = singleClips.arraySize > 0;
+        var blendTrees1D = layerProp.FindPropertyRelative("serializedBlendTree1Ds");
 
-
+        singleClipsParent.style.display = singleClips.arraySize > 0 ? DisplayStyle.Flex : DisplayStyle.None;
         for (int i = 0; i < singleClips.arraySize; i++)
-            statesParent.Add(CreateSingleClipStateVisualElement(singleClips.GetArrayElementAtIndex(i)));
+            singleClipsParent.Add(CreateSingleClipStateVisualElement(singleClips.GetArrayElementAtIndex(i)));
 
-        if (anyStates)
+        blendTrees1DParent.style.display = blendTrees1D.arraySize > 0 ? DisplayStyle.Flex : DisplayStyle.None;
+        for (int i = 0; i < blendTrees1D.arraySize; i++)
+            blendTrees1DParent.Add(CreateBlendTree1DVisualElement(blendTrees1D.GetArrayElementAtIndex(i)));
+
+        if (singleClips.arraySize + blendTrees1D.arraySize > 0)
             statesParent.Q<Label>("No States").style.display = DisplayStyle.None;
 
         return layerElement;
@@ -233,30 +258,69 @@ public class NewAnimationPlayerEditor : Editor {
         return singleClipElement;
     }
 
+    private VisualElement CreateBlendTree1DVisualElement(SerializedProperty blendTree1DProp)
+    {
+        var blendTreeElement = blendTree1DTemplate.CloneTree();
+
+        AddSharedPropertiesForAnimationStates(blendTree1DProp, blendTreeElement);
+
+        var blendVariableField = blendTreeElement.Q<TextField>("Blend Variable");
+        blendVariableField.BindProperty(blendTree1DProp.FindPropertyRelative("blendVariable"));
+
+        var entriesParent = blendTreeElement.Q<VisualElement>("Entries");
+
+
+        var addEntryButton = entriesParent.Q<Button>("Add Entry");
+        addEntryButton.clickable = new Clickable(AddBlendTreeEntry);
+
+        return blendTreeElement;
+
+        void AddBlendTreeEntry()
+        {
+            var layer = layers.GetArrayElementAtIndex(selectedLayer);
+            var blendTreeIndex = blendTreeElement.parent.IndexOf(blendTreeElement) - 1; //there's a label as the first element
+            var blendTree1D = layer.FindPropertyRelative("serializedBlendTree1Ds").GetArrayElementAtIndex(blendTreeIndex);
+            var entries = blendTree1D.FindPropertyRelative("entries");
+            entries.arraySize++;
+
+            var entry = entries.GetArrayElementAtIndex(entries.arraySize - 1);
+            entry.FindPropertyRelative("clip").objectReferenceValue = null; // auto-inits to value of prev element, don't want that!
+            entry.FindPropertyRelative("threshold").floatValue += 1f; //default to 0 (if first), or last entry + 1
+
+            entry.serializedObject.ApplyModifiedProperties();
+        }
+    }
+
     private void AddSharedPropertiesForAnimationStates(SerializedProperty stateProp, VisualElement stateElement)
     {
         stateElement.Q<TextField>("State Name").BindProperty(stateProp.FindPropertyRelative("name"));
         stateElement.Q<DoubleField>("State Speed").BindProperty(stateProp.FindPropertyRelative("speed"));
     }
 
-    // The layer element is passed instead of the user data, as the user data is the layer prop that gets regenerated as layers are deleted
-    private void AddStateClicked(TemplateContainer layerElement)
+    private void AddStateClicked()
     {
         var gm = new GenericMenu();
-        gm.allowDuplicateNames = true;
         foreach (var stateType in allStateTypes)
-            gm.AddItem(new GUIContent(stateType.Name), false, () => StateSelected((SerializedProperty) layerElement.userData, stateType));
+            gm.AddItem(new GUIContent(stateType.Name), false, () => StateToAddSelected(stateType));
         gm.ShowAsContext();
     }
 
-    private void StateSelected(SerializedProperty layer, Type stateType)
+    private void StateToAddSelected(Type stateType)
     {
+        var layer = layers.GetArrayElementAtIndex(selectedLayer);
+
         SerializedProperty stateProp;
         var serializedOrder = AppendArray(layer, "serializedStateOrder");
 
         if (stateType == typeof(SingleClip))
         {
             stateProp = AppendArray(layer, "serializedSingleClipStates");
+        }
+        else if (stateType == typeof(BlendTree1D))
+        {
+            stateProp = AppendArray(layer, "serializedBlendTree1Ds");
+            stateProp.FindPropertyRelative("blendVariable").stringValue = "blend";
+            stateProp.FindPropertyRelative("compensateForDifferentDurations").boolValue = true;
         }
         else
         {
@@ -268,6 +332,10 @@ public class NewAnimationPlayerEditor : Editor {
         HandleGUIDOfNewState();
 
         layer.serializedObject.ApplyModifiedProperties();
+
+        visualElementsForLayers[selectedLayer] = CreateLayerVisualElement(selectedLayer);
+        layersContainer.Clear();
+        layersContainer.Add(visualElementsForLayers[selectedLayer]);
 
         SerializedProperty AppendArray(SerializedProperty prop, string arrayPropName)
         {
@@ -289,6 +357,5 @@ public class NewAnimationPlayerEditor : Editor {
             serializedOrder.FindPropertyRelative("guidSerialized").stringValue = guid;
         }
     }
-
 }
 }

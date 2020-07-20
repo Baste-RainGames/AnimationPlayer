@@ -13,13 +13,20 @@
         </Box>
 
         <Box class="animationLayer__selectStateSection animationLayer__subSection">
-            <Label text="Select state" class="animationLayer__selectStateSection__entry"/>
-
             <Button name="Add State" text="Add State" class="animationLayer__selectStateSection__entry" />
         </Box>
 
         <Box name="States Parent" class="animationLayer__subSection">
             <Label name="No States" text="No states in layer"/>
+
+            <VisualElement name="Single Clip States">
+                <Label text="Single Clip States"/>
+            </VisualElement>
+
+            <VisualElement name="1D Blend Trees">
+                <Label text="1D Blend Trees"/>
+            </VisualElement>
+
         </Box>
 
 

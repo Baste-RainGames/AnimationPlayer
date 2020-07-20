@@ -547,11 +547,11 @@ namespace Animation_Player
 
                     if (state is BlendTree1D bt1d)
                     {
-                        for (int j = 0; j < bt1d.blendTree.Count; j++)
+                        for (int j = 0; j < bt1d.entries.Count; j++)
                         {
-                            EditorGUILayout.LabelField($"assigned {ClipName(bt1d.blendTree[j].clip)}");
+                            EditorGUILayout.LabelField($"assigned {ClipName(bt1d.entries[j].clip)}");
                             var (clip, weight) = animationPlayer.layers[selectedLayer].GetCurrentActualClipAndWeight(state, j);
-                            if (clip != bt1d.blendTree[j].clip)
+                            if (clip != bt1d.entries[j].clip)
                                 EditorGUILayout.LabelField($"overriden clip: {ClipName(clip)}, weight: {weight}");
                         }
                     }

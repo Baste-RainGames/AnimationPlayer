@@ -134,13 +134,13 @@ namespace Animation_Player
             EditorGUI.indentLevel++;
 
             int swapIndex = -1;
-            if (state.blendTree == null)
+            if (state.entries == null)
             {
-                state.blendTree = new System.Collections.Generic.List<BlendTreeEntry1D>();
+                state.entries = new System.Collections.Generic.List<BlendTreeEntry1D>();
             }
-            for (var i = 0; i < state.blendTree.Count; i++)
+            for (var i = 0; i < state.entries.Count; i++)
             {
-                var blendTreeEntry = state.blendTree[i];
+                var blendTreeEntry = state.entries[i];
 
                 var whenLabel = $"When '{state.blendVariable}' =";
                 var whenLabelRequiredWidth = GUI.skin.label.CalcSize(new GUIContent(whenLabel)).x;
@@ -169,18 +169,18 @@ namespace Animation_Player
                 {
                     blendTreeEntry.threshold = EditorUtilities.FloatField(whenLabel, blendTreeEntry.threshold, whenLabelRequiredWidth, remainingAfterWhenLabel);
 
-                    EditorGUI.BeginDisabledGroup(i == state.blendTree.Count - 1);
+                    EditorGUI.BeginDisabledGroup(i == state.entries.Count - 1);
                     if (GUILayout.Button("\u2193", upDownButtonStyle, upDownButtonOptions))
                         swapIndex = i + 1;
                     EditorGUI.EndDisabledGroup();
 
                     // Remove 1D blend tree entry
                     if (GUILayout.Button("Remove", GUILayout.Width(70f)))
-                        state.blendTree.RemoveAt(i);
+                        state.entries.RemoveAt(i);
                 }
                 EditorGUILayout.EndHorizontal();
 
-                if (i != state.blendTree.Count - 1)
+                if (i != state.entries.Count - 1)
                 {
                     EditorUtilities.Splitter(width: Screen.width - 100f);
                 }
@@ -189,7 +189,7 @@ namespace Animation_Player
             if (swapIndex != -1)
             {
                 markDirty = true;
-                state.blendTree.Swap(swapIndex, swapIndex - 1);
+                state.entries.Swap(swapIndex, swapIndex - 1);
             }
 
             EditorGUI.indentLevel--;
@@ -198,7 +198,7 @@ namespace Animation_Player
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("Add blend tree entry", GUILayout.Width(150f)))
             {
-                state.blendTree.Add(new BlendTreeEntry1D());
+                state.entries.Add(new BlendTreeEntry1D());
                 markDirty = true;
             }
 

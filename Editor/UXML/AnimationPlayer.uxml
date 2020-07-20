@@ -7,8 +7,8 @@
 
         <VisualElement class="topBar">
             <VisualElement name="Layer Dropdown Placeholder" class="topBar__element" />
-            <Button name="Add Layer" text="Add Layer" class="topBar__element" />
-            <Button name="Remove Layer" text="Remove Layer" class="topBar__element"/>
+            <Button name="Add Layer" text="Add Layer"        class="topBar__element" />
+            <Button name="Remove Layer" text="Remove Layer"  class="topBar__element"/>
         </VisualElement>
 
         <VisualElement name="Layers Container"/> <!-- Filled from C#-->

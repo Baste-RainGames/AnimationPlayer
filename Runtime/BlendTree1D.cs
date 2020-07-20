@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
+using UnityEngine.Serialization;
 
 namespace Animation_Player
 {
@@ -12,7 +13,8 @@ namespace Animation_Player
         public const string DefaultName = "New Blend Tree";
 
         public string blendVariable;
-        public List<BlendTreeEntry1D> blendTree;
+        [FormerlySerializedAs("blendTree")]
+        public List<BlendTreeEntry1D> entries;
         public bool compensateForDifferentDurations = true; // @TODO: this should be setable from the editor, no?
 
         private BlendTreeController1D controller;
@@ -24,7 +26,7 @@ namespace Animation_Player
             var blendTree = new BlendTree1D();
             blendTree.Initialize(name, DefaultName);
             blendTree.blendVariable = "blend";
-            blendTree.blendTree = new List<BlendTreeEntry1D>();
+            blendTree.entries = new List<BlendTreeEntry1D>();
 
             return blendTree;
         }
@@ -33,20 +35,20 @@ namespace Animation_Player
                                                   Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers,
                                                   List<BlendTreeController2D> all2DControllers)
         {
-            var treeMixer = AnimationMixerPlayable.Create(graph, blendTree.Count, true);
+            var treeMixer = AnimationMixerPlayable.Create(graph, entries.Count, true);
             treeMixer.SetSpeed(speed);
             treeMixer.SetPropagateSetTime(true);
 
-            if (blendTree.Count == 0)
+            if (entries.Count == 0)
                 return treeMixer;
 
 
-            float[] thresholds = new float[blendTree.Count];
+            float[] thresholds = new float[entries.Count];
 
-            var innerPlayables = new AnimationClipPlayable[blendTree.Count];
-            for (int i = 0; i < blendTree.Count; i++)
+            var innerPlayables = new AnimationClipPlayable[entries.Count];
+            for (int i = 0; i < entries.Count; i++)
             {
-                var blendTreeEntry = blendTree[i];
+                var blendTreeEntry = entries[i];
                 var clip = GetClipToUseFor(blendTreeEntry.clip);
                 if (clip == null)
                     clip = new AnimationClip();
@@ -71,7 +73,7 @@ namespace Animation_Player
             get
             {
                 var longest = 0f;
-                foreach (var blendTreeEntry in blendTree)
+                foreach (var blendTreeEntry in entries)
                 {
                     var clip = GetClipToUseFor(blendTreeEntry.clip);
                     var clipLength = clip == null ? 0f : clip.length;
@@ -87,7 +89,7 @@ namespace Animation_Player
         {
             get
             {
-                foreach (var entry in blendTree) {
+                foreach (var entry in entries) {
                     var clip = GetClipToUseFor(entry.clip);
                     if (clip != null && clip.isLooping)
                         return true;
@@ -114,7 +116,7 @@ namespace Animation_Player
             for (int i = 0; i < inputCount; i++)
             {
                 var clipPlayable = (AnimationClipPlayable) asMixer.GetInput(i);
-                var shouldPlay = GetClipToUseFor(blendTree[i].clip);
+                var shouldPlay = GetClipToUseFor(entries[i].clip);
                 var isPlaying = clipPlayable.GetAnimationClip();
 
                 if (isPlaying != shouldPlay) {

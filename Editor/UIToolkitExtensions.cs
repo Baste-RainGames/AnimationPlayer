@@ -17,5 +17,10 @@ public static class UIToolkitExtensions {
         parentElement.Remove(toReplace);
         parentElement.Insert(index, replaceWith);
     }
+
+    public static void SetDisplayed(this VisualElement visualElement, bool displayed)
+    {
+        visualElement.style.display = displayed ? DisplayStyle.Flex : DisplayStyle.None;
+    }
 }
 }

@@ -10,6 +10,25 @@ namespace Animation_Player
 [CustomEditor(typeof(AnimationPlayer))]
 public class NewNewAnimationPlayerEditor : Editor
 {
+    private void OnEnable()
+    {
+        var directReference = (AnimationPlayer) target;
+        if (directReference.layers == null)
+            InitializeNewAnimationPlayer();
+    }
+
+    private void InitializeNewAnimationPlayer()
+    {
+        var layers = serializedObject.FindProperty(nameof(AnimationPlayer.layers));
+        layers.arraySize = 1;
+        var baseLayer = layers.GetArrayElementAtIndex(0);
+        baseLayer.FindPropertyRelative(nameof(AnimationLayer.name)).stringValue = "Base Layer";
+        baseLayer.FindPropertyRelative(nameof(AnimationLayer.startWeight)).floatValue = 1f;
+        var defaultTransition = serializedObject.FindProperty(nameof(AnimationPlayer.defaultTransition));
+        defaultTransition.FindPropertyRelative(nameof(TransitionData.duration)).floatValue = .1f;
+        serializedObject.ApplyModifiedProperties();
+    }
+
     public override VisualElement CreateInspectorGUI()
     {
         return new UIRoot(serializedObject).visualElement;
@@ -37,7 +56,10 @@ public class NewNewAnimationPlayerEditor : Editor
         public UIRoot(SerializedObject serializedObject) : base(null, serializedObject)
         {
             root = this;
+
             visualElement = new VisualElement();
+            visualElement.styleSheets.Add(AssetDatabase.LoadAssetAtPath<StyleSheet>("Packages/com.baste.animationplayer/Editor/UXML/AnimationPlayer.uss"));
+
             topBar = new TopBar(this, serializedObject);
             layersContainer = new LayersContainer(this, serializedObject);
 
@@ -60,7 +82,6 @@ public class NewNewAnimationPlayerEditor : Editor
         public TopBar(UIRoot root, SerializedObject serializedObject) : base(root, serializedObject)
         {
             visualElement = new VisualElement();
-            visualElement.styleSheets.Add(AssetDatabase.LoadAssetAtPath<StyleSheet>("Packages/com.baste.animationplayer/Editor/UXML/AnimationPlayer.uss"));
             visualElement.AddToClassList("topBar");
 
             layerDropdown     = new LayerDropdown    (root, serializedObject);
@@ -179,7 +200,7 @@ public class NewNewAnimationPlayerEditor : Editor
         public void SetLayerVisible(int index)
         {
             for (int i = 0; i < layers.Count; i++)
-                layers[i].visualElement.style.display = index == i ? DisplayStyle.Flex : DisplayStyle.None;
+                layers[i].visualElement.SetDisplayed(index == i);
         }
 
         public void AddNewLayer()
@@ -215,9 +236,9 @@ public class NewNewAnimationPlayerEditor : Editor
             this.index = index;
             serializedProperty = serializedObject.FindProperty(nameof(AnimationPlayer.layers)).GetArrayElementAtIndex(index);
 
-            editLayerSection = new EditLayerSection(root, serializedObject, serializedProperty);
+            editLayerSection          = new EditLayerSection         (root, serializedObject, serializedProperty);
             addAndSearchStatesSection = new AddAndSearchStatesSection(root, serializedObject);
-            editStatesSection = new EditStatesSection(root, serializedObject);
+            editStatesSection         = new EditStatesSection        (root, serializedObject, serializedProperty);
 
             visualElement.Add(editLayerSection         .visualElement);
             visualElement.Add(addAndSearchStatesSection.visualElement);
@@ -413,7 +434,6 @@ public class NewNewAnimationPlayerEditor : Editor
                 stateProp = AppendArray(layerProp, "serializedBlendTree2Ds");
                 stateProp.FindPropertyRelative("blendVariable").stringValue = "blend";
                 stateProp.FindPropertyRelative("blendVariable2").stringValue = "blend2";
-                stateProp.FindPropertyRelative("compensateForDifferentDurations").boolValue = true;
             }
             else if (stateType == typeof(PlayRandomClip))
             {
@@ -434,7 +454,7 @@ public class NewNewAnimationPlayerEditor : Editor
 
             layerProp.serializedObject.ApplyModifiedProperties();
 
-            root.layersContainer.layers[root.selectedLayer].editStatesSection.OnStateAdded();
+            root.layersContainer.layers[root.selectedLayer].editStatesSection.OnStateAdded(stateType);
 
             SerializedProperty AppendArray(SerializedProperty prop, string arrayPropName)
             {
@@ -460,14 +480,264 @@ public class NewNewAnimationPlayerEditor : Editor
 
     public class EditStatesSection : AnimationPlayerUINode
     {
-        public EditStatesSection(UIRoot root, SerializedObject serializedObject) : base(root, serializedObject) { }
+        public NoStatesLabel      noStatesLabel;
+        public SingleClipSection  singleClipSection;
+        public BlendTree1DSection blendTree1DSection;
+        public BlendTree2DSection blendTree2DSection;
+        public SequenceSection    sequenceSection;
+        public RandomClipSection  randomClipSection;
+
+        public EditStatesSection(UIRoot root, SerializedObject serializedObject, SerializedProperty layerProperty) : base(root, serializedObject)
+        {
+            visualElement = new VisualElement();
+            visualElement.AddToClassList("animationLayer__subSection");
+            visualElement.AddToClassList("animationLayer__editStatesSection");
+
+            noStatesLabel      = new NoStatesLabel     (root, serializedObject, layerProperty);
+            singleClipSection  = new SingleClipSection (root, serializedObject, layerProperty);
+            blendTree1DSection = new BlendTree1DSection(root, serializedObject, layerProperty);
+            blendTree2DSection = new BlendTree2DSection(root, serializedObject, layerProperty);
+            sequenceSection    = new SequenceSection   (root, serializedObject, layerProperty);
+            randomClipSection  = new RandomClipSection (root, serializedObject, layerProperty);
+
+            visualElement.Add(noStatesLabel     .visualElement);
+            visualElement.Add(singleClipSection .visualElement);
+            visualElement.Add(blendTree1DSection.visualElement);
+            visualElement.Add(blendTree2DSection.visualElement);
+            visualElement.Add(sequenceSection   .visualElement);
+            visualElement.Add(randomClipSection .visualElement);
+        }
 
         public void ParentIndexChanged(int newIndex) { }
 
-        public void OnStateAdded()
-        {
+        public void OnStateAdded(Type stateType) { }
+    }
 
+    public class NoStatesLabel : AnimationPlayerUINode
+    {
+        public NoStatesLabel(UIRoot uiRoot, SerializedObject serializedObject, SerializedProperty layerProperty) : base(uiRoot, serializedObject)
+        {
+            visualElement = new Label("No states in layer");
+
+            var countStates = layerProperty.FindPropertyRelative("serializedSingleClipStates").arraySize +
+                              layerProperty.FindPropertyRelative("serializedBlendTree1Ds").arraySize +
+                              layerProperty.FindPropertyRelative("serializedBlendTree2Ds").arraySize +
+                              layerProperty.FindPropertyRelative("serializedSelectRandomStates").arraySize +
+                              layerProperty.FindPropertyRelative("serializedSequences").arraySize;
+
+            visualElement.SetDisplayed(countStates == 0);
         }
+    }
+
+    public abstract class StateSection<TStateDisplay> : AnimationPlayerUINode where TStateDisplay : StateDisplay
+    {
+        private Label label;
+        private SerializedProperty stateListProp;
+        private List<TStateDisplay> stateDisplays = new List<TStateDisplay>();
+
+        protected StateSection(UIRoot uiRoot, SerializedObject serializedObject, SerializedProperty layerProperty) : base(uiRoot, serializedObject)
+        {
+            visualElement = new VisualElement();
+            visualElement.AddToClassList("animationLayer__editStatesSection__clipSet");
+
+            label = new Label(LabelText);
+            label.AddToClassList("animationLayer__editStatesSection__clipSet__header");
+            visualElement.Add(label);
+
+            stateListProp = layerProperty.FindPropertyRelative(ListPropName);
+            visualElement.SetDisplayed(stateListProp.arraySize > 0);
+
+            for (int i = 0; i < stateListProp.arraySize; i++)
+            {
+                var display = CreateDisplayForState(stateListProp.GetArrayElementAtIndex(i));
+                visualElement.Add(display.visualElement);
+                stateDisplays.Add(display);
+            }
+        }
+
+        protected abstract TStateDisplay CreateDisplayForState(SerializedProperty stateProp);
+
+        public abstract string LabelText { get ; }
+        public abstract string ListPropName { get ; }
+    }
+
+    public class SingleClipSection : StateSection<SingleClipDisplay>
+    {
+        public SingleClipSection(UIRoot uiRoot, SerializedObject serializedObject, SerializedProperty layerProperty) : base(
+            uiRoot, serializedObject, layerProperty) { }
+
+        protected override SingleClipDisplay CreateDisplayForState(SerializedProperty stateProp) => new SingleClipDisplay(root, serializedObject, stateProp);
+        public override string LabelText { get; } = "Single Clips States";
+        public override string ListPropName { get; } = "serializedSingleClipStates";
+    }
+
+    public class BlendTree1DSection : StateSection<BlendTree1DDisplay>
+    {
+        public BlendTree1DSection(UIRoot uiRoot, SerializedObject serializedObject, SerializedProperty layerProperty) : base(
+            uiRoot, serializedObject, layerProperty) { }
+
+        protected override BlendTree1DDisplay CreateDisplayForState(SerializedProperty stateProp) => new BlendTree1DDisplay(root, serializedObject, stateProp);
+        public override string LabelText { get; } = "1D Blend Trees";
+        public override string ListPropName { get; } = "serializedBlendTree1Ds";
+    }
+
+    public class BlendTree2DSection : StateSection<BlendTree2DDisplay>
+    {
+        public BlendTree2DSection(UIRoot uiRoot, SerializedObject serializedObject, SerializedProperty layerProperty) : base(
+            uiRoot, serializedObject, layerProperty) { }
+
+        protected override BlendTree2DDisplay CreateDisplayForState(SerializedProperty stateProp) => new BlendTree2DDisplay(root, serializedObject, stateProp);
+        public override string LabelText { get; } = "2D Blend Trees";
+        public override string ListPropName { get; } = "serializedBlendTree2Ds";
+    }
+
+    public class SequenceSection : StateSection<SequenceDisplay>
+    {
+        public SequenceSection(UIRoot uiRoot, SerializedObject serializedObject, SerializedProperty layerProperty) : base(
+            uiRoot, serializedObject, layerProperty) { }
+
+        protected override SequenceDisplay CreateDisplayForState(SerializedProperty stateProp) => new SequenceDisplay(root, serializedObject, stateProp);
+        public override string LabelText { get; } = "Sequences";
+        public override string ListPropName { get; } = "serializedSequences";
+    }
+
+    public class RandomClipSection : StateSection<RandomClipDisplay>
+    {
+        public RandomClipSection(UIRoot uiRoot, SerializedObject serializedObject, SerializedProperty layerProperty) : base(uiRoot, serializedObject, layerProperty) { }
+        protected override RandomClipDisplay CreateDisplayForState(SerializedProperty stateProp)
+        {
+            return new RandomClipDisplay(root, serializedObject, stateProp);
+        }
+
+        public override string LabelText { get; } = "Random Clip States";
+        public override string ListPropName { get; } = "serializedSelectRandomStates";
+    }
+
+    public abstract class StateDisplay : AnimationPlayerUINode
+    {
+        public TextField textField;
+        public DoubleField doubleField;
+
+        protected StateDisplay(UIRoot root, SerializedObject serializedObject, SerializedProperty stateProp) : base(root, serializedObject)
+        {
+            visualElement = new VisualElement();
+
+            textField = new TextField("State Name");
+            doubleField = new DoubleField("State Speed");
+
+            textField.BindProperty(stateProp.FindPropertyRelative("name"));
+            doubleField.BindProperty(stateProp.FindPropertyRelative(nameof(SingleClip.speed)));
+
+            visualElement.Add(textField);
+            visualElement.Add(doubleField);
+        }
+    }
+
+    public class SingleClipDisplay : StateDisplay
+    {
+        private ObjectField clipField;
+
+        public SingleClipDisplay(UIRoot root, SerializedObject serializedObject, SerializedProperty singleClipProp) : base(
+            root, serializedObject, singleClipProp)
+        {
+            clipField = new ObjectField("Clip")
+            {
+                objectType = typeof(AnimationClip)
+            };
+            clipField.BindProperty(singleClipProp.FindPropertyRelative(nameof(SingleClip.clip)));
+
+            visualElement.Add(clipField);
+        }
+    }
+
+    public class BlendTree1DDisplay : StateDisplay
+    {
+        private TextField blendVariableField;
+        private Toggle compensateForDurationsField;
+        private List<BlendTree1DEntry> entries = new List<BlendTree1DEntry>();
+        private SerializedProperty entriesProp;
+        private Button addEntryButton;
+
+        public BlendTree1DDisplay(UIRoot root, SerializedObject serializedObject, SerializedProperty stateProp) : base(root, serializedObject, stateProp)
+        {
+            blendVariableField = new TextField("Blend Variable");
+            blendVariableField.BindProperty(stateProp.FindPropertyRelative(nameof(BlendTree1D.blendVariable)));
+            visualElement.Add(blendVariableField);
+
+            compensateForDurationsField = new Toggle("Compensate For Different Durations");
+            compensateForDurationsField.BindProperty(stateProp.FindPropertyRelative(nameof(BlendTree1D.compensateForDifferentDurations)));
+            visualElement.Add(blendVariableField);
+
+            entriesProp = stateProp.FindPropertyRelative(nameof(BlendTree1D.entries));
+            for (int i = 0; i < entriesProp.arraySize; i++)
+            {
+                var entryElement = new BlendTree1DEntry(root, serializedObject, entriesProp.GetArrayElementAtIndex(i));
+                visualElement.Add(entryElement.visualElement);
+                entries.Add(entryElement);
+            }
+
+            addEntryButton = new Button
+            {
+                text = "Add Entry",
+                clickable = new Clickable(AddEntry)
+            };
+            visualElement.Add(addEntryButton);
+        }
+
+        private void AddEntry()
+        {
+            entriesProp.arraySize++;
+            var entryProp = entriesProp.GetArrayElementAtIndex(entriesProp.arraySize - 1);
+            entryProp.FindPropertyRelative(nameof(BlendTreeEntry1D.clip)).objectReferenceValue = null;
+            entryProp.FindPropertyRelative(nameof(BlendTreeEntry1D.threshold)).floatValue = 0f;
+
+            serializedObject.ApplyModifiedProperties();
+
+            var entryElement = new BlendTree1DEntry(root, serializedObject, entriesProp.GetArrayElementAtIndex(entriesProp.arraySize - 1));
+            visualElement.Add(entryElement.visualElement);
+            entries.Add(entryElement);
+
+            visualElement.Remove(addEntryButton);
+            visualElement.Add(addEntryButton);
+        }
+    }
+
+    public class BlendTree1DEntry : AnimationPlayerUINode
+    {
+        public ObjectField clipField;
+        public FloatField thresholdField;
+
+        public BlendTree1DEntry( UIRoot root, SerializedObject serializedObject, SerializedProperty entryProp) : base(root, serializedObject)
+        {
+            visualElement = new VisualElement();
+            visualElement.AddToClassList("blendTreeEntry");
+
+            clipField = new ObjectField("Clip");
+            clipField.Q<Label>().style.minWidth = 50f;
+            clipField.objectType = typeof(AnimationClip);
+            clipField.BindProperty(entryProp.FindPropertyRelative(nameof(BlendTreeEntry.clip)));
+
+            thresholdField = new FloatField("threshold");
+            thresholdField.BindProperty(entryProp.FindPropertyRelative(nameof(BlendTreeEntry1D.threshold)));
+
+            visualElement.Add(clipField);
+            visualElement.Add(thresholdField);
+        }
+    }
+
+    public class BlendTree2DDisplay : StateDisplay
+    {
+        public BlendTree2DDisplay(UIRoot root, SerializedObject serializedObject, SerializedProperty stateProp) : base(root, serializedObject, stateProp) { }
+    }
+
+    public class SequenceDisplay : StateDisplay
+    {
+        public SequenceDisplay(UIRoot root, SerializedObject serializedObject, SerializedProperty stateProp) : base(root, serializedObject, stateProp) { }
+    }
+
+    public class RandomClipDisplay : StateDisplay
+    {
+        public RandomClipDisplay(UIRoot root, SerializedObject serializedObject, SerializedProperty stateProp) : base(root, serializedObject, stateProp) { }
     }
 }
 }

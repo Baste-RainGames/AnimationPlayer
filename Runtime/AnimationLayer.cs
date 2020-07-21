@@ -706,43 +706,40 @@ namespace Animation_Player
         public GUIContent[] layersForEditor;
 #endif
 
-        [SerializeField]
-        private List<SingleClip> serializedSingleClipStates = new List<SingleClip>();
-        [SerializeField]
-        private List<BlendTree1D> serializedBlendTree1Ds = new List<BlendTree1D>();
-        [SerializeField]
-        private List<BlendTree2D> serializedBlendTree2Ds = new List<BlendTree2D>();
-        [SerializeField]
-        private List<PlayRandomClip> serializedSelectRandomStates = new List<PlayRandomClip>();
-        [SerializeField]
-        private List<Sequence> serializedSequences = new List<Sequence>();
-        [SerializeField]
-        private SerializedGUID[] serializedStateOrder;
+        [SerializeField] private List<SingleClip>     serializedSingleClipStates   = new List<SingleClip>();
+        [SerializeField] private List<BlendTree1D>    serializedBlendTree1Ds       = new List<BlendTree1D>();
+        [SerializeField] private List<BlendTree2D>    serializedBlendTree2Ds       = new List<BlendTree2D>();
+        [SerializeField] private List<PlayRandomClip> serializedSelectRandomStates = new List<PlayRandomClip>();
+        [SerializeField] private List<Sequence>       serializedSequences          = new List<Sequence>();
+        [SerializeField] private SerializedGUID[]     serializedStateOrder;
 
         public void OnBeforeSerialize()
         {
-            if (serializedSingleClipStates == null)
-                serializedSingleClipStates = new List<SingleClip>();
-            else
+            //@TODO: all of these null checks are probably bogus since we new the lists in their declarations.
+            // delete them if there's no errors.
+
+            // if (serializedSingleClipStates == null)
+            //     serializedSingleClipStates = new List<SingleClip>();
+            // else
                 serializedSingleClipStates.Clear();
 
-            if (serializedBlendTree1Ds == null)
-                serializedBlendTree1Ds = new List<BlendTree1D>();
-            else
+            // if (serializedBlendTree1Ds == null)
+            //     serializedBlendTree1Ds = new List<BlendTree1D>();
+            // else
                 serializedBlendTree1Ds.Clear();
 
-            if (serializedBlendTree2Ds == null)
-                serializedBlendTree2Ds = new List<BlendTree2D>();
-            else
+            // if (serializedBlendTree2Ds == null)
+            //     serializedBlendTree2Ds = new List<BlendTree2D>();
+            // else
                 serializedBlendTree2Ds.Clear();
-            if (serializedSelectRandomStates == null)
-                serializedSelectRandomStates = new List<PlayRandomClip>();
-            else
+            // if (serializedSelectRandomStates == null)
+            //     serializedSelectRandomStates = new List<PlayRandomClip>();
+            // else
                 serializedSelectRandomStates.Clear();
 
-            if (serializedSequences == null)
-                serializedSequences = new List<Sequence>();
-            else
+            // if (serializedSequences == null)
+            //     serializedSequences = new List<Sequence>();
+            // else
                 serializedSequences.Clear();
 
             foreach (var state in states)

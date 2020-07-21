@@ -13,6 +13,7 @@ namespace Animation_Player
         public string blendVariable;
         public string blendVariable2;
         public List<BlendTreeEntry2D> blendTree;
+        //@TODO: should we compensate for different durations like we do in the 1D blend tree?
 
         private BlendTree2D() { }
 

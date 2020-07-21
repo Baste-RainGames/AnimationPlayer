@@ -28,6 +28,20 @@
     padding: 0 10px 0 10px;
 }
 
+.animationLayer__editStatesSection {
+
+}
+
+.animationLayer__editStatesSection__clipSet {
+    border-width: 1px 1px 1px 1px;
+    border-color: black;
+}
+
+.animationLayer__editStatesSection__clipSet__header {
+    margin-left: 10px;
+    -unity-font-style: bold;
+}
+
 .label {
     margin: 1px 3px 1px 3px
 }
@@ -36,7 +50,7 @@
     margin-left: 10px
 }
 
-.blendTree1DEntry {
+.blendTreeEntry {
     flex-direction: row;
 }
 

@@ -212,15 +212,15 @@ namespace Animation_Player
             state.blendVariable2 = EditorUtilities.TextField("Second blend variable", state.blendVariable2, 120f);
             EditorGUI.indentLevel++;
 
-            if (state.blendTree == null)
+            if (state.entries == null)
             {
-                state.blendTree = new System.Collections.Generic.List<BlendTreeEntry2D>();
+                state.entries = new System.Collections.Generic.List<BlendTreeEntry2D>();
             }
 
             int swapIndex = -1;
-            for (var i = 0; i < state.blendTree.Count; i++)
+            for (var i = 0; i < state.entries.Count; i++)
             {
-                var blendTreeEntry = state.blendTree[i];
+                var blendTreeEntry = state.entries[i];
 
                 var oldClip = blendTreeEntry.clip;
                 blendTreeEntry.clip = EditorUtilities.ObjectField("Clip", blendTreeEntry.clip, 150f, 200f);
@@ -241,18 +241,18 @@ namespace Animation_Player
                 {
                     blendTreeEntry.threshold2 = EditorUtilities.FloatField($"When '{state.blendVariable2}' =", blendTreeEntry.threshold2, 150f, 200f);
 
-                    EditorGUI.BeginDisabledGroup(i == state.blendTree.Count - 1);
+                    EditorGUI.BeginDisabledGroup(i == state.entries.Count - 1);
                     if (GUILayout.Button("\u2193", upDownButtonStyle, upDownButtonOptions))
                         swapIndex = i + 1;
                     EditorGUI.EndDisabledGroup();
 
                     // Remove 2D blend tree entry
                     if (GUILayout.Button("Remove", GUILayout.Width(70f)))
-                        state.blendTree.RemoveAt(i);
+                        state.entries.RemoveAt(i);
                 }
                 EditorGUILayout.EndHorizontal();
 
-                if (i != state.blendTree.Count - 1)
+                if (i != state.entries.Count - 1)
                 {
                     EditorUtilities.Splitter(width:350f);
                 }
@@ -261,7 +261,7 @@ namespace Animation_Player
             if (swapIndex != -1)
             {
                 markDirty = true;
-                state.blendTree.Swap(swapIndex, swapIndex - 1);
+                state.entries.Swap(swapIndex, swapIndex - 1);
             }
 
             EditorGUI.indentLevel--;
@@ -270,7 +270,7 @@ namespace Animation_Player
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("Add blend tree entry", GUILayout.Width(150f)))
             {
-                state.blendTree.Add(new BlendTreeEntry2D());
+                state.entries.Add(new BlendTreeEntry2D());
                 markDirty = true;
             }
 

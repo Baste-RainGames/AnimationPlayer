@@ -51,7 +51,11 @@
 }
 
 .blendTreeEntry {
-    flex-direction: row;
+
+}
+
+.blendTreeEntry__threshold {
+    padding-left: 10px;
 }
 
 .blendTree1D__addEntryButton {

@@ -1043,7 +1043,7 @@ namespace Animation_Player
                 }
                 case BlendTree2D blendTree2D:
                 {
-                    foreach (var clip in blendTree2D.blendTree.Select(entry => entry.clip))
+                    foreach (var clip in blendTree2D.entries.Select(entry => entry.clip))
                         AddClip(clip);
                     break;
                 }
@@ -1098,7 +1098,7 @@ namespace Animation_Player
                         if (bt2d.blendVariable == variable)
                         {
                             hasSet = true;
-                            foreach (var entry in bt2d.blendTree)
+                            foreach (var entry in bt2d.entries)
                             {
                                 minVal = Mathf.Min(entry.threshold1, minVal);
                                 maxVal = Mathf.Max(entry.threshold1, maxVal);
@@ -1107,7 +1107,7 @@ namespace Animation_Player
                         if (bt2d.blendVariable2 == variable)
                         {
                             hasSet = true;
-                            foreach (var entry in bt2d.blendTree)
+                            foreach (var entry in bt2d.entries)
                             {
                                 minVal = Mathf.Min(entry.threshold2, minVal);
                                 maxVal = Mathf.Max(entry.threshold2, maxVal);

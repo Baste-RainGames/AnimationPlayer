@@ -141,7 +141,7 @@ namespace Animation_Player
                         yield return clip;
                     break;
                 case BlendTree2D blendTree2D:
-                    foreach (var clip in blendTree2D.blendTree.Select(entry => entry.clip))
+                    foreach (var clip in blendTree2D.entries.Select(entry => entry.clip))
                         yield return clip;
                     break;
                 case PlayRandomClip playRandomClip:

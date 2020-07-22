@@ -88,10 +88,10 @@ namespace Animation_Player
                 };
             }
             else if (state is BlendTree2D bt2d) {
-                var min1 = bt2d.blendTree.Min(entry => entry.threshold1);
-                var max1 = bt2d.blendTree.Max(entry => entry.threshold1);
-                var min2 = bt2d.blendTree.Min(entry => entry.threshold2);
-                var max2 = bt2d.blendTree.Max(entry => entry.threshold2);
+                var min1 = bt2d.entries.Min(entry => entry.threshold1);
+                var max1 = bt2d.entries.Max(entry => entry.threshold1);
+                var min2 = bt2d.entries.Min(entry => entry.threshold2);
+                var max2 = bt2d.entries.Max(entry => entry.threshold2);
 
                 blendVars = new [] {
                     (bt2d.blendVariable,  min1, max1, Mathf.Clamp(0, min1, max1)),
@@ -249,7 +249,7 @@ namespace Animation_Player
                 if (state is BlendTree1D blendTree1D)
                     clip = blendTree1D.entries[0].clip;
                 else if (state is BlendTree2D blendTree2D)
-                    clip = blendTree2D.blendTree[0].clip;
+                    clip = blendTree2D.entries[0].clip;
                 else if (state is PlayRandomClip randomClip)
                     clip = randomClip.clips[0];
                 else if (state is SingleClip singleClip)

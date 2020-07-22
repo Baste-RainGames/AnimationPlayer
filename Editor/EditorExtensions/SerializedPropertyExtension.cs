@@ -47,16 +47,17 @@ internal static class SerializedPropertyExtension
         return prop;
     }
 
-    internal static SerializedProperty ExpandArrayByOne(this SerializedProperty prop) {
+    internal static SerializedProperty AppendToArray(this SerializedProperty prop) {
         if (!prop.isArray) {
             Debug.LogError($"Trying to expand the array size of the property {prop.displayName}, but it's not an array");
             return null;
         }
 
-        return ExpandArrayByOne(prop, prop.arraySize);
+        prop.arraySize++;
+        return prop.GetArrayElementAtIndex(prop.arraySize - 1);
     }
 
-    internal static SerializedProperty ExpandArrayByOne(this SerializedProperty prop, int atIndex) {
+    internal static SerializedProperty InsertIntoArray(this SerializedProperty prop, int atIndex) {
         if (!prop.isArray) {
             Debug.LogError($"Trying to expand the array size of the property {prop.displayName}, but it's not an array");
             return null;

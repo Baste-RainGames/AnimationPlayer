@@ -247,15 +247,15 @@ public class NewNewAnimationPlayerEditor : Editor
                 index++;
             } while (SomeLayerHasName(layerName));
 
-newLayer.FindPropertyRelative("serializedSingleClipStates").ClearArray();
-newLayer.FindPropertyRelative("serializedBlendTree1Ds").ClearArray();
-newLayer.FindPropertyRelative("serializedBlendTree2Ds").ClearArray();
-newLayer.FindPropertyRelative("serializedSelectRandomStates").ClearArray();
-newLayer.FindPropertyRelative("serializedSequences").ClearArray();
-newLayer.FindPropertyRelative(nameof(AnimationLayer.transitions)).ClearArray();
-newLayer.FindPropertyRelative(nameof(AnimationLayer.name)).stringValue = layerName;
-newLayer.FindPropertyRelative(nameof(AnimationLayer.startWeight)).floatValue = 1f;
-newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int) AnimationLayerType.Override;
+            newLayer.FindPropertyRelative("serializedSingleClipStates").ClearArray();
+            newLayer.FindPropertyRelative("serializedBlendTree1Ds").ClearArray();
+            newLayer.FindPropertyRelative("serializedBlendTree2Ds").ClearArray();
+            newLayer.FindPropertyRelative("serializedSelectRandomStates").ClearArray();
+            newLayer.FindPropertyRelative("serializedSequences").ClearArray();
+            newLayer.FindPropertyRelative(nameof(AnimationLayer.transitions)).ClearArray();
+            newLayer.FindPropertyRelative(nameof(AnimationLayer.name)).stringValue = layerName;
+            newLayer.FindPropertyRelative(nameof(AnimationLayer.startWeight)).floatValue = 1f;
+            newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int) AnimationLayerType.Override;
 
             serializedObject.ApplyModifiedProperties();
             CreateLayer(editor, layersProp.arraySize - 1);
@@ -340,64 +340,45 @@ newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int
 
     public class LayerType : AnimationPlayerUINode
     {
-        private EnumField enumField;
-
         public LayerType(NewNewAnimationPlayerEditor editor, SerializedProperty layerProp) : base(editor)
         {
-            visualElement = enumField = new EnumField("Layer Type");
-            Rebind(layerProp);
-        }
-
-        public void Rebind(SerializedProperty newLayerProp)
-        {
-            enumField.BindProperty(newLayerProp.FindPropertyRelative(nameof(AnimationLayer.type)));
+            var enumField = new EnumField("Layer Type");
+            enumField.BindProperty(layerProp.FindPropertyRelative(nameof(AnimationLayer.type)));
+            visualElement = enumField;
         }
     }
 
     public class LayerStartWeight : AnimationPlayerUINode
     {
-        private Slider slider;
-
         public LayerStartWeight(NewNewAnimationPlayerEditor editor, SerializedProperty layerProp) : base(editor)
         {
-            visualElement = slider = new Slider("Layer Start Weight", 0f, 1f);
-            Rebind(layerProp);
-        }
-
-        public void Rebind(SerializedProperty newLayersProp)
-        {
-            slider.BindProperty(newLayersProp.FindPropertyRelative(nameof(AnimationLayer.startWeight)));
+            var slider = new Slider("Layer Start Weight", 0f, 1f);
+            slider.BindProperty(layerProp.FindPropertyRelative(nameof(AnimationLayer.startWeight)));
+            visualElement = slider;
         }
     }
 
     public class AvatarMaskNode : AnimationPlayerUINode
     {
-        private ObjectField objectField;
-
         public AvatarMaskNode(NewNewAnimationPlayerEditor editor, SerializedProperty layerProp) : base(editor)
         {
-            visualElement = objectField = new ObjectField("Avatar Mask");
+            var objectField = new ObjectField("Avatar Mask");
             objectField.objectType = typeof(AvatarMask);
-            Rebind(layerProp);
-        }
+            objectField.BindProperty(layerProp.FindPropertyRelative(nameof(AnimationLayer.mask)));
 
-        public void Rebind(SerializedProperty newLayersProp)
-        {
-            objectField.BindProperty(newLayersProp.FindPropertyRelative(nameof(AnimationLayer.mask)));
+            visualElement = objectField;
         }
     }
 
     public class AddAndSearchStatesSection : AnimationPlayerUINode
     {
-        public AddStateButton addStateButton;
-
         public AddAndSearchStatesSection(NewNewAnimationPlayerEditor editor) : base(editor)
         {
             visualElement = new VisualElement();
             visualElement.AddToClassList("animationLayer__subSection");
             visualElement.AddToClassList("animationLayer__addAndSearchStatesSection");
 
-            addStateButton = new AddStateButton(editor);
+            var addStateButton = new AddStateButton(editor);
 
             visualElement.Add(addStateButton.visualElement);
         }
@@ -497,12 +478,12 @@ newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int
 
     public class EditStatesSection : AnimationPlayerUINode
     {
-        public NoStatesLabel      noStatesLabel;
-        public SingleClipSection  singleClipSection;
-        public BlendTree1DSection blendTree1DSection;
-        public BlendTree2DSection blendTree2DSection;
-        public SequenceSection    sequenceSection;
-        public RandomClipSection  randomClipSection;
+        private readonly NoStatesLabel      noStatesLabel;
+        private readonly SingleClipSection  singleClipSection;
+        private readonly BlendTree1DSection blendTree1DSection;
+        private readonly BlendTree2DSection blendTree2DSection;
+        private readonly SequenceSection    sequenceSection;
+        private readonly RandomClipSection  randomClipSection;
 
         public EditStatesSection(NewNewAnimationPlayerEditor editor, SerializedProperty layerProperty) : base(editor)
         {
@@ -524,8 +505,6 @@ newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int
             visualElement.Add(sequenceSection   .visualElement);
             visualElement.Add(randomClipSection .visualElement);
         }
-
-        public void ParentIndexChanged(int newIndex) { }
 
         public void OnStateAdded(Type stateType)
         {
@@ -563,16 +542,14 @@ newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int
 
     public abstract class StateSection<TStateDisplay> : AnimationPlayerUINode where TStateDisplay : StateDisplay
     {
-        private Label label;
         private SerializedProperty stateListProp;
-        private List<TStateDisplay> stateDisplays = new List<TStateDisplay>();
 
         protected StateSection(NewNewAnimationPlayerEditor editor, SerializedProperty layerProperty) : base(editor)
         {
             visualElement = new VisualElement();
             visualElement.AddToClassList("animationLayer__editStatesSection__clipSet");
 
-            label = new Label(LabelText);
+            var label = new Label(LabelText);
             label.AddToClassList("animationLayer__editStatesSection__clipSet__header");
             visualElement.Add(label);
 
@@ -583,14 +560,13 @@ newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int
             {
                 var display = CreateDisplayForState(stateListProp.GetArrayElementAtIndex(i));
                 visualElement.Add(display.visualElement);
-                stateDisplays.Add(display);
             }
         }
 
         protected abstract TStateDisplay CreateDisplayForState(SerializedProperty stateProp);
 
-        public abstract string LabelText { get ; }
-        public abstract string ListPropName { get ; }
+        protected abstract string LabelText { get ; }
+        protected abstract string ListPropName { get ; }
 
         public void OnStateAdded()
         {
@@ -598,7 +574,6 @@ newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int
 
             var display = CreateDisplayForState(stateListProp.GetArrayElementAtIndex(stateListProp.arraySize - 1));
             visualElement.Add(display.visualElement);
-            stateDisplays.Add(display);
         }
     }
 
@@ -607,8 +582,8 @@ newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int
         public SingleClipSection(NewNewAnimationPlayerEditor editor, SerializedProperty layerProperty) : base(editor, layerProperty) { }
 
         protected override SingleClipDisplay CreateDisplayForState(SerializedProperty stateProp) => new SingleClipDisplay(editor, stateProp);
-        public override string LabelText { get; } = "Single Clips States";
-        public override string ListPropName { get; } = "serializedSingleClipStates";
+        protected override string LabelText { get; } = "Single Clips States";
+        protected override string ListPropName { get; } = "serializedSingleClipStates";
     }
 
     public class BlendTree1DSection : StateSection<BlendTree1DDisplay>
@@ -616,8 +591,8 @@ newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int
         public BlendTree1DSection(NewNewAnimationPlayerEditor editor, SerializedProperty layerProperty) : base(editor, layerProperty) { }
 
         protected override BlendTree1DDisplay CreateDisplayForState(SerializedProperty stateProp) => new BlendTree1DDisplay(editor, stateProp);
-        public override string LabelText { get; } = "1D Blend Trees";
-        public override string ListPropName { get; } = "serializedBlendTree1Ds";
+        protected override string LabelText { get; } = "1D Blend Trees";
+        protected override string ListPropName { get; } = "serializedBlendTree1Ds";
     }
 
     public class BlendTree2DSection : StateSection<BlendTree2DDisplay>
@@ -625,8 +600,8 @@ newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int
         public BlendTree2DSection(NewNewAnimationPlayerEditor editor, SerializedProperty layerProperty) : base(editor, layerProperty) { }
 
         protected override BlendTree2DDisplay CreateDisplayForState(SerializedProperty stateProp) => new BlendTree2DDisplay(editor, stateProp);
-        public override string LabelText { get; } = "2D Blend Trees";
-        public override string ListPropName { get; } = "serializedBlendTree2Ds";
+        protected override string LabelText { get; } = "2D Blend Trees";
+        protected override string ListPropName { get; } = "serializedBlendTree2Ds";
     }
 
     public class SequenceSection : StateSection<SequenceDisplay>
@@ -634,8 +609,8 @@ newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int
         public SequenceSection(NewNewAnimationPlayerEditor editor, SerializedProperty layerProperty) : base(editor, layerProperty) { }
 
         protected override SequenceDisplay CreateDisplayForState(SerializedProperty stateProp) => new SequenceDisplay(editor, stateProp);
-        public override string LabelText { get; } = "Sequences";
-        public override string ListPropName { get; } = "serializedSequences";
+        protected override string LabelText { get; } = "Sequences";
+        protected override string ListPropName { get; } = "serializedSequences";
     }
 
     public class RandomClipSection : StateSection<RandomClipDisplay>
@@ -647,21 +622,18 @@ newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int
             return new RandomClipDisplay(editor, stateProp);
         }
 
-        public override string LabelText { get; } = "Random Clip States";
-        public override string ListPropName { get; } = "serializedSelectRandomStates";
+        protected override string LabelText { get; } = "Random Clip States";
+        protected override string ListPropName { get; } = "serializedSelectRandomStates";
     }
 
     public abstract class StateDisplay : AnimationPlayerUINode
     {
-        public TextField textField;
-        public DoubleField doubleField;
-
         protected StateDisplay(NewNewAnimationPlayerEditor editor, SerializedProperty stateProp) : base(editor)
         {
             visualElement = new VisualElement();
 
-            textField = new TextField("State Name");
-            doubleField = new DoubleField("State Speed");
+            var textField = new TextField("State Name");
+            var doubleField = new DoubleField("State Speed");
 
             textField.BindProperty(stateProp.FindPropertyRelative("name"));
             doubleField.BindProperty(stateProp.FindPropertyRelative(nameof(SingleClip.speed)));
@@ -673,35 +645,29 @@ newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int
 
     public class SingleClipDisplay : StateDisplay
     {
-        private ObjectField clipField;
-
         public SingleClipDisplay(NewNewAnimationPlayerEditor editor, SerializedProperty singleClipProp) : base(editor, singleClipProp)
         {
-            clipField = new ObjectField("Clip")
+            var clipField = new ObjectField("Clip")
             {
                 objectType = typeof(AnimationClip)
             };
             clipField.BindProperty(singleClipProp.FindPropertyRelative(nameof(SingleClip.clip)));
-
             visualElement.Add(clipField);
         }
     }
 
     public class BlendTree1DDisplay : StateDisplay
     {
-        private TextField blendVariableField;
-        private Toggle compensateForDurationsField;
-        private List<BlendTree1DEntry> entries = new List<BlendTree1DEntry>();
         private SerializedProperty entriesProp;
         private Button addEntryButton;
 
         public BlendTree1DDisplay(NewNewAnimationPlayerEditor editor, SerializedProperty stateProp) : base(editor, stateProp)
         {
-            blendVariableField = new TextField("Blend Variable");
+            var blendVariableField = new TextField("Blend Variable");
             blendVariableField.BindProperty(stateProp.FindPropertyRelative(nameof(BlendTree1D.blendVariable)));
             visualElement.Add(blendVariableField);
 
-            compensateForDurationsField = new Toggle("Compensate For Different Durations");
+            var compensateForDurationsField = new Toggle("Compensate For Different Durations");
             compensateForDurationsField.BindProperty(stateProp.FindPropertyRelative(nameof(BlendTree1D.compensateForDifferentDurations)));
             visualElement.Add(blendVariableField);
 
@@ -710,7 +676,6 @@ newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int
             {
                 var entryElement = new BlendTree1DEntry(editor, entriesProp.GetArrayElementAtIndex(i));
                 visualElement.Add(entryElement.visualElement);
-                entries.Add(entryElement);
             }
 
             addEntryButton = new Button
@@ -731,7 +696,6 @@ newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int
 
             var entryElement = new BlendTree1DEntry(editor, entriesProp.GetArrayElementAtIndex(entriesProp.arraySize - 1));
             visualElement.Add(entryElement.visualElement);
-            entries.Add(entryElement);
 
             visualElement.Remove(addEntryButton);
             visualElement.Add(addEntryButton);
@@ -740,20 +704,17 @@ newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int
 
     public class BlendTree1DEntry : AnimationPlayerUINode
     {
-        public ObjectField clipField;
-        public FloatField thresholdField;
-
         public BlendTree1DEntry(NewNewAnimationPlayerEditor editor, SerializedProperty entryProp) : base(editor)
         {
             visualElement = new VisualElement();
             visualElement.AddToClassList("blendTreeEntry");
 
-            clipField = new ObjectField("Clip");
+            var clipField = new ObjectField("Clip");
             clipField.Q<Label>().style.minWidth = 50f;
             clipField.objectType = typeof(AnimationClip);
             clipField.BindProperty(entryProp.FindPropertyRelative(nameof(BlendTreeEntry.clip)));
 
-            thresholdField = new FloatField("threshold");
+            var thresholdField = new FloatField("threshold");
             thresholdField.AddToClassList("blendTreeEntry__threshold");
             thresholdField.BindProperty(entryProp.FindPropertyRelative(nameof(BlendTreeEntry1D.threshold)));
 
@@ -764,19 +725,16 @@ newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int
 
     public class BlendTree2DDisplay : StateDisplay
     {
-        private TextField blendVariableField;
-        private TextField blendVariable2Field;
-        private List<BlendTree2DEntry> entries = new List<BlendTree2DEntry>();
         private SerializedProperty entriesProp;
         private Button addEntryButton;
 
         public BlendTree2DDisplay(NewNewAnimationPlayerEditor editor, SerializedProperty stateProp) : base(editor, stateProp)
         {
-            blendVariableField = new TextField("Blend Variable");
+            var blendVariableField = new TextField("Blend Variable");
             blendVariableField.BindProperty(stateProp.FindPropertyRelative(nameof(BlendTree2D.blendVariable)));
             visualElement.Add(blendVariableField);
 
-            blendVariable2Field = new TextField("Blend Variable 2");
+            var blendVariable2Field = new TextField("Blend Variable 2");
             blendVariable2Field.BindProperty(stateProp.FindPropertyRelative(nameof(BlendTree2D.blendVariable2)));
             visualElement.Add(blendVariable2Field);
 
@@ -785,7 +743,6 @@ newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int
             {
                 var entryElement = new BlendTree2DEntry(editor, entriesProp.GetArrayElementAtIndex(i));
                 visualElement.Add(entryElement.visualElement);
-                entries.Add(entryElement);
             }
 
             addEntryButton = new Button
@@ -807,7 +764,6 @@ newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int
 
             var entryElement = new BlendTree2DEntry(editor, entriesProp.GetArrayElementAtIndex(entriesProp.arraySize - 1));
             visualElement.Add(entryElement.visualElement);
-            entries.Add(entryElement);
 
             visualElement.Remove(addEntryButton);
             visualElement.Add(addEntryButton);
@@ -816,25 +772,21 @@ newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int
 
     public class BlendTree2DEntry : AnimationPlayerUINode
     {
-        public ObjectField clipField;
-        public FloatField threshold1Field;
-        public FloatField threshold2Field;
-
         public BlendTree2DEntry(NewNewAnimationPlayerEditor editor, SerializedProperty entryProp) : base(editor)
         {
             visualElement = new VisualElement();
             visualElement.AddToClassList("blendTreeEntry");
 
-            clipField = new ObjectField("Clip");
+            var clipField = new ObjectField("Clip");
             clipField.Q<Label>().style.minWidth = 50f;
             clipField.objectType = typeof(AnimationClip);
             clipField.BindProperty(entryProp.FindPropertyRelative(nameof(BlendTreeEntry.clip)));
 
-            threshold1Field = new FloatField("threshold");
+            var threshold1Field = new FloatField("threshold");
             threshold1Field.AddToClassList("blendTreeEntry__threshold");
             threshold1Field.BindProperty(entryProp.FindPropertyRelative(nameof(BlendTreeEntry2D.threshold1)));
 
-            threshold2Field = new FloatField("threshold 2");
+            var threshold2Field = new FloatField("threshold 2");
             threshold2Field.AddToClassList("blendTreeEntry__threshold");
             threshold2Field.BindProperty(entryProp.FindPropertyRelative(nameof(BlendTreeEntry2D.threshold2)));
 
@@ -846,24 +798,19 @@ newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int
 
     public class SequenceDisplay : StateDisplay
     {
-        private EnumField loopModeField;
         private SerializedProperty clipsProp;
-        private List<ObjectField> clipFields = new List<ObjectField>();
-        private Button addClipButton;
 
         public SequenceDisplay(NewNewAnimationPlayerEditor editor, SerializedProperty stateProp) : base(editor, stateProp)
         {
-            loopModeField = new EnumField("Loop Mode");
+            var loopModeField = new EnumField("Loop Mode");
             loopModeField.BindProperty(stateProp.FindPropertyRelative(nameof(Sequence.loopMode)));
             visualElement.Add(loopModeField);
 
             clipsProp = stateProp.FindPropertyRelative(nameof(Sequence.clips));
             for (int i = 0; i < clipsProp.arraySize; i++)
-            {
                 AddClipVisualElement(clipsProp.GetArrayElementAtIndex(i));
-            }
 
-            addClipButton = new Button
+            var addClipButton = new Button
             {
                 text = "Add Clip",
                 clickable = new Clickable(AddClip)
@@ -877,7 +824,6 @@ newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int
             clipField.objectType = typeof(AnimationClip);
             clipField.BindProperty(clipProp);
             visualElement.Add(clipField);
-            clipFields.Add(clipField);
         }
 
         private void AddClip()
@@ -892,8 +838,6 @@ newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int
     public class RandomClipDisplay : StateDisplay
     {
         private SerializedProperty clipsProp;
-        private List<ObjectField> clipFields = new List<ObjectField>();
-        private Button addClipButton;
 
         public RandomClipDisplay(NewNewAnimationPlayerEditor editor, SerializedProperty stateProp) : base(editor, stateProp)
         {
@@ -901,7 +845,7 @@ newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int
             for (int i = 0; i < clipsProp.arraySize; i++)
                 AddClipVisualElement(clipsProp.GetArrayElementAtIndex(i));
 
-            addClipButton = new Button
+            var addClipButton = new Button
             {
                 text = "Add Clip",
                 clickable = new Clickable(AddClip)
@@ -915,7 +859,6 @@ newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int
             clipField.objectType = typeof(AnimationClip);
             clipField.BindProperty(clipProp);
             visualElement.Add(clipField);
-            clipFields.Add(clipField);
         }
 
         private void AddClip()

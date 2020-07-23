@@ -88,7 +88,7 @@ public class NewNewAnimationPlayerEditor : Editor
         public void Init()
         {
             visualElement = new VisualElement();
-            visualElement.styleSheets.Add(AssetDatabase.LoadAssetAtPath<StyleSheet>("Packages/com.baste.animationplayer/Editor/UXML/AnimationPlayer.uss"));
+            visualElement.styleSheets.Add(AssetDatabase.LoadAssetAtPath<StyleSheet>("Packages/com.baste.animationplayer/Editor/USS/AnimationPlayer.uss"));
 
             topBar = new TopBar(editor);
             layersContainer = new LayersContainer(editor);
@@ -376,10 +376,18 @@ public class NewNewAnimationPlayerEditor : Editor
         {
             visualElement = new VisualElement();
             visualElement.AddToClassList("animationLayer__subSection");
-            visualElement.AddToClassList("animationLayer__addAndSearchStatesSection");
+            visualElement.AddToClassList("animationLayer__statesHeader");
+
+            var label = new Label("States");
+            label.AddToClassList("label");
+            visualElement.Add(label);
+
+            var search = new ToolbarSearchField();
+            search.AddToClassList("animationLayer__statesHeader__search");
+            search.Q("unity-text-input").AddToClassList("animationLayer__statesHeader__search__textInput");
+            visualElement.Add(search);
 
             var addStateButton = new AddStateButton(editor);
-
             visualElement.Add(addStateButton.visualElement);
         }
     }

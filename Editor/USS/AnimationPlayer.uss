@@ -16,16 +16,23 @@
 }
 
 .animationLayer__subSection {
-    margin: 2px 0 2px 0;
+    margin: 0 0 2px 0;
 }
 
-.animationLayer__addAndSearchStatesSection {
+.animationLayer__statesHeader {
     flex-direction: row;
-    justify-content: center;
+    justify-content: space-between;
+    border-width: 1px 1px 0 1px;
+    border-color: black;
 }
 
-.animationLayer__addAndSearchStatesSection__entry {
-    padding: 0 10px 0 10px;
+.animationLayer__statesHeader__search {
+    width: auto;
+    flex-grow: 2;
+}
+
+.animationLayer__statesHeader__search__textInput {
+    height: 16px
 }
 
 .animationLayer__editStatesSection {

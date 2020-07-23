@@ -16,32 +16,29 @@ public class NewNewAnimationPlayerEditor : Editor
     {
         var directReference = (AnimationPlayer) target;
         if (directReference.layers == null)
-            InitializeNewAnimationPlayer();
+            InitializeJustAddedAnimationPlayer();
 
         Undo.undoRedoPerformed += HandleUndoRedo;
     }
 
-    private void InitializeNewAnimationPlayer()
+    private void OnDisable() => Undo.undoRedoPerformed -= HandleUndoRedo;
+    private void HandleUndoRedo() => RebuildUI();
+
+    private void InitializeJustAddedAnimationPlayer()
     {
         var layers = serializedObject.FindProperty(nameof(AnimationPlayer.layers));
         layers.arraySize = 1;
+
         var baseLayer = layers.GetArrayElementAtIndex(0);
         baseLayer.FindPropertyRelative(nameof(AnimationLayer.name)).stringValue = "Base Layer";
         baseLayer.FindPropertyRelative(nameof(AnimationLayer.startWeight)).floatValue = 1f;
+
         var defaultTransition = serializedObject.FindProperty(nameof(AnimationPlayer.defaultTransition));
         defaultTransition.FindPropertyRelative(nameof(TransitionData.duration)).floatValue = .1f;
+
         serializedObject.ApplyModifiedProperties();
     }
 
-    private void OnDisable()
-    {
-        Undo.undoRedoPerformed -= HandleUndoRedo;
-    }
-
-    private void HandleUndoRedo()
-    {
-        RebuildUI();
-    }
 
     private void RebuildUI()
     {
@@ -68,13 +65,13 @@ public class NewNewAnimationPlayerEditor : Editor
 
     public abstract class AnimationPlayerUINode
     {
-        public NewNewAnimationPlayerEditor editor;
+        protected readonly NewNewAnimationPlayerEditor editor;
         public VisualElement visualElement;
 
         protected SerializedObject serializedObject => editor.serializedObject;
         protected UIRoot root => editor.uiRoot;
 
-        public AnimationPlayerUINode(NewNewAnimationPlayerEditor editor)
+        protected AnimationPlayerUINode(NewNewAnimationPlayerEditor editor)
         {
             this.editor = editor;
         }
@@ -102,23 +99,23 @@ public class NewNewAnimationPlayerEditor : Editor
             topBar.layerDropdown.LayersReady();
             topBar.layerDropdown.SelectLayer(selectedLayer);
 
-            layersContainer.SetLayerVisible(selectedLayer);
+            if (selectedLayer == 0)
+                layersContainer.SetLayerVisible(selectedLayer);
         }
     }
 
     public class TopBar : AnimationPlayerUINode
     {
-        public LayerDropdown layerDropdown;
-        public AddLayerButton addLayerButton;
-        public RemoveLayerButton removeLayerButton;
+        public readonly LayerDropdown layerDropdown;
+        public readonly RemoveLayerButton removeLayerButton;
 
         public TopBar(NewNewAnimationPlayerEditor editor) : base(editor)
         {
             visualElement = new VisualElement();
             visualElement.AddToClassList("topBar");
 
-            layerDropdown     = new LayerDropdown    (editor);
-            addLayerButton    = new AddLayerButton   (editor);
+            layerDropdown         = new LayerDropdown    (editor);
+            var addLayerButton    = new AddLayerButton   (editor);
             removeLayerButton = new RemoveLayerButton(editor);
 
             visualElement.Add(layerDropdown    .visualElement);
@@ -133,6 +130,7 @@ public class NewNewAnimationPlayerEditor : Editor
 
         public LayerDropdown(NewNewAnimationPlayerEditor editor) : base(editor)
         {
+            // placeholder for the popup field.
             visualElement = new VisualElement();
         }
 
@@ -159,10 +157,7 @@ public class NewNewAnimationPlayerEditor : Editor
             root.layersContainer.SetLayerVisible(index);
         }
 
-        public void SelectLayer(int newLayer)
-        {
-            popupField.index = newLayer;
-        }
+        public void SelectLayer(int newLayer) => popupField.index = newLayer;
     }
 
     public class RemoveLayerButton : AnimationPlayerUINode
@@ -176,6 +171,7 @@ public class NewNewAnimationPlayerEditor : Editor
 
             };
             visualElement.AddToClassList("topBar__element");
+            visualElement.SetEnabled(editor.serializedObject.FindProperty("layers").arraySize > 1);
         }
 
         private void RemoveLayerClicked()
@@ -203,12 +199,14 @@ public class NewNewAnimationPlayerEditor : Editor
         {
             root.layersContainer.AddNewLayer();
             root.topBar.layerDropdown.SelectLayer(root.layersContainer.NumLayers - 1);
+
+            editor.uiRoot.topBar.removeLayerButton.visualElement.SetEnabled(editor.serializedObject.FindProperty("layers").arraySize > 1);
         }
     }
 
     public class LayersContainer : AnimationPlayerUINode
     {
-        public List<Layer> layers;
+        public readonly List<Layer> layers;
         private SerializedProperty layersProp;
 
         public LayersContainer(NewNewAnimationPlayerEditor editor) : base(editor)
@@ -219,9 +217,7 @@ public class NewNewAnimationPlayerEditor : Editor
             layersProp = serializedObject.FindProperty("layers");
 
             for (int i = 0; i < layersProp.arraySize; i++)
-            {
                 CreateLayer(editor, i);
-            }
         }
 
         public int NumLayers => layersProp.arraySize;
@@ -251,8 +247,15 @@ public class NewNewAnimationPlayerEditor : Editor
                 index++;
             } while (SomeLayerHasName(layerName));
 
-            newLayer.FindPropertyRelative(nameof(AnimationLayer.name)).stringValue = layerName;
-            newLayer.FindPropertyRelative(nameof(AnimationLayer.startWeight)).floatValue = 1f;
+newLayer.FindPropertyRelative("serializedSingleClipStates").ClearArray();
+newLayer.FindPropertyRelative("serializedBlendTree1Ds").ClearArray();
+newLayer.FindPropertyRelative("serializedBlendTree2Ds").ClearArray();
+newLayer.FindPropertyRelative("serializedSelectRandomStates").ClearArray();
+newLayer.FindPropertyRelative("serializedSequences").ClearArray();
+newLayer.FindPropertyRelative(nameof(AnimationLayer.transitions)).ClearArray();
+newLayer.FindPropertyRelative(nameof(AnimationLayer.name)).stringValue = layerName;
+newLayer.FindPropertyRelative(nameof(AnimationLayer.startWeight)).floatValue = 1f;
+newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int) AnimationLayerType.Override;
 
             serializedObject.ApplyModifiedProperties();
             CreateLayer(editor, layersProp.arraySize - 1);
@@ -276,81 +279,45 @@ public class NewNewAnimationPlayerEditor : Editor
 
     public class Layer : AnimationPlayerUINode
     {
-        public int index;
-        public SerializedProperty serializedProperty;
-
-        public EditLayerSection editLayerSection;
-        public AddAndSearchStatesSection addAndSearchStatesSection;
-        public EditStatesSection editStatesSection;
+        public readonly SerializedProperty serializedProperty;
+        public readonly EditStatesSection editStatesSection;
 
         public Layer(NewNewAnimationPlayerEditor editor, int index) : base(editor)
         {
             visualElement = new VisualElement();
             visualElement.AddToClassList("animationLayer");
 
-            this.index = index;
             serializedProperty = serializedObject.FindProperty(nameof(AnimationPlayer.layers)).GetArrayElementAtIndex(index);
 
-            editLayerSection          = new EditLayerSection         (editor, serializedProperty);
-            addAndSearchStatesSection = new AddAndSearchStatesSection(editor);
-            editStatesSection         = new EditStatesSection        (editor, serializedProperty);
+            var editLayerSection          = new EditLayerSection         (editor, serializedProperty);
+            var addAndSearchStatesSection = new AddAndSearchStatesSection(editor);
+            editStatesSection             = new EditStatesSection        (editor, serializedProperty);
 
             visualElement.Add(editLayerSection         .visualElement);
             visualElement.Add(addAndSearchStatesSection.visualElement);
             visualElement.Add(editStatesSection        .visualElement);
         }
 
-        public static string GetNameOf(Layer layer)
-        {
-            return layer.GetName();
-        }
-
-        private string GetName()
-        {
-            return serializedProperty.FindPropertyRelative("name").stringValue;
-        }
-
-        public void IndexChanged(int newIndex)
-        {
-            if (index == newIndex)
-                return;
-
-            index = newIndex;
-            serializedProperty = serializedObject.FindProperty(nameof(AnimationPlayer.layers)).GetArrayElementAtIndex(newIndex);
-            editLayerSection.ParentSerializedPropertyChanged(serializedProperty);
-            editStatesSection.ParentIndexChanged(newIndex);
-        }
+        public static string GetNameOf(Layer layer) => layer.GetName();
+        private string GetName() => serializedProperty.FindPropertyRelative("name").stringValue;
     }
 
     public class EditLayerSection : AnimationPlayerUINode
     {
-        public LayerName        layerName;
-        public LayerType        layerType;
-        public LayerStartWeight LayerStartWeight;
-        public AvatarMaskNode   avatarMask;
-
         public EditLayerSection(NewNewAnimationPlayerEditor editor, SerializedProperty layerProp) : base(editor)
         {
             visualElement = new VisualElement();
             visualElement.AddToClassList("animationLayer__subSection");
 
-            layerName        = new LayerName(editor, layerProp);
-            layerType        = new LayerType(editor, layerProp);
-            LayerStartWeight = new LayerStartWeight(editor, layerProp);
-            avatarMask       = new AvatarMaskNode(editor, layerProp);
+            var layerName        = new LayerName(editor, layerProp);
+            var layerType        = new LayerType(editor, layerProp);
+            var layerStartWeight = new LayerStartWeight(editor, layerProp);
+            var avatarMask       = new AvatarMaskNode(editor, layerProp);
 
             visualElement.Add(layerName.visualElement);
             visualElement.Add(layerType.visualElement);
-            visualElement.Add(LayerStartWeight.visualElement);
+            visualElement.Add(layerStartWeight.visualElement);
             visualElement.Add(avatarMask.visualElement);
-        }
-
-        public void ParentSerializedPropertyChanged(SerializedProperty newLayersProp)
-        {
-            layerName.Rebind(newLayersProp);
-            layerType.Rebind(newLayersProp);
-            LayerStartWeight.Rebind(newLayersProp);
-            avatarMask.Rebind(newLayersProp);
         }
     }
 

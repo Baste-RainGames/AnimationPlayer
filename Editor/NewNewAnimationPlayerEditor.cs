@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -221,6 +223,7 @@ public class NewNewAnimationPlayerEditor : Editor
         }
 
         public int NumLayers => layersProp.arraySize;
+        public Layer SelectedLayer => layers[root.selectedLayer];
 
         private void CreateLayer(NewNewAnimationPlayerEditor editor, int layerIndex)
         {
@@ -387,8 +390,15 @@ public class NewNewAnimationPlayerEditor : Editor
             search.Q("unity-text-input").AddToClassList("animationLayer__statesHeader__search__textInput");
             visualElement.Add(search);
 
+            search.RegisterValueChangedCallback(SearchUpdated);
+
             var addStateButton = new AddStateButton(editor);
             visualElement.Add(addStateButton.visualElement);
+        }
+
+        private void SearchUpdated(ChangeEvent<string> evt)
+        {
+            root.layersContainer.SelectedLayer.editStatesSection.SetSearchTerm(evt.newValue);
         }
     }
 
@@ -487,11 +497,11 @@ public class NewNewAnimationPlayerEditor : Editor
     public class EditStatesSection : AnimationPlayerUINode
     {
         private readonly NoStatesLabel      noStatesLabel;
-        private readonly SingleClipSection  singleClipSection;
-        private readonly BlendTree1DSection blendTree1DSection;
-        private readonly BlendTree2DSection blendTree2DSection;
-        private readonly SequenceSection    sequenceSection;
-        private readonly RandomClipSection  randomClipSection;
+        public readonly SingleClipSection  singleClipSection;
+        public readonly BlendTree1DSection blendTree1DSection;
+        public readonly BlendTree2DSection blendTree2DSection;
+        public readonly SequenceSection    sequenceSection;
+        public readonly RandomClipSection  randomClipSection;
 
         public EditStatesSection(NewNewAnimationPlayerEditor editor, SerializedProperty layerProperty) : base(editor)
         {
@@ -499,12 +509,12 @@ public class NewNewAnimationPlayerEditor : Editor
             visualElement.AddToClassList("animationLayer__subSection");
             visualElement.AddToClassList("animationLayer__editStatesSection");
 
-            noStatesLabel      = new NoStatesLabel     (editor, layerProperty);
             singleClipSection  = new SingleClipSection (editor, layerProperty);
             blendTree1DSection = new BlendTree1DSection(editor, layerProperty);
             blendTree2DSection = new BlendTree2DSection(editor, layerProperty);
             sequenceSection    = new SequenceSection   (editor, layerProperty);
             randomClipSection  = new RandomClipSection (editor, layerProperty);
+            noStatesLabel      = new NoStatesLabel     (editor, layerProperty, this);
 
             visualElement.Add(noStatesLabel     .visualElement);
             visualElement.Add(singleClipSection .visualElement);
@@ -530,13 +540,46 @@ public class NewNewAnimationPlayerEditor : Editor
             else
                 Debug.LogError($"Adding state of type {stateType.Name} not implemented!");
         }
+
+        public void SetSearchTerm(string searchTerm)
+        {
+            singleClipSection .SetSearchTerm(searchTerm);
+            blendTree1DSection.SetSearchTerm(searchTerm);
+            blendTree2DSection.SetSearchTerm(searchTerm);
+            sequenceSection   .SetSearchTerm(searchTerm);
+            randomClipSection .SetSearchTerm(searchTerm);
+
+            noStatesLabel.OnSearchTermUpdated();
+        }
     }
 
     public class NoStatesLabel : AnimationPlayerUINode
     {
-        public NoStatesLabel(NewNewAnimationPlayerEditor editor, SerializedProperty layerProperty) : base(editor)
+        private Label label;
+        private EditStatesSection parent;
+        private SerializedProperty layerProperty;
+
+        public NoStatesLabel( NewNewAnimationPlayerEditor editor, SerializedProperty layerProperty, EditStatesSection parent) : base(editor)
         {
-            visualElement = new Label("No states in layer");
+            this.parent = parent;
+            this.layerProperty = layerProperty;
+            visualElement = label = new Label();
+
+            OnSearchTermUpdated();
+        }
+
+        public void OnSearchTermUpdated()
+        {
+            var shouldBeHidden = parent.singleClipSection .visualElement.IsDisplayed() ||
+                                 parent.blendTree1DSection.visualElement.IsDisplayed() ||
+                                 parent.blendTree2DSection.visualElement.IsDisplayed() ||
+                                 parent.sequenceSection   .visualElement.IsDisplayed() ||
+                                 parent.randomClipSection .visualElement.IsDisplayed();
+
+            label.SetDisplayed(!shouldBeHidden);
+
+            if (shouldBeHidden)
+                return;
 
             var countStates = layerProperty.FindPropertyRelative("serializedSingleClipStates").arraySize +
                               layerProperty.FindPropertyRelative("serializedBlendTree1Ds").arraySize +
@@ -544,13 +587,14 @@ public class NewNewAnimationPlayerEditor : Editor
                               layerProperty.FindPropertyRelative("serializedSelectRandomStates").arraySize +
                               layerProperty.FindPropertyRelative("serializedSequences").arraySize;
 
-            visualElement.SetDisplayed(countStates == 0);
+            label.text = countStates == 0 ? "No states in layer!" : "No states matches search!";
         }
     }
 
     public abstract class StateSection<TStateDisplay> : AnimationPlayerUINode where TStateDisplay : StateDisplay
     {
         private SerializedProperty stateListProp;
+        private List<TStateDisplay> childDisplays = new List<TStateDisplay>();
 
         protected StateSection(NewNewAnimationPlayerEditor editor, SerializedProperty layerProperty) : base(editor)
         {
@@ -567,6 +611,7 @@ public class NewNewAnimationPlayerEditor : Editor
             for (int i = 0; i < stateListProp.arraySize; i++)
             {
                 var display = CreateDisplayForState(stateListProp.GetArrayElementAtIndex(i));
+                childDisplays.Add(display);
                 visualElement.Add(display.visualElement);
             }
         }
@@ -581,7 +626,20 @@ public class NewNewAnimationPlayerEditor : Editor
             visualElement.SetDisplayed(stateListProp.arraySize > 0);
 
             var display = CreateDisplayForState(stateListProp.GetArrayElementAtIndex(stateListProp.arraySize - 1));
+            childDisplays.Add(display);
             visualElement.Add(display.visualElement);
+        }
+
+        public void SetSearchTerm(string searchTerm)
+        {
+            var regex = new Regex(searchTerm);
+            foreach (var stateDisplay in childDisplays)
+            {
+                var stateName = stateDisplay.stateProp.FindPropertyRelative("name").stringValue;
+                stateDisplay.visualElement.SetDisplayed(regex.IsMatch(stateName));
+            }
+
+            visualElement.SetDisplayed(childDisplays.Any(cd => cd.visualElement.IsDisplayed()));
         }
     }
 
@@ -636,15 +694,18 @@ public class NewNewAnimationPlayerEditor : Editor
 
     public abstract class StateDisplay : AnimationPlayerUINode
     {
+        public SerializedProperty stateProp;
+
         protected StateDisplay(NewNewAnimationPlayerEditor editor, SerializedProperty stateProp) : base(editor)
         {
+            this.stateProp = stateProp;
             visualElement = new VisualElement();
 
             var textField = new TextField("State Name");
             var doubleField = new DoubleField("State Speed");
 
             textField.BindProperty(stateProp.FindPropertyRelative("name"));
-            doubleField.BindProperty(stateProp.FindPropertyRelative(nameof(SingleClip.speed)));
+            doubleField.BindProperty(stateProp.FindPropertyRelative(nameof(AnimationPlayerState.speed)));
 
             visualElement.Add(textField);
             visualElement.Add(doubleField);

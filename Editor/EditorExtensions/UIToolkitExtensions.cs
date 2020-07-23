@@ -22,5 +22,7 @@ public static class UIToolkitExtensions {
     {
         visualElement.style.display = displayed ? DisplayStyle.Flex : DisplayStyle.None;
     }
+
+    public static bool IsDisplayed(this VisualElement visualElement) => visualElement.style.display != DisplayStyle.None;
 }
 }

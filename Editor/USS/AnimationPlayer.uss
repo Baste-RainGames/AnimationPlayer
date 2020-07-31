@@ -47,6 +47,7 @@
 .animationLayer__editStatesSection__stateSet__header {
     margin-left: 10px;
     -unity-font-style: bold;
+    padding-top: 5px;
 }
 
 .animationLayer__editStatesSection__stateSet__state {
@@ -109,4 +110,12 @@
 
 .blendTree1D__addEntryButton {
     max-width: 100px;
+}
+
+.horizontal-divider {
+    width: auto;
+    height: 0;
+    border-bottom-width: 1px;
+    border-bottom-color: #000000;
+    margin: 5px 5px 5px 5px;
 }

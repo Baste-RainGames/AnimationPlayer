@@ -1,613 +1,1091 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEditor;
-using UnityEditor.SceneManagement;
+using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.UIElements;
 
-namespace Animation_Player
-{
-    // [CustomEditor(typeof(AnimationPlayer))]
-    public class AnimationPlayerEditor : Editor
+namespace Animation_Player {
+[CustomEditor(typeof(AnimationPlayer))]
+public class AnimationPlayerEditor : Editor {
+    private UIRoot uiRoot;
+
+    private void OnEnable()
     {
-        private AnimationPlayer animationPlayer;
-        private SerializedObject animationPlayerSO;
-        private SerializedProperty layersSP;
+        var directReference = (AnimationPlayer) target;
+        if (directReference.layers == null)
+            InitializeJustAddedAnimationPlayer();
 
-        public enum AnimationPlayerEditMode
+        Undo.undoRedoPerformed += HandleUndoRedo;
+    }
+
+    private void OnDisable() => Undo.undoRedoPerformed -= HandleUndoRedo;
+    private void HandleUndoRedo() => RebuildUI();
+
+    private void InitializeJustAddedAnimationPlayer()
+    {
+        var layers = serializedObject.FindProperty(nameof(AnimationPlayer.layers));
+        layers.arraySize = 1;
+
+        var baseLayer = layers.GetArrayElementAtIndex(0);
+        baseLayer.FindPropertyRelative(nameof(AnimationLayer.name)).stringValue = "Base Layer";
+        baseLayer.FindPropertyRelative(nameof(AnimationLayer.startWeight)).floatValue = 1f;
+
+        var defaultTransition = serializedObject.FindProperty(nameof(AnimationPlayer.defaultTransition));
+        defaultTransition.FindPropertyRelative(nameof(TransitionData.duration)).floatValue = .1f;
+
+        serializedObject.ApplyModifiedProperties();
+    }
+
+
+    private void RebuildUI()
+    {
+        serializedObject.Update();
+
+        var parentElement = uiRoot.visualElement.parent;
+        var index = parentElement.IndexOf(uiRoot.visualElement);
+        parentElement.RemoveAt(index);
+
+        var selectedLayer = uiRoot.selectedLayer;
+        uiRoot = new UIRoot(this);
+        uiRoot.Init();
+        uiRoot.topBar.layerDropdown.SelectLayer(Mathf.Min(selectedLayer, uiRoot.layersContainer.NumLayers - 1));
+
+        parentElement.Insert(index, uiRoot.visualElement);
+    }
+
+    public override VisualElement CreateInspectorGUI()
+    {
+        uiRoot = new UIRoot(this);
+        uiRoot.Init();
+        return uiRoot.visualElement;
+    }
+
+    public abstract class AnimationPlayerUINode {
+        protected readonly AnimationPlayerEditor editor;
+        public VisualElement visualElement;
+
+        protected SerializedObject serializedObject => editor.serializedObject;
+        protected UIRoot root => editor.uiRoot;
+
+        protected AnimationPlayerUINode(AnimationPlayerEditor editor)
         {
-            States,
-            Transitions,
-            Events,
-            MetaData
-        }
-
-        private PersistedInt selectedLayer;
-        private PersistedInt selectedState;
-        private PersistedShortPair selectedToState;
-        private PersistedAnimationPlayerEditMode selectedEditMode;
-
-        private int SelectedLayer
-        {
-            get => selectedLayer;
-            set => selectedLayer.SetTo(value);
-        }
-        private int SelectedState
-        {
-            get => selectedState;
-            set => selectedState.SetTo(value);
-        }
-        private AnimationPlayerEditMode SelectedEditMode
-        {
-            get => selectedEditMode;
-            set => selectedEditMode.SetTo(value);
-        }
-
-        private string[][] allStateNames;
-
-        private static bool stylesCreated;
-        private static GUIStyle editLayerStyle;
-        private static GUIStyle editLayerButton_Background;
-        private static GUIStyle editLayerButton_NotSelected;
-        private static GUIStyle editLayerButton_Selected;
-        private static GUIStyle centeredLabel;
-
-        private MetaDataDrawer metaDataDrawer;
-
-        public AnimationStatePreviewer previewer;
-        private List<AnimationClip> multiChoiceAnimationClips;
-
-        private object scriptReloadChecker;
-
-        private bool stateNamesNeedsUpdate = true;
-        private bool transitionsNeedsUpdate = true;
-        private bool drawAssignedClips;
-
-        public void MarkDirty()
-        {
-            stateNamesNeedsUpdate = true;
-            metaDataDrawer.usedClipsNeedsUpdate = true;
-            EditorUtilities.SetDirty(animationPlayer);
-            EditorSceneManager.MarkSceneDirty(animationPlayer.gameObject.scene);
-        }
-
-        private void OnEnable()
-        {
-            HandleInitialization(false);
-
-            if (animationPlayer.EnsureVersionUpgraded())
-            {
-                EditorUtility.SetDirty(animationPlayer);
-                if (animationPlayer.gameObject.scene.IsValid())
-                    EditorSceneManager.MarkSceneDirty(animationPlayer.gameObject.scene);
-            }
-
-            Undo.undoRedoPerformed -= CheckSelectionBounds;
-            Undo.undoRedoPerformed += CheckSelectionBounds;
-
-            var instanceId = animationPlayer.GetInstanceID();
-
-            selectedLayer    = new PersistedInt(persistedLayer + instanceId);
-            selectedState    = new PersistedInt(persistedState + instanceId);
-            selectedToState  = new PersistedShortPair(persistedToState + instanceId);
-            selectedEditMode = new PersistedAnimationPlayerEditMode(persistedEditMode + instanceId);
-
-            stateNamesNeedsUpdate = true;
-        }
-
-        private void HandleInitialization(bool isGUICall)
-        {
-            if (scriptReloadChecker == null)
-            {
-                // Unity persists some objects through reload, and fails to persist others. This makes it hard to figure out if
-                // something needs to be re-cached. This solves that - we know that Unity can't persist a raw object, so if it's null, a reload is neccessary.
-                scriptReloadChecker = new object();
-
-                animationPlayer = (AnimationPlayer) target;
-                animationPlayerSO = serializedObject;
-                layersSP = animationPlayerSO.FindProperty(nameof(AnimationPlayer.layers));
-
-                metaDataDrawer = new MetaDataDrawer(animationPlayer);
-                stylesCreated = false;
-                transitionsNeedsUpdate = true;
-            }
-
-            if (isGUICall && !stylesCreated)
-            {
-                var backgroundTex = EditorUtilities.MakeTex(1, 1, new Color(1.0f, 1.0f, 1.0f, .1f));
-                editLayerStyle = new GUIStyle {normal = {background = backgroundTex}};
-
-                centeredLabel = new GUIStyle(GUI.skin.label) {
-                    alignment = TextAnchor.UpperCenter
-                };
-
-                var buttonBackgroundTex = EditorUtilities.MakeTex(1, 1, new Color(1.0f, 1.0f, 1.0f, 0.05f));
-                var buttonSelectedTex = EditorUtilities.MakeTex(1, 1, new Color(1.0f, 1.0f, 1.0f, 0.05f));
-                var buttonNotSelectedText = EditorUtilities.MakeTex(1, 1, new Color(1.0f, 1.0f, 1.0f, 0.2f));
-
-                editLayerButton_Background = new GUIStyle {normal = {background = buttonBackgroundTex}};
-
-                editLayerButton_NotSelected = new GUIStyle(GUI.skin.label)
-                {
-                    normal = {background = buttonNotSelectedText},
-                    alignment = TextAnchor.MiddleCenter
-                };
-
-                editLayerButton_Selected = new GUIStyle(GUI.skin.label)
-                {
-                    normal = {background = buttonSelectedTex},
-                    alignment = TextAnchor.MiddleCenter
-                };
-
-                stylesCreated = true;
-            }
-
-            if (animationPlayer.layers == null || animationPlayer.layers.Length == 0)
-            {
-                animationPlayer.layers = new AnimationLayer[1];
-                animationPlayer.layers[0] = AnimationLayer.CreateLayer();
-
-                if (animationPlayer.defaultTransition == default)
-                    animationPlayer.defaultTransition = TransitionData.Linear(.1f); //default shouldn't be snap
-                EditorUtilities.SetDirty(animationPlayer);
-                return;
-            }
-
-            if (stateNamesNeedsUpdate)
-            {
-                stateNamesNeedsUpdate = false;
-                allStateNames = new string[animationPlayer.layers.Length][];
-                for (int i = 0; i < animationPlayer.layers.Length; i++)
-                {
-                    var states = animationPlayer.layers[i].states;
-                    allStateNames[i] = new string[states.Count];
-                    for (int j = 0; j < states.Count; j++)
-                        allStateNames[i][j] = states[j].Name;
-                }
-            }
-
-            if (transitionsNeedsUpdate)
-            {
-                transitionsNeedsUpdate = false;
-                foreach (var layer in animationPlayer.layers)
-                {
-                    foreach (var transition in layer.transitions)
-                    {
-                        transition.FetchStates(layer.states);
-                    }
-                }
-            }
-
-            if (previewer == null)
-                previewer = new AnimationStatePreviewer(animationPlayer);
-        }
-
-        public override void OnInspectorGUI()
-        {
-            if (Application.isPlaying && animationPlayer.CullCheckingActive)
-                EditorGUILayout.LabelField($"Is culled: {animationPlayer.IsCulled}");
-
-            HandleInitialization(true);
-
-            if (animationPlayer.layers == null || animationPlayer.layers.Length == 0)
-                return;
-
-            EditorUtilities.Splitter();
-
-            DrawLayerSelection();
-
-            if (animationPlayer.layers.Length == 0)
-                return; //Deleted last layer in DrawLayerSelection
-
-            if (SelectedState == -1 && animationPlayer.layers[SelectedLayer].states.Count > 0)
-                SelectedState = 0; //Handle adding a state for the first time.
-
-            GUILayout.Space(10f);
-
-            DrawSelectedLayer();
-
-            GUILayout.Space(10f);
-            EditorUtilities.Splitter();
-
-            var numStatesBefore = animationPlayer.layers[SelectedLayer].states.Count;
-            StateSelectionAndAdditionDrawer.Draw(animationPlayer, selectedLayer, selectedState, this, multiChoiceAnimationClips);
-            if (numStatesBefore != animationPlayer.layers[SelectedLayer].states.Count)
-            {
-                Repaint();
-                return;
-            }
-
-            DrawSelectedState();
-
-            EditorUtilities.Splitter();
-
-            DrawRuntimeDebugData();
-        }
-
-        private void DrawLayerSelection()
-        {
-            var numLayers = animationPlayer.layers.Length;
-
-            SelectedLayer = Mathf.Clamp(SelectedLayer, 0, numLayers);
-
-            var screenWidth = Screen.width;
-            var twoLines = screenWidth < 420f;
-
-            EditorGUILayout.BeginHorizontal();
-            {
-                var old = SelectedLayer;
-                SelectedLayer = EditorUtilities.DrawLeftButton(SelectedLayer);
-
-                var layerName = animationPlayer.layers[SelectedLayer].name;
-                if (string.IsNullOrWhiteSpace(layerName))
-                    layerName = $"Layer {SelectedLayer} (no name)";
-
-                var layerLabel = new GUIContent(layerName);
-
-                float labelWidth;
-
-                if (twoLines) {
-                    const float otherElementsWidth = (2 * 24f) // left/right button width
-                                                   + (2 * 4f)  // default spacing between elements
-                                                   + 25f       // scroll bar, margin.
-                                                   + 5f;       // my maths is off slightly.
-                    labelWidth = screenWidth - otherElementsWidth;
-                }
-                else {
-                    const float otherElementsWidth = (2 * 24f)  // left/right button width
-                                                   + (2 * 100f) // Add layer/delete layer width
-                                                   + (6 * 4f)   // default spacing between elements
-                                                   + 25f        // scroll bar, margin.
-                                                   + 10f;       // spacing between right button and add layer button
-                    labelWidth = screenWidth - otherElementsWidth;
-                }
-
-                EditorGUILayout.LabelField(layerLabel, centeredLabel, GUILayout.Width(labelWidth));
-                SelectedLayer = EditorUtilities.DrawRightButton(SelectedLayer, numLayers);
-
-                if (SelectedLayer != old && Event.current.button == 1) {
-                    var swap = animationPlayer.layers[old];
-                    animationPlayer.layers[old] = animationPlayer.layers[SelectedLayer];
-                    animationPlayer.layers[SelectedLayer] = swap;
-                    MarkDirty();
-                }
-
-                if (twoLines)
-                {
-                    EditorGUILayout.EndHorizontal();
-                    EditorGUILayout.BeginHorizontal();
-                    GUILayout.FlexibleSpace();
-                }
-                else
-                {
-                    GUILayout.Space(10f);
-                }
-
-                if (GUILayout.Button("Add layer", GUILayout.Width(100f)))
-                {
-                    layersSP.arraySize++;
-                    var newLayerIndex = layersSP.arraySize - 1;
-                    var newLayer = layersSP.GetArrayElementAtIndex(newLayerIndex);
-                    SerializedPropertyHelper.SetValue(newLayer, AnimationLayer.CreateLayer());
-                    SelectedLayer = newLayerIndex;
-                }
-
-                EditorGUI.BeginDisabledGroup(numLayers < 2);
-                {
-                    if (EditorUtilities.AreYouSureButton("Delete layer", "Are you sure?", "DeleteLayer" + SelectedLayer, 1f, GUILayout.Width(100f)))
-                    {
-                        EditorUtilities.RecordUndo(animationPlayer, "Delete layer from animation player");
-                        EditorUtilities.DeleteIndexFromArray(ref animationPlayer.layers, SelectedLayer);
-                        SelectedLayer = Mathf.Max(0, SelectedLayer - 1);
-                        MarkDirty();
-                    }
-                }
-                EditorGUI.EndDisabledGroup();
-
-                if (twoLines) {
-                    GUILayout.FlexibleSpace();
-                }
-            }
-            animationPlayerSO.ApplyModifiedProperties();
-            EditorGUILayout.EndHorizontal();
-        }
-
-        private void DrawSelectedLayer()
-        {
-            Undo.RecordObject(animationPlayer, "changing layer settings");
-
-            var layer = animationPlayer.layers[SelectedLayer];
-
-            layer.name = EditorGUILayout.TextField($"Layer {SelectedLayer} Name", layer.name);
-            layer.startWeight = EditorGUILayout.Slider($"Layer {SelectedLayer} Weight", layer.startWeight, 0f, 1f);
-            layer.mask = EditorUtilities.ObjectField($"Layer {SelectedLayer} Mask", layer.mask);
-
-            if(SelectedLayer > 0) //Doesn't make any sense for base layer to be additive!
-                layer.type = (AnimationLayerType) EditorGUILayout.EnumPopup("Type", layer.type);
-            else
-                EditorGUILayout.LabelField(string.Empty);
-        }
-
-        private void DrawSelectedState()
-        {
-            EditorGUILayout.BeginHorizontal(editLayerButton_Background);
-
-            //Making tabbed views are hard!
-            var editStatesRect = EditorUtilities.ReserveRect();
-            var editTransitionsRect = EditorUtilities.ReserveRect();
-            var eventsRect = EditorUtilities.ReserveRect();
-            var metaDataRect = EditorUtilities.ReserveRect();
-
-            EditorGUILayout.EndHorizontal();
-
-            DrawTabHeader(editStatesRect, "States", 0);
-            DrawTabHeader(editTransitionsRect, "Transitions", 1);
-            DrawTabHeader(eventsRect, "Events", 2);
-            DrawTabHeader(metaDataRect, "Metadata", 3);
-
-            EditorGUILayout.BeginVertical(editLayerStyle);
-
-            GUILayout.Space(10f);
-
-            switch (SelectedEditMode)
-            {
-                case AnimationPlayerEditMode.States:
-                    StateDataDrawer.DrawStateData(animationPlayer, SelectedLayer, selectedState, this);
-                    break;
-                case AnimationPlayerEditMode.Transitions:
-                    AnimationTransitionDrawer.DrawTransitions(animationPlayer, SelectedLayer, SelectedState, selectedToState, allStateNames[SelectedLayer]);
-                    break;
-                case AnimationPlayerEditMode.Events:
-                    DrawEvents();
-                    break;
-                case AnimationPlayerEditMode.MetaData:
-                    metaDataDrawer.DrawMetaData();
-                    break;
-            }
-
-            GUILayout.Space(20f);
-            EditorGUILayout.EndVertical();
-        }
-
-        private void DrawTabHeader(Rect rect, string label, int index)
-        {
-            //Hack: expand the rects so they hit the next control
-            rect.yMax += 2;
-            rect.yMin -= 2;
-
-            //Expand the first and last rects so they are aligned with the box below
-            if (index == 0)
-            {
-                rect.x -= 4;
-                rect.xMax += 4;
-            }
-            else if (index == 3)
-            {
-                rect.x += 4;
-                rect.xMin -= 4;
-            }
-
-            var isSelected = index == (int) SelectedEditMode;
-            var style = isSelected ? editLayerButton_Selected : editLayerButton_NotSelected;
-            if (GUI.Button(rect, label, style))
-                SelectedEditMode = (AnimationPlayerEditMode) index;
-        }
-
-        private void DrawEvents()
-        {
-            if (animationPlayer.layers[SelectedLayer].states.Count == 0)
-            {
-                EditorGUILayout.LabelField("No states on layer, can't make events");
-                return;
-            }
-
-            var state = animationPlayer.GetState(SelectedState, SelectedLayer);
-            int indexToDelete = -1;
-            EditorGUILayout.LabelField($"Animation events for {state.Name}:");
-            EditorUtilities.DrawIndented(() =>
-            {
-                for (var i = 0; i < state.animationEvents.Count; i++)
-                {
-                    if (DrawEvent(state.animationEvents[i], state))
-                        indexToDelete = i;
-                    EditorUtilities.Splitter();
-                }
-            });
-
-            if (indexToDelete != -1)
-                state.animationEvents.RemoveAt(indexToDelete);
-
-            EditorUtilities.DrawHorizontal(() =>
-            {
-                if (GUILayout.Button("Create new Animation Event"))
-                {
-                    EditorUtilities.RecordUndo(animationPlayer, $"Added animation event to {state.Name}");
-                    state.animationEvents.Add(new AnimationEvent {name = "New Event"});
-                    MarkDirty();
-                }
-                GUILayout.FlexibleSpace();
-            });
-        }
-
-
-        private bool DrawEvent(AnimationEvent animationEvent, AnimationPlayerState containingState)
-        {
-            const float  eventLabelWidth = 100f;
-            const string nameTooltip = "The name of the event, used when subscribing.";
-            const string timeTooltip = "When the event should fire, in real seconds.";
-            const string mustBeActiveTooltip = "Does the state have to be the active state for the event to fire?";
-            const string minWeightTooltip = "The minimum required weight for the state to fire.";
-
-            bool shouldDelete = false;
-            EditorGUI.BeginChangeCheck();
-            EditorUtilities.DrawHorizontal(() =>
-            {
-                GUIContent nameContent = new GUIContent("Name", nameTooltip);
-                EditorGUILayout.LabelField(nameContent, GUILayout.Width(eventLabelWidth));
-                animationEvent.name = EditorGUILayout.TextField(animationEvent.name);
-            });
-            EditorUtilities.DrawHorizontal(() =>
-            {
-                var timeContent = new GUIContent("Time", timeTooltip);
-                EditorGUILayout.LabelField(timeContent, GUILayout.Width(eventLabelWidth));
-                animationEvent.time = EditorGUILayout.Slider((float) animationEvent.time, 0f, containingState.Duration);
-            });
-            EditorUtilities.DrawHorizontal(() =>
-            {
-                var mustBeActiveContent = new GUIContent("Must be active", mustBeActiveTooltip);
-                EditorGUILayout.LabelField(mustBeActiveContent, GUILayout.Width(eventLabelWidth));
-                animationEvent.mustBeActiveState = EditorGUILayout.Toggle(animationEvent.mustBeActiveState);
-            });
-            EditorUtilities.DrawHorizontal(() =>
-            {
-                var minWeightContent = new GUIContent("Minimum weight", minWeightTooltip);
-                EditorGUILayout.LabelField(minWeightContent, GUILayout.Width(eventLabelWidth));
-                animationEvent.minWeight = EditorGUILayout.Slider(animationEvent.minWeight, 0f, 1f);
-            });
-            EditorUtilities.DrawHorizontal(() =>
-            {
-                GUILayout.FlexibleSpace();
-                if (GUILayout.Button($"Delete '{animationEvent.name}'"))
-                    shouldDelete = true;
-            });
-            if (EditorGUI.EndChangeCheck())
-                EditorUtilities.SetDirty(animationPlayer);
-
-            return shouldDelete;
-        }
-
-
-        public void StartDragAndDropMultiChoice(List<AnimationClip> animationClips)
-        {
-            multiChoiceAnimationClips = animationClips;
-        }
-
-        public void StopDragAndDropMultiChoice()
-        {
-            multiChoiceAnimationClips = null;
-            //Repaint();
-        }
-
-        private void DrawRuntimeDebugData()
-        {
-            if (!Application.isPlaying)
-                return;
-
-            EditorGUILayout.LabelField("Current blend variable values:");
-            var blendVars = animationPlayer.GetBlendVariables();
-            EditorUtilities.DrawIndented(() =>
-            {
-                var maxWidth = 100f;
-                foreach (var blendVar in blendVars)
-                {
-                    GUI.skin.label.CalcMinMaxWidth(new GUIContent(blendVar), out _, out var varNameMaxWidth);
-                    maxWidth = Mathf.Max(maxWidth, varNameMaxWidth);
-                }
-
-                foreach (var blendVar in blendVars)
-                {
-                    EditorGUILayout.BeginHorizontal();
-                    {
-                        EditorGUILayout.LabelField(blendVar, GUILayout.Width(maxWidth));
-                        EditorGUILayout.LabelField(animationPlayer.GetBlendVar(blendVar).ToString());
-                    }
-                    EditorGUILayout.EndHorizontal();
-                }
-            });
-
-            EditorUtilities.Splitter();
-            drawAssignedClips = EditorGUILayout.Toggle("Draw assigned clips", drawAssignedClips);
-            EditorUtilities.Splitter();
-
-            if (!animationPlayer.gameObject.scene.IsValid())
-            {
-                //is looking at the prefab at runtime, don't attempt to draw the graph!
-                return;
-            }
-
-            EditorGUILayout.LabelField("Playing clip " + animationPlayer.GetPlayingState(SelectedLayer));
-            for (int i = 0; i < animationPlayer.GetStateCount(SelectedLayer); i++)
-            {
-                var state = animationPlayer.layers[SelectedLayer].states[i];
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    EditorGUILayout.LabelField($"Current weight for state \"{state.Name}\": {animationPlayer.GetStateWeight(i, SelectedLayer)}");
-
-                    if (GUILayout.Button("Play it!"))
-                        animationPlayer.Play(i, SelectedLayer);
-                }
-
-                using (new EditorGUI.IndentLevelScope())
-                {
-                    if (state is SingleClip singleClip)
-                    {
-                        EditorGUILayout.LabelField($"default clip: {ClipName(singleClip.clip)}");
-                        var (clip, weight) = animationPlayer.layers[selectedLayer].GetCurrentActualClipAndWeight(state);
-                        if (clip != singleClip.clip)
-                            EditorGUILayout.LabelField($"overriden clip: {ClipName(clip)}, weight: {weight}");
-                    }
-
-                    if (state is BlendTree1D bt1d)
-                    {
-                        for (int j = 0; j < bt1d.entries.Count; j++)
-                        {
-                            EditorGUILayout.LabelField($"assigned {ClipName(bt1d.entries[j].clip)}");
-                            var (clip, weight) = animationPlayer.layers[selectedLayer].GetCurrentActualClipAndWeight(state, j);
-                            if (clip != bt1d.entries[j].clip)
-                                EditorGUILayout.LabelField($"overriden clip: {ClipName(clip)}, weight: {weight}");
-                        }
-                    }
-                }
-            }
-        }
-
-        private string ClipName(AnimationClip clip) => clip == null ? "null" : clip.name;
-
-        //Undo can remove layers, but the selected bounds are not undone, so do that manually
-        private void CheckSelectionBounds()
-        {
-            if (animationPlayer == null || animationPlayer.layers == null)
-                return;
-
-            SelectedLayer = Mathf.Clamp(SelectedLayer, 0, animationPlayer.layers.Length - 1);
-            if (animationPlayer.layers.Length == 0)
-                return;
-            var layer = animationPlayer.layers[SelectedLayer];
-            SelectedState = Mathf.Clamp(SelectedState, 0, layer.states.Count - 1);
-        }
-
-        // private const float selectedLayerWidth = 108f;
-
-        private const string persistedLayer = "APE_SelectedLayer_";
-        private const string persistedState = "APE_SelectedState_";
-        private const string persistedToState = "APE_SelectedToState_";
-        private const string persistedEditMode = "APE_EditMode_";
-
-        public class PersistedAnimationPlayerEditMode : PersistedVal<AnimationPlayerEditMode>
-        {
-            public PersistedAnimationPlayerEditMode(string key) : base(key) { }
-
-            protected override int ToInt(AnimationPlayerEditMode val)
-            {
-                return (int) val;
-            }
-
-            protected override AnimationPlayerEditMode ToType(int i)
-            {
-                return (AnimationPlayerEditMode) i;
-            }
-
-            public static implicit operator int(PersistedAnimationPlayerEditMode p)
-            {
-                return p.ToInt(p); //look at it go!
-            }
-        }
-
-        public override bool RequiresConstantRepaint()
-        {
-            return Application.isPlaying || (previewer != null && previewer.IsShowingPreview) || DragAndDrop.objectReferences.Length > 0;
-        }
-
-        private void OnDestroy() {
-            previewer?.Cleanup();
+            this.editor = editor;
         }
     }
+
+    public class UIRoot : AnimationPlayerUINode {
+        public TopBar topBar;
+        public LayersContainer layersContainer;
+        public int selectedLayer;
+
+        public UIRoot(AnimationPlayerEditor editor) : base(editor) { }
+
+        public void Init()
+        {
+            visualElement = new VisualElement();
+            visualElement.styleSheets.Add(AssetDatabase.LoadAssetAtPath<StyleSheet>("Packages/com.baste.animationplayer/Editor/USS/AnimationPlayer.uss"));
+
+            topBar = new TopBar(editor);
+            layersContainer = new LayersContainer(editor);
+
+            visualElement.Add(topBar.visualElement);
+            visualElement.Add(layersContainer.visualElement);
+
+            topBar.layerDropdown.LayersReady();
+            topBar.layerDropdown.SelectLayer(selectedLayer);
+
+            if (selectedLayer == 0)
+                layersContainer.SetLayerVisible(selectedLayer);
+        }
+    }
+
+    public class TopBar : AnimationPlayerUINode {
+        public readonly LayerDropdown layerDropdown;
+        public readonly RemoveLayerButton removeLayerButton;
+
+        public TopBar(AnimationPlayerEditor editor) : base(editor)
+        {
+            visualElement = new VisualElement();
+            visualElement.AddToClassList("topBar");
+
+            layerDropdown = new LayerDropdown(editor);
+            var addLayerButton = new AddLayerButton(editor);
+            removeLayerButton = new RemoveLayerButton(editor);
+
+            visualElement.Add(layerDropdown.visualElement);
+            visualElement.Add(addLayerButton.visualElement);
+            visualElement.Add(removeLayerButton.visualElement);
+        }
+    }
+
+    public class LayerDropdown : AnimationPlayerUINode {
+        private PopupField<Layer> popupField;
+
+        public LayerDropdown(AnimationPlayerEditor editor) : base(editor)
+        {
+            // placeholder for the popup field.
+            visualElement = new VisualElement();
+        }
+
+        public void LayersReady()
+        {
+            var old = visualElement;
+
+            visualElement = popupField = new PopupField<Layer>(
+                root.layersContainer.layers,
+                0,
+                Layer.GetNameOf,
+                Layer.GetNameOf
+            );
+            popupField.AddToClassList("topBar__element");
+            popupField.RegisterValueChangedCallback(LayerChanged);
+
+            old.parent.Replace(old, visualElement);
+        }
+
+        private void LayerChanged(ChangeEvent<Layer> evt)
+        {
+            var index = root.layersContainer.layers.IndexOf(evt.newValue);
+            root.selectedLayer = index;
+            root.layersContainer.SetLayerVisible(index);
+        }
+
+        public void SelectLayer(int newLayer) => popupField.index = newLayer;
+    }
+
+    public class RemoveLayerButton : AnimationPlayerUINode {
+        public RemoveLayerButton(AnimationPlayerEditor editor) : base(editor)
+        {
+            visualElement = new Button
+            {
+                text = "Remove Layer",
+                clickable = new Clickable(RemoveLayerClicked),
+            };
+            visualElement.AddToClassList("topBar__element");
+            visualElement.SetEnabled(editor.serializedObject.FindProperty("layers").arraySize > 1);
+        }
+
+        private void RemoveLayerClicked()
+        {
+            if (root.layersContainer.NumLayers == 1)
+                return;
+            root.layersContainer.RemoveLayer(root.selectedLayer);
+            editor.RebuildUI();
+        }
+    }
+
+    public class AddLayerButton : AnimationPlayerUINode {
+        public AddLayerButton(AnimationPlayerEditor editor) : base(editor)
+        {
+            visualElement = new Button
+            {
+                text = "Add Layer",
+                clickable = new Clickable(AddLayerClicked)
+            };
+            visualElement.AddToClassList("topBar__element");
+        }
+
+        private void AddLayerClicked()
+        {
+            root.layersContainer.AddNewLayer();
+            root.topBar.layerDropdown.SelectLayer(root.layersContainer.NumLayers - 1);
+
+            editor.uiRoot.topBar.removeLayerButton.visualElement.SetEnabled(editor.serializedObject.FindProperty("layers").arraySize > 1);
+        }
+    }
+
+    public class LayersContainer : AnimationPlayerUINode {
+        public readonly List<Layer> layers;
+        private SerializedProperty layersProp;
+
+        public LayersContainer(AnimationPlayerEditor editor) : base(editor)
+        {
+            visualElement = new VisualElement();
+            layers = new List<Layer>();
+
+            layersProp = serializedObject.FindProperty("layers");
+
+            for (int i = 0; i < layersProp.arraySize; i++)
+                CreateLayer(editor, i);
+        }
+
+        public int NumLayers => layersProp.arraySize;
+        public Layer SelectedLayer => layers[root.selectedLayer];
+
+        private void CreateLayer(AnimationPlayerEditor editor, int layerIndex)
+        {
+            var layer = new Layer(editor, layerIndex);
+            layers.Add(layer);
+            visualElement.Add(layer.visualElement);
+        }
+
+        public void SetLayerVisible(int index)
+        {
+            for (int i = 0; i < layers.Count; i++)
+                layers[i].visualElement.SetDisplayed(index == i);
+        }
+
+        public void AddNewLayer()
+        {
+            var newLayer = layersProp.AppendToArray();
+
+            string layerName;
+            var index = layersProp.arraySize;
+            do
+            {
+                layerName = "Layer " + index;
+                index++;
+            } while (SomeLayerHasName(layerName));
+
+            newLayer.FindPropertyRelative("serializedSingleClipStates").ClearArray();
+            newLayer.FindPropertyRelative("serializedBlendTree1Ds").ClearArray();
+            newLayer.FindPropertyRelative("serializedBlendTree2Ds").ClearArray();
+            newLayer.FindPropertyRelative("serializedSelectRandomStates").ClearArray();
+            newLayer.FindPropertyRelative("serializedSequences").ClearArray();
+            newLayer.FindPropertyRelative(nameof(AnimationLayer.transitions)).ClearArray();
+            newLayer.FindPropertyRelative(nameof(AnimationLayer.name)).stringValue = layerName;
+            newLayer.FindPropertyRelative(nameof(AnimationLayer.startWeight)).floatValue = 1f;
+            newLayer.FindPropertyRelative(nameof(AnimationLayer.type)).enumValueIndex = (int) AnimationLayerType.Override;
+
+            serializedObject.ApplyModifiedProperties();
+            CreateLayer(editor, layersProp.arraySize - 1);
+
+            bool SomeLayerHasName(string name)
+            {
+                foreach (var layerProp in layersProp.IterateArray())
+                    if (layerProp.FindPropertyRelative(nameof(AnimationLayer.name)).stringValue == name)
+                        return true;
+
+                return false;
+            }
+        }
+
+        public void RemoveLayer(int layer)
+        {
+            layersProp.DeleteArrayElementAtIndex(layer);
+            serializedObject.ApplyModifiedProperties();
+        }
+    }
+
+    public class Layer : AnimationPlayerUINode {
+        public readonly SerializedProperty serializedProperty;
+        public readonly EditStatesSection editStatesSection;
+
+        public Layer(AnimationPlayerEditor editor, int index) : base(editor)
+        {
+            visualElement = new VisualElement();
+            visualElement.AddToClassList("animationLayer");
+
+            serializedProperty = serializedObject.FindProperty(nameof(AnimationPlayer.layers)).GetArrayElementAtIndex(index);
+
+            var editLayerSection = new EditLayerSection(editor, serializedProperty);
+            var addAndSearchStatesSection = new AddAndSearchStatesSection(editor);
+            editStatesSection = new EditStatesSection(editor, serializedProperty);
+
+            visualElement.Add(editLayerSection.visualElement);
+            visualElement.Add(addAndSearchStatesSection.visualElement);
+            visualElement.Add(editStatesSection.visualElement);
+        }
+
+        public static string GetNameOf(Layer layer) => layer.GetName();
+        private string GetName() => serializedProperty.FindPropertyRelative("name").stringValue;
+    }
+
+    public class EditLayerSection : AnimationPlayerUINode {
+        public EditLayerSection(AnimationPlayerEditor editor, SerializedProperty layerProp) : base(editor)
+        {
+            visualElement = new VisualElement();
+            visualElement.AddToClassList("animationLayer__subSection");
+
+            var layerName = new LayerName(editor, layerProp);
+            var layerType = new LayerType(editor, layerProp);
+            var layerStartWeight = new LayerStartWeight(editor, layerProp);
+            var avatarMask = new AvatarMaskNode(editor, layerProp);
+
+            visualElement.Add(layerName.visualElement);
+            visualElement.Add(layerType.visualElement);
+            visualElement.Add(layerStartWeight.visualElement);
+            visualElement.Add(avatarMask.visualElement);
+        }
+    }
+
+    public class LayerName : AnimationPlayerUINode {
+        private TextField textField;
+
+        public LayerName(AnimationPlayerEditor editor, SerializedProperty layerProp) :
+            base(editor)
+        {
+            visualElement = textField = new TextField("Layer Name");
+            Rebind(layerProp);
+        }
+
+        public void Rebind(SerializedProperty newLayerProp)
+        {
+            textField.BindProperty(newLayerProp.FindPropertyRelative(nameof(AnimationLayer.name)));
+        }
+    }
+
+    public class LayerType : AnimationPlayerUINode {
+        public LayerType(AnimationPlayerEditor editor, SerializedProperty layerProp) : base(editor)
+        {
+            var enumField = new EnumField("Layer Type");
+            enumField.BindProperty(layerProp.FindPropertyRelative(nameof(AnimationLayer.type)));
+            visualElement = enumField;
+        }
+    }
+
+    public class LayerStartWeight : AnimationPlayerUINode {
+        public LayerStartWeight(AnimationPlayerEditor editor, SerializedProperty layerProp) : base(editor)
+        {
+            var slider = new Slider("Layer Start Weight", 0f, 1f);
+            slider.BindProperty(layerProp.FindPropertyRelative(nameof(AnimationLayer.startWeight)));
+            visualElement = slider;
+        }
+    }
+
+    public class AvatarMaskNode : AnimationPlayerUINode {
+        public AvatarMaskNode(AnimationPlayerEditor editor, SerializedProperty layerProp) : base(editor)
+        {
+            var objectField = new ObjectField("Avatar Mask");
+            objectField.objectType = typeof(AvatarMask);
+            objectField.BindProperty(layerProp.FindPropertyRelative(nameof(AnimationLayer.mask)));
+
+            visualElement = objectField;
+        }
+    }
+
+    public class AddAndSearchStatesSection : AnimationPlayerUINode {
+        public AddAndSearchStatesSection(AnimationPlayerEditor editor) : base(editor)
+        {
+            visualElement = new VisualElement();
+            visualElement.AddToClassList("animationLayer__subSection");
+            visualElement.AddToClassList("animationLayer__statesHeader");
+
+            var label = new Label("States");
+            label.AddToClassList("label");
+            visualElement.Add(label);
+
+            var search = new ToolbarSearchField();
+            search.AddToClassList("animationLayer__statesHeader__search");
+            search.Q("unity-text-input").AddToClassList("animationLayer__statesHeader__search__textInput");
+            visualElement.Add(search);
+
+            search.RegisterValueChangedCallback(SearchUpdated);
+
+            var addStateButton = new AddStateButton(editor);
+            visualElement.Add(addStateButton.visualElement);
+        }
+
+        private void SearchUpdated(ChangeEvent<string> evt)
+        {
+            root.layersContainer.SelectedLayer.editStatesSection.SetSearchTerm(evt.newValue);
+        }
+    }
+
+    public class AddStateButton : AnimationPlayerUINode {
+        private static List<Type> allStateTypes = new List<Type>
+        {
+            typeof(SingleClip),
+            typeof(BlendTree1D),
+            typeof(BlendTree2D),
+            typeof(Sequence),
+            typeof(PlayRandomClip)
+        };
+
+        public AddStateButton(AnimationPlayerEditor editor) : base(editor)
+        {
+            Button button;
+            visualElement = button = new Button();
+
+            button.clickable = new Clickable(AddStateClicked);
+            button.text = "Add State";
+        }
+
+        private void AddStateClicked()
+        {
+            var gm = new GenericMenu();
+            foreach (var stateType in allStateTypes)
+                gm.AddItem(new GUIContent(stateType.Name), false, () => StateToAddSelected(stateType));
+            gm.ShowAsContext();
+        }
+
+        private void StateToAddSelected(Type stateType)
+        {
+            var layerProp = root.layersContainer.layers[root.selectedLayer].serializedProperty;
+
+            SerializedProperty stateProp;
+            var serializedOrder = AppendToArray("serializedStateOrder");
+
+            if (stateType == typeof(SingleClip))
+            {
+                stateProp = AppendToArray("serializedSingleClipStates");
+            }
+            else if (stateType == typeof(BlendTree1D))
+            {
+                stateProp = AppendToArray("serializedBlendTree1Ds");
+                stateProp.FindPropertyRelative("blendVariable").stringValue = "blend";
+                stateProp.FindPropertyRelative("compensateForDifferentDurations").boolValue = true;
+            }
+            else if (stateType == typeof(BlendTree2D))
+            {
+                stateProp = AppendToArray("serializedBlendTree2Ds");
+                stateProp.FindPropertyRelative("blendVariable").stringValue = "blend";
+                stateProp.FindPropertyRelative("blendVariable2").stringValue = "blend2";
+            }
+            else if (stateType == typeof(PlayRandomClip))
+            {
+                stateProp = AppendToArray("serializedSelectRandomStates");
+            }
+            else if (stateType == typeof(Sequence))
+            {
+                stateProp = AppendToArray("serializedSequences");
+            }
+            else
+            {
+                Debug.LogError($"Adding state of type {stateType.Name} not implemented!");
+                return;
+            }
+
+            HandleSharedProps();
+            HandleGUIDOfNewState();
+
+            layerProp.serializedObject.ApplyModifiedProperties();
+
+            root.layersContainer.layers[root.selectedLayer].editStatesSection.OnStateAdded(stateType);
+
+            SerializedProperty AppendToArray(string arrayPropName)
+            {
+                return layerProp.FindPropertyRelative(arrayPropName).AppendToArray();
+            }
+
+            void HandleSharedProps()
+            {
+                stateProp.FindPropertyRelative("speed").doubleValue = 1d;
+                stateProp.FindPropertyRelative("name").stringValue = $"New {ObjectNames.NicifyVariableName(stateType.Name)}";
+            }
+
+            void HandleGUIDOfNewState()
+            {
+                var guid = SerializedGUID.Create().GUID.ToString();
+                stateProp.FindPropertyRelative("guid").FindPropertyRelative("guidSerialized").stringValue = guid;
+                serializedOrder.FindPropertyRelative("guidSerialized").stringValue = guid;
+            }
+        }
+    }
+
+    public class EditStatesSection : AnimationPlayerUINode {
+        private readonly NoStatesLabel noStatesLabel;
+        public readonly SingleClipSection singleClipSection;
+        public readonly BlendTree1DSection blendTree1DSection;
+        public readonly BlendTree2DSection blendTree2DSection;
+        public readonly SequenceSection sequenceSection;
+        public readonly RandomClipSection randomClipSection;
+
+        public EditStatesSection(AnimationPlayerEditor editor, SerializedProperty layerProperty) : base(editor)
+        {
+            visualElement = new VisualElement();
+            visualElement.AddToClassList("animationLayer__subSection");
+            visualElement.AddToClassList("animationLayer__editStatesSection");
+
+            singleClipSection = new SingleClipSection(editor, layerProperty);
+            blendTree1DSection = new BlendTree1DSection(editor, layerProperty);
+            blendTree2DSection = new BlendTree2DSection(editor, layerProperty);
+            sequenceSection = new SequenceSection(editor, layerProperty);
+            randomClipSection = new RandomClipSection(editor, layerProperty);
+            noStatesLabel = new NoStatesLabel(editor, layerProperty, this);
+
+            visualElement.Add(noStatesLabel.visualElement);
+            visualElement.Add(singleClipSection.visualElement);
+            visualElement.Add(blendTree1DSection.visualElement);
+            visualElement.Add(blendTree2DSection.visualElement);
+            visualElement.Add(sequenceSection.visualElement);
+            visualElement.Add(randomClipSection.visualElement);
+        }
+
+        public void OnStateAdded(Type stateType)
+        {
+            noStatesLabel.visualElement.SetDisplayed(false);
+            if (stateType == typeof(SingleClip))
+                singleClipSection.OnStateAdded();
+            else if (stateType == typeof(BlendTree1D))
+                blendTree1DSection.OnStateAdded();
+            else if (stateType == typeof(BlendTree2D))
+                blendTree2DSection.OnStateAdded();
+            else if (stateType == typeof(PlayRandomClip))
+                randomClipSection.OnStateAdded();
+            else if (stateType == typeof(Sequence))
+                sequenceSection.OnStateAdded();
+            else
+                Debug.LogError($"Adding state of type {stateType.Name} not implemented!");
+        }
+
+        public void SetSearchTerm(string searchTerm)
+        {
+            singleClipSection.SetSearchTerm(searchTerm);
+            blendTree1DSection.SetSearchTerm(searchTerm);
+            blendTree2DSection.SetSearchTerm(searchTerm);
+            sequenceSection.SetSearchTerm(searchTerm);
+            randomClipSection.SetSearchTerm(searchTerm);
+
+            noStatesLabel.OnSearchTermUpdated();
+        }
+    }
+
+    public class NoStatesLabel : AnimationPlayerUINode {
+        private Label label;
+        private EditStatesSection parent;
+        private SerializedProperty layerProperty;
+
+        public NoStatesLabel(AnimationPlayerEditor editor, SerializedProperty layerProperty, EditStatesSection parent) : base(editor)
+        {
+            this.parent = parent;
+            this.layerProperty = layerProperty;
+            visualElement = label = new Label();
+
+            OnSearchTermUpdated();
+        }
+
+        public void OnSearchTermUpdated()
+        {
+            var shouldBeHidden = parent.singleClipSection.visualElement.IsDisplayed() ||
+                                 parent.blendTree1DSection.visualElement.IsDisplayed() ||
+                                 parent.blendTree2DSection.visualElement.IsDisplayed() ||
+                                 parent.sequenceSection.visualElement.IsDisplayed() ||
+                                 parent.randomClipSection.visualElement.IsDisplayed();
+
+            label.AddToClassList("animationLayer__editStatesSection__stateSet");
+            label.SetDisplayed(!shouldBeHidden);
+
+            if (shouldBeHidden)
+                return;
+
+            var countStates = layerProperty.FindPropertyRelative("serializedSingleClipStates").arraySize +
+                              layerProperty.FindPropertyRelative("serializedBlendTree1Ds").arraySize +
+                              layerProperty.FindPropertyRelative("serializedBlendTree2Ds").arraySize +
+                              layerProperty.FindPropertyRelative("serializedSelectRandomStates").arraySize +
+                              layerProperty.FindPropertyRelative("serializedSequences").arraySize;
+
+            label.text = countStates == 0 ? "No states in layer!" : "No states matches search!";
+        }
+    }
+
+    public abstract class StateSection<TStateDisplay> : AnimationPlayerUINode where TStateDisplay : StateDisplay {
+        private SerializedProperty stateListProp;
+        private List<TStateDisplay> childDisplays = new List<TStateDisplay>();
+
+        protected StateSection(AnimationPlayerEditor editor, SerializedProperty layerProperty) : base(editor)
+        {
+            visualElement = new VisualElement();
+            visualElement.AddToClassList("animationLayer__editStatesSection__stateSet");
+
+            var label = new Label(LabelText);
+            label.AddToClassList("animationLayer__editStatesSection__stateSet__header");
+            visualElement.Add(label);
+
+            stateListProp = layerProperty.FindPropertyRelative(ListPropName);
+            visualElement.SetDisplayed(stateListProp.arraySize > 0);
+
+            for (int i = 0; i < stateListProp.arraySize; i++)
+            {
+                var display = CreateDisplayForState(stateListProp, i);
+                childDisplays.Add(display);
+                visualElement.Add(display.visualElement);
+            }
+        }
+
+        protected abstract TStateDisplay CreateDisplayForState(SerializedProperty stateListProp, int stateIndex);
+
+        protected abstract string LabelText { get; }
+        protected abstract string ListPropName { get; }
+
+        public void OnStateAdded()
+        {
+            visualElement.SetDisplayed(stateListProp.arraySize > 0);
+
+            var display = CreateDisplayForState(stateListProp, stateListProp.arraySize - 1);
+            childDisplays.Add(display);
+            visualElement.Add(display.visualElement);
+        }
+
+        public void SetSearchTerm(string searchTerm)
+        {
+            var regex = new Regex(searchTerm);
+            foreach (var stateDisplay in childDisplays)
+            {
+                var stateName = stateDisplay.stateProp.FindPropertyRelative("name").stringValue;
+                stateDisplay.visualElement.SetDisplayed(regex.IsMatch(stateName));
+            }
+
+            visualElement.SetDisplayed(childDisplays.Any(cd => cd.visualElement.IsDisplayed()));
+        }
+    }
+
+    public class SingleClipSection : StateSection<SingleClipDisplay> {
+        public SingleClipSection(AnimationPlayerEditor editor, SerializedProperty layerProperty) : base(editor, layerProperty) { }
+
+        protected override SingleClipDisplay CreateDisplayForState(SerializedProperty stateListProp, int stateIndex) =>
+            new SingleClipDisplay(editor, stateListProp, stateIndex, stateListProp.GetArrayElementAtIndex(stateIndex));
+
+        protected override string LabelText { get; } = "Single Clips States";
+        protected override string ListPropName { get; } = "serializedSingleClipStates";
+    }
+
+    public class BlendTree1DSection : StateSection<BlendTree1DDisplay> {
+        public BlendTree1DSection(AnimationPlayerEditor editor, SerializedProperty layerProperty) : base(editor, layerProperty) { }
+
+        protected override BlendTree1DDisplay CreateDisplayForState(SerializedProperty stateListProp, int stateIndex) =>
+            new BlendTree1DDisplay(editor, stateListProp, stateIndex, stateListProp.GetArrayElementAtIndex(stateIndex));
+
+        protected override string LabelText { get; } = "1D Blend Trees";
+        protected override string ListPropName { get; } = "serializedBlendTree1Ds";
+    }
+
+    public class BlendTree2DSection : StateSection<BlendTree2DDisplay> {
+        public BlendTree2DSection(AnimationPlayerEditor editor, SerializedProperty layerProperty) : base(editor, layerProperty) { }
+
+        protected override BlendTree2DDisplay CreateDisplayForState(SerializedProperty stateListProp, int stateIndex) =>
+            new BlendTree2DDisplay(editor, stateListProp, stateIndex, stateListProp.GetArrayElementAtIndex(stateIndex));
+
+        protected override string LabelText { get; } = "2D Blend Trees";
+        protected override string ListPropName { get; } = "serializedBlendTree2Ds";
+    }
+
+    public class SequenceSection : StateSection<SequenceDisplay> {
+        public SequenceSection(AnimationPlayerEditor editor, SerializedProperty layerProperty) : base(editor, layerProperty) { }
+
+        protected override SequenceDisplay CreateDisplayForState(SerializedProperty stateListProp, int stateIndex) =>
+            new SequenceDisplay(editor, stateListProp, stateIndex, stateListProp.GetArrayElementAtIndex(stateIndex));
+
+        protected override string LabelText { get; } = "Sequences";
+        protected override string ListPropName { get; } = "serializedSequences";
+    }
+
+    public class RandomClipSection : StateSection<RandomClipDisplay> {
+        public RandomClipSection(AnimationPlayerEditor editor, SerializedProperty layerProperty) : base(editor, layerProperty) { }
+
+        protected override RandomClipDisplay CreateDisplayForState(SerializedProperty stateListProp, int stateIndex)
+        {
+            return new RandomClipDisplay(editor, stateListProp, stateIndex, stateListProp.GetArrayElementAtIndex(stateIndex));
+        }
+
+        protected override string LabelText { get; } = "Random Clip States";
+        protected override string ListPropName { get; } = "serializedSelectRandomStates";
+    }
+
+    public abstract class StateDisplay : AnimationPlayerUINode {
+        public readonly SerializedProperty stateProp;
+        private readonly SerializedProperty stateListProp;
+        private int stateIndex;
+        private readonly VisualElement onlyVisibleWhenExpandedSection;
+        private readonly Label toggleExpandedLabel;
+
+        protected StateDisplay(AnimationPlayerEditor editor, SerializedProperty stateListProp, int stateIndex, SerializedProperty stateProp) :
+            base(editor)
+        {
+            this.stateProp = stateProp;
+            this.stateIndex = stateIndex;
+            this.stateListProp = stateListProp;
+
+            visualElement = new VisualElement();
+            visualElement.AddToClassList("animationLayer__editStatesSection__stateSet__state");
+
+            var alwaysVisibleSection = new VisualElement {name = "always visible"};
+            onlyVisibleWhenExpandedSection = new VisualElement {name = "only visible when expanded"};
+            var toggleExpandedButton = new VisualElement {name = "toggle expanded button"};
+            toggleExpandedButton.AddToClassList("animationLayer__editStatesSection__stateSet__state__toggleExpanded");
+
+            toggleExpandedButton.AddManipulator(new Clickable(ToggleExpanded));
+            toggleExpandedLabel = new Label("v");
+            toggleExpandedButton.Add(toggleExpandedLabel);
+
+            visualElement.Add(alwaysVisibleSection);
+            visualElement.Add(onlyVisibleWhenExpandedSection);
+            visualElement.Add(toggleExpandedButton);
+
+            FillAlwaysVisibleSection(alwaysVisibleSection);
+            FillOnlyVisibleWhenExpandedSection(onlyVisibleWhenExpandedSection);
+            CreatePreview(onlyVisibleWhenExpandedSection);
+
+            onlyVisibleWhenExpandedSection.SetDisplayed(false);
+        }
+
+        private void CreatePreview(VisualElement parentSection)
+        {
+            parentSection.Add(new HorizontalDivider());
+
+
+        }
+
+        protected virtual void FillAlwaysVisibleSection(VisualElement section)
+        {
+            var nameSection = new VisualElement();
+            nameSection.AddToClassList("animationLayer__editStatesSection__stateSet__state__nameSection");
+
+            var deleteButton = new Button();
+            deleteButton.text = "X";
+            deleteButton.AddToClassList("animationLayer__editStatesSection__stateSet__state__nameSection__deleteButton");
+
+            deleteButton.clickable = new Clickable(DeleteState);
+
+            var nameField = new TextField("State Name");
+            nameField.BindProperty(stateProp.FindPropertyRelative("name"));
+
+            nameSection.Add(nameField);
+            nameSection.Add(deleteButton);
+
+            section.Add(nameSection);
+        }
+
+        protected virtual void FillOnlyVisibleWhenExpandedSection(VisualElement section)
+        {
+            var speedField = new DoubleField("State Speed");
+            speedField.BindProperty(stateProp.FindPropertyRelative(nameof(AnimationPlayerState.speed)));
+
+            section.Add(speedField);
+        }
+
+        private void DeleteState()
+        {
+            stateListProp.DeleteArrayElementAtIndex(stateIndex);
+            serializedObject.ApplyModifiedProperties();
+            editor.RebuildUI();
+        }
+
+        private void ToggleExpanded()
+        {
+            onlyVisibleWhenExpandedSection.SetDisplayed(!onlyVisibleWhenExpandedSection.IsDisplayed());
+            toggleExpandedLabel.text = onlyVisibleWhenExpandedSection.IsDisplayed() ? "^" : "v";
+        }
+    }
+
+    public class SingleClipDisplay : StateDisplay {
+        public SingleClipDisplay(AnimationPlayerEditor editor, SerializedProperty stateListProp, int stateIndex, SerializedProperty stateProp)
+            : base(editor, stateListProp, stateIndex, stateProp) { }
+
+        protected override void FillAlwaysVisibleSection(VisualElement section)
+        {
+            var clipField = new ObjectField("Clip")
+            {
+                objectType = typeof(AnimationClip)
+            };
+            clipField.BindProperty(stateProp.FindPropertyRelative(nameof(SingleClip.clip)));
+            section.Add(clipField);
+        }
+    }
+
+    public class BlendTree1DDisplay : StateDisplay {
+        private SerializedProperty entriesProp;
+        private List<BlendTree1DEntry> entryElements = new List<BlendTree1DEntry>();
+        private SerializedProperty blendVariableProp;
+        private VisualElement entrySection;
+
+        public BlendTree1DDisplay(AnimationPlayerEditor editor, SerializedProperty stateListProp, int stateIndex, SerializedProperty stateProp)
+            : base(editor, stateListProp, stateIndex, stateProp) { }
+
+        protected override void FillAlwaysVisibleSection(VisualElement section)
+        {
+            base.FillAlwaysVisibleSection(section);
+
+            blendVariableProp = stateProp.FindPropertyRelative(nameof(BlendTree1D.blendVariable));
+
+            var blendVariableField = new TextField("Blend Variable");
+            blendVariableField.BindProperty(blendVariableProp);
+            blendVariableField.RegisterValueChangedCallback(BlendVariableChanged);
+
+            section.Add(blendVariableField);
+        }
+
+        protected override void FillOnlyVisibleWhenExpandedSection(VisualElement section)
+        {
+            base.FillOnlyVisibleWhenExpandedSection(section);
+
+            var compensateForDurationsField = new Toggle("Compensate For Different Durations");
+            compensateForDurationsField.tooltip = "Should the blend tree compensate if the clips in the tree has different durations? This causes clips that " +
+                                                  "play simultaneously to be sped up or slowed down in order to match length. This improves visuals in quite " +
+                                                  "a few instances - for example, it can make blending between a jog and a run have the feet hit the ground " +
+                                                  "at the same time";
+            compensateForDurationsField.BindProperty(stateProp.FindPropertyRelative(nameof(BlendTree1D.compensateForDifferentDurations)));
+            section.Add(compensateForDurationsField);
+
+            entrySection = new VisualElement();
+            section.Add(entrySection);
+
+            entriesProp = stateProp.FindPropertyRelative(nameof(BlendTree1D.entries));
+            for (int i = 0; i < entriesProp.arraySize; i++)
+            {
+                var entryElement = new BlendTree1DEntry(editor, entriesProp.GetArrayElementAtIndex(i));
+                entryElements.Add(entryElement);
+                entryElement.SetBlendVariableName(blendVariableProp.stringValue);
+                entrySection.Add(entryElement.visualElement);
+            }
+
+            var addEntryButton = new Button
+            {
+                text = "Add Entry",
+                clickable = new Clickable(AddEntry)
+            };
+            addEntryButton.AddToClassList("animationLayer__editStatesSection__stateSet__state__addButton");
+            section.Add(addEntryButton);
+        }
+
+        private void AddEntry()
+        {
+            var entryProp = entriesProp.AppendToArray();
+            entryProp.FindPropertyRelative(nameof(BlendTreeEntry1D.clip)).objectReferenceValue = null;
+            entryProp.FindPropertyRelative(nameof(BlendTreeEntry1D.threshold)).floatValue = 0f;
+
+            serializedObject.ApplyModifiedProperties();
+
+            var entryElement = new BlendTree1DEntry(editor, entriesProp.GetArrayElementAtIndex(entriesProp.arraySize - 1));
+            entrySection.Add(entryElement.visualElement);
+            entryElements.Add(entryElement);
+            entryElement.SetBlendVariableName(blendVariableProp.stringValue);
+        }
+
+        private void BlendVariableChanged(ChangeEvent<string> evt)
+        {
+            foreach (var entryElement in entryElements)
+                entryElement.SetBlendVariableName(evt.newValue);
+        }
+    }
+
+    public class BlendTree1DEntry : AnimationPlayerUINode {
+        private FloatField thresholdField;
+
+        public BlendTree1DEntry(AnimationPlayerEditor editor, SerializedProperty entryProp) : base(editor)
+        {
+            visualElement = new VisualElement();
+            visualElement.AddToClassList("blendTreeEntry");
+
+            var clipField = new ObjectField("Clip");
+            clipField.Q<Label>().style.minWidth = 50f;
+            clipField.objectType = typeof(AnimationClip);
+            clipField.BindProperty(entryProp.FindPropertyRelative(nameof(BlendTreeEntry.clip)));
+
+            thresholdField = new FloatField();
+            thresholdField.AddToClassList("blendTreeEntry__threshold");
+            thresholdField.BindProperty(entryProp.FindPropertyRelative(nameof(BlendTreeEntry1D.threshold)));
+
+            visualElement.Add(clipField);
+            visualElement.Add(thresholdField);
+        }
+
+        public void SetBlendVariableName(string blendVariableName)
+        {
+            thresholdField.label = $"When \"{blendVariableName}\" = ";
+        }
+    }
+
+    public class BlendTree2DDisplay : StateDisplay {
+        private SerializedProperty entriesProp;
+        private SerializedProperty blendVariable1Prop;
+        private SerializedProperty blendVariable2Prop;
+        private List<BlendTree2DEntry> entryElements = new List<BlendTree2DEntry>();
+        private VisualElement entrySection;
+
+        public BlendTree2DDisplay(AnimationPlayerEditor editor, SerializedProperty stateListProp, int stateIndex, SerializedProperty stateProp)
+            : base(editor, stateListProp, stateIndex, stateProp) { }
+
+        protected override void FillAlwaysVisibleSection(VisualElement section)
+        {
+            base.FillAlwaysVisibleSection(section);
+
+            var blendVariableField = new TextField("Blend Variable");
+            blendVariable1Prop = stateProp.FindPropertyRelative(nameof(BlendTree2D.blendVariable));
+            blendVariableField.BindProperty(blendVariable1Prop);
+            section.Add(blendVariableField);
+
+            var blendVariable2Field = new TextField("Blend Variable 2");
+            blendVariable2Prop = stateProp.FindPropertyRelative(nameof(BlendTree2D.blendVariable2));
+            blendVariable2Field.BindProperty(blendVariable2Prop);
+            section.Add(blendVariable2Field);
+
+            blendVariableField.RegisterValueChangedCallback(BlendVariable1Changed);
+            blendVariable2Field.RegisterValueChangedCallback(BlendVariable2Changed);
+        }
+
+        protected override void FillOnlyVisibleWhenExpandedSection(VisualElement section)
+        {
+            base.FillOnlyVisibleWhenExpandedSection(section);
+
+            entrySection = new VisualElement();
+            section.Add(entrySection);
+
+            entriesProp = stateProp.FindPropertyRelative(nameof(BlendTree2D.entries));
+            for (int i = 0; i < entriesProp.arraySize; i++)
+            {
+                var entryElement = new BlendTree2DEntry(editor, entriesProp.GetArrayElementAtIndex(i));
+                entryElement.SetBlendVariableNames(blendVariable1Prop.stringValue, blendVariable2Prop.stringValue);
+
+                entryElements.Add(entryElement);
+                entrySection.Add(entryElement.visualElement);
+            }
+
+            var addEntryButton = new Button
+            {
+                text = "Add Entry",
+                clickable = new Clickable(AddEntry)
+            };
+            addEntryButton.AddToClassList("animationLayer__editStatesSection__stateSet__state__addButton");
+            section.Add(addEntryButton);
+        }
+
+        private void BlendVariable1Changed(ChangeEvent<string> evt)
+        {
+            foreach (var entryElement in entryElements)
+                entryElement.SetBlendVariableNames(evt.newValue, blendVariable2Prop.stringValue);
+        }
+
+        private void BlendVariable2Changed(ChangeEvent<string> evt)
+        {
+            foreach (var entryElement in entryElements)
+                entryElement.SetBlendVariableNames(blendVariable1Prop.stringValue, evt.newValue);
+        }
+
+        private void AddEntry()
+        {
+            var entryProp = entriesProp.AppendToArray();
+            entryProp.FindPropertyRelative(nameof(BlendTreeEntry2D.clip)).objectReferenceValue = null;
+            entryProp.FindPropertyRelative(nameof(BlendTreeEntry2D.threshold1)).floatValue = 0f;
+            entryProp.FindPropertyRelative(nameof(BlendTreeEntry2D.threshold2)).floatValue = 0f;
+
+            serializedObject.ApplyModifiedProperties();
+
+            var entryElement = new BlendTree2DEntry(editor, entriesProp.GetArrayElementAtIndex(entriesProp.arraySize - 1));
+            entryElement.SetBlendVariableNames(blendVariable1Prop.stringValue, blendVariable2Prop.stringValue);
+            entryElements.Add(entryElement);
+            entrySection.Add(entryElement.visualElement);
+        }
+    }
+
+    public class BlendTree2DEntry : AnimationPlayerUINode {
+        private FloatField threshold1Field;
+        private FloatField threshold2Field;
+
+        public BlendTree2DEntry(AnimationPlayerEditor editor, SerializedProperty entryProp) : base(editor)
+        {
+            visualElement = new VisualElement();
+            visualElement.AddToClassList("blendTreeEntry");
+
+            var clipField = new ObjectField("Clip");
+            clipField.Q<Label>().style.minWidth = 50f;
+            clipField.objectType = typeof(AnimationClip);
+            clipField.BindProperty(entryProp.FindPropertyRelative(nameof(BlendTreeEntry.clip)));
+
+            threshold1Field = new FloatField();
+            threshold1Field.AddToClassList("blendTreeEntry__threshold");
+            threshold1Field.BindProperty(entryProp.FindPropertyRelative(nameof(BlendTreeEntry2D.threshold1)));
+
+            threshold2Field = new FloatField();
+            threshold2Field.AddToClassList("blendTreeEntry__threshold");
+            threshold2Field.BindProperty(entryProp.FindPropertyRelative(nameof(BlendTreeEntry2D.threshold2)));
+
+            visualElement.Add(clipField);
+            visualElement.Add(threshold1Field);
+            visualElement.Add(threshold2Field);
+        }
+
+        public void SetBlendVariableNames(string blendVar1, string blendVar2)
+        {
+            threshold1Field.label = $"When \"{blendVar1}\" = ";
+            threshold2Field.label = $"When \"{blendVar2}\" = ";
+        }
+    }
+
+    public class SequenceDisplay : StateDisplay {
+        private SerializedProperty clipsProp;
+        private VisualElement clipsSection;
+
+        public SequenceDisplay(AnimationPlayerEditor editor, SerializedProperty stateListProp, int stateIndex, SerializedProperty stateProp)
+            : base(editor, stateListProp, stateIndex, stateProp) { }
+
+        protected override void FillOnlyVisibleWhenExpandedSection(VisualElement section)
+        {
+            base.FillOnlyVisibleWhenExpandedSection(section);
+
+            var loopModeField = new EnumField("Loop Mode");
+            loopModeField.BindProperty(stateProp.FindPropertyRelative(nameof(Sequence.loopMode)));
+            section.Add(loopModeField);
+
+            clipsSection = new VisualElement();
+            section.Add(clipsSection);
+
+            clipsProp = stateProp.FindPropertyRelative(nameof(Sequence.clips));
+            for (int i = 0; i < clipsProp.arraySize; i++)
+                AddClipVisualElement(clipsProp.GetArrayElementAtIndex(i));
+
+            var addClipButton = new Button
+            {
+                text = "Add Clip",
+                clickable = new Clickable(AddClip)
+            };
+            addClipButton.AddToClassList("animationLayer__editStatesSection__stateSet__state__addButton");
+            section.Add(addClipButton);
+        }
+
+        private void AddClipVisualElement(SerializedProperty clipProp)
+        {
+            var clipField = new ObjectField("Clip");
+            clipField.objectType = typeof(AnimationClip);
+            clipField.BindProperty(clipProp);
+            clipsSection.Add(clipField);
+        }
+
+        private void AddClip()
+        {
+            var clipProp = clipsProp.AppendToArray();
+            clipProp.objectReferenceValue = null;
+            serializedObject.ApplyModifiedProperties();
+            AddClipVisualElement(clipProp);
+        }
+    }
+
+    public class RandomClipDisplay : StateDisplay {
+        private SerializedProperty clipsProp;
+        private VisualElement clipsSection;
+
+        public RandomClipDisplay(AnimationPlayerEditor editor, SerializedProperty stateListProp, int stateIndex, SerializedProperty stateProp)
+            : base(editor, stateListProp, stateIndex, stateProp) { }
+
+        protected override void FillOnlyVisibleWhenExpandedSection(VisualElement section)
+        {
+            base.FillOnlyVisibleWhenExpandedSection(section);
+
+            clipsSection = new VisualElement();
+            section.Add(clipsSection);
+
+            clipsProp = stateProp.FindPropertyRelative(nameof(PlayRandomClip.clips));
+            for (int i = 0; i < clipsProp.arraySize; i++)
+                AddClipVisualElement(clipsProp.GetArrayElementAtIndex(i));
+
+            var addClipButton = new Button
+            {
+                text = "Add Clip",
+                clickable = new Clickable(AddClip)
+            };
+            addClipButton.AddToClassList("unity-button");
+            addClipButton.AddToClassList("animationLayer__editStatesSection__stateSet__state__addButton");
+            section.Add(addClipButton);
+        }
+
+        private void AddClipVisualElement(SerializedProperty clipProp)
+        {
+            var clipField = new ObjectField("Clip");
+            clipField.objectType = typeof(AnimationClip);
+            clipField.BindProperty(clipProp);
+            clipsSection.Add(clipField);
+        }
+
+        private void AddClip()
+        {
+            var clipProp = clipsProp.AppendToArray();
+            clipProp.objectReferenceValue = null;
+            serializedObject.ApplyModifiedProperties();
+            AddClipVisualElement(clipProp);
+        }
+    }
+}
 }

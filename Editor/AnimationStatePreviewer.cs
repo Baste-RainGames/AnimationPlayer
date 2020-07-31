@@ -111,11 +111,9 @@ namespace Animation_Player
 
         private void DrawAnimationStatePreview(AnimationPlayerState previewedState, bool changedState)
         {
-            EditorUtilities.Splitter();
-
             var oldPreviewMode = previewMode;
 
-            EditorUtilities.DrawHorizontal(() =>
+            using (new GUILayout.HorizontalScope())
             {
                 EditorGUILayout.LabelField("Preview mode");
 
@@ -128,7 +126,7 @@ namespace Animation_Player
                 if (GUILayout.Button("Manual") || swapToManual)
                     previewMode = PreviewMode.Manual;
                 EditorGUI.EndDisabledGroup();
-            });
+            }
 
             swapToManual = false;
 
@@ -194,7 +192,6 @@ namespace Animation_Player
 
             if (blendVars.Length > 0)
             {
-                EditorUtilities.Splitter();
                 EditorGUILayout.LabelField($"Blend vars for {previewedState.Name}");
                 for (var i = 0; i < blendVars.Length; i++) {
                     var (name, min, max, current) = blendVars[i];
@@ -211,8 +208,6 @@ namespace Animation_Player
                                 controller.SetValue(name, newVal);
                     }
                 }
-
-                EditorUtilities.Splitter();
             }
 
             SceneView.RepaintAll();
@@ -266,7 +261,6 @@ namespace Animation_Player
                 resetGraph.GetRootPlayable(0).SetTime(0);
                 resetGraph.Evaluate();
             }
-            catch { }
             finally {
                 resetGraph.Destroy();
             }

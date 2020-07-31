@@ -170,7 +170,6 @@ public class NewNewAnimationPlayerEditor : Editor
             {
                 text = "Remove Layer",
                 clickable = new Clickable(RemoveLayerClicked),
-
             };
             visualElement.AddToClassList("topBar__element");
             visualElement.SetEnabled(editor.serializedObject.FindProperty("layers").arraySize > 1);
@@ -599,10 +598,10 @@ public class NewNewAnimationPlayerEditor : Editor
         protected StateSection(NewNewAnimationPlayerEditor editor, SerializedProperty layerProperty) : base(editor)
         {
             visualElement = new VisualElement();
-            visualElement.AddToClassList("animationLayer__editStatesSection__clipSet");
+            visualElement.AddToClassList("animationLayer__editStatesSection__stateSet");
 
             var label = new Label(LabelText);
-            label.AddToClassList("animationLayer__editStatesSection__clipSet__header");
+            label.AddToClassList("animationLayer__editStatesSection__stateSet__header");
             visualElement.Add(label);
 
             stateListProp = layerProperty.FindPropertyRelative(ListPropName);
@@ -701,6 +700,8 @@ public class NewNewAnimationPlayerEditor : Editor
             this.stateProp = stateProp;
             visualElement = new VisualElement();
 
+            visualElement.AddToClassList("animationLayer__editStatesSection__stateSet__state");
+
             var textField = new TextField("State Name");
             var doubleField = new DoubleField("State Speed");
 
@@ -728,12 +729,14 @@ public class NewNewAnimationPlayerEditor : Editor
     public class BlendTree1DDisplay : StateDisplay
     {
         private SerializedProperty entriesProp;
+        private List<BlendTree1DEntry> entryElements = new List<BlendTree1DEntry>();
         private Button addEntryButton;
 
         public BlendTree1DDisplay(NewNewAnimationPlayerEditor editor, SerializedProperty stateProp) : base(editor, stateProp)
         {
             var blendVariableField = new TextField("Blend Variable");
-            blendVariableField.BindProperty(stateProp.FindPropertyRelative(nameof(BlendTree1D.blendVariable)));
+            var blendVariableProp = stateProp.FindPropertyRelative(nameof(BlendTree1D.blendVariable));
+            blendVariableField.BindProperty(blendVariableProp);
             visualElement.Add(blendVariableField);
 
             var compensateForDurationsField = new Toggle("Compensate For Different Durations");
@@ -744,6 +747,8 @@ public class NewNewAnimationPlayerEditor : Editor
             for (int i = 0; i < entriesProp.arraySize; i++)
             {
                 var entryElement = new BlendTree1DEntry(editor, entriesProp.GetArrayElementAtIndex(i));
+                entryElements.Add(entryElement);
+                entryElement.SetBlendVariableName(blendVariableProp.stringValue);
                 visualElement.Add(entryElement.visualElement);
             }
 
@@ -753,6 +758,8 @@ public class NewNewAnimationPlayerEditor : Editor
                 clickable = new Clickable(AddEntry)
             };
             visualElement.Add(addEntryButton);
+
+            blendVariableField.RegisterValueChangedCallback(BlendVariableChanged);
         }
 
         private void AddEntry()
@@ -765,14 +772,24 @@ public class NewNewAnimationPlayerEditor : Editor
 
             var entryElement = new BlendTree1DEntry(editor, entriesProp.GetArrayElementAtIndex(entriesProp.arraySize - 1));
             visualElement.Add(entryElement.visualElement);
+            entryElements.Add(entryElement);
+            entryElement.SetBlendVariableName(entriesProp.GetArrayElementAtIndex(entriesProp.arraySize - 1).stringValue);
 
             visualElement.Remove(addEntryButton);
             visualElement.Add(addEntryButton);
+        }
+
+        private void BlendVariableChanged(ChangeEvent<string> evt)
+        {
+            foreach (var entryElement in entryElements)
+                entryElement.SetBlendVariableName(evt.newValue);
         }
     }
 
     public class BlendTree1DEntry : AnimationPlayerUINode
     {
+        private FloatField thresholdField;
+
         public BlendTree1DEntry(NewNewAnimationPlayerEditor editor, SerializedProperty entryProp) : base(editor)
         {
             visualElement = new VisualElement();
@@ -783,34 +800,47 @@ public class NewNewAnimationPlayerEditor : Editor
             clipField.objectType = typeof(AnimationClip);
             clipField.BindProperty(entryProp.FindPropertyRelative(nameof(BlendTreeEntry.clip)));
 
-            var thresholdField = new FloatField("threshold");
+            thresholdField = new FloatField();
             thresholdField.AddToClassList("blendTreeEntry__threshold");
             thresholdField.BindProperty(entryProp.FindPropertyRelative(nameof(BlendTreeEntry1D.threshold)));
 
             visualElement.Add(clipField);
             visualElement.Add(thresholdField);
         }
+
+        public void SetBlendVariableName(string blendVariableName)
+        {
+            thresholdField.label = $"When \"{blendVariableName}\" = ";
+        }
     }
 
     public class BlendTree2DDisplay : StateDisplay
     {
         private SerializedProperty entriesProp;
+        private SerializedProperty blendVariable1Prop;
+        private SerializedProperty blendVariable2Prop;
+        private List<BlendTree2DEntry> entryElements = new List<BlendTree2DEntry>();
         private Button addEntryButton;
 
         public BlendTree2DDisplay(NewNewAnimationPlayerEditor editor, SerializedProperty stateProp) : base(editor, stateProp)
         {
             var blendVariableField = new TextField("Blend Variable");
-            blendVariableField.BindProperty(stateProp.FindPropertyRelative(nameof(BlendTree2D.blendVariable)));
+            blendVariable1Prop = stateProp.FindPropertyRelative(nameof(BlendTree2D.blendVariable));
+            blendVariableField.BindProperty(blendVariable1Prop);
             visualElement.Add(blendVariableField);
 
             var blendVariable2Field = new TextField("Blend Variable 2");
-            blendVariable2Field.BindProperty(stateProp.FindPropertyRelative(nameof(BlendTree2D.blendVariable2)));
+            blendVariable2Prop = stateProp.FindPropertyRelative(nameof(BlendTree2D.blendVariable2));
+            blendVariable2Field.BindProperty(blendVariable2Prop);
             visualElement.Add(blendVariable2Field);
 
             entriesProp = stateProp.FindPropertyRelative(nameof(BlendTree2D.entries));
             for (int i = 0; i < entriesProp.arraySize; i++)
             {
                 var entryElement = new BlendTree2DEntry(editor, entriesProp.GetArrayElementAtIndex(i));
+                entryElement.SetBlendVariableNames(blendVariable1Prop.stringValue, blendVariable2Prop.stringValue);
+
+                entryElements.Add(entryElement);
                 visualElement.Add(entryElement.visualElement);
             }
 
@@ -820,6 +850,21 @@ public class NewNewAnimationPlayerEditor : Editor
                 clickable = new Clickable(AddEntry)
             };
             visualElement.Add(addEntryButton);
+
+            blendVariableField .RegisterValueChangedCallback(BlendVariable1Changed);
+            blendVariable2Field.RegisterValueChangedCallback(BlendVariable2Changed);
+        }
+
+        private void BlendVariable1Changed(ChangeEvent<string> evt)
+        {
+            foreach (var entryElement in entryElements)
+                entryElement.SetBlendVariableNames(evt.newValue, blendVariable2Prop.stringValue);
+        }
+
+        private void BlendVariable2Changed(ChangeEvent<string> evt)
+        {
+            foreach (var entryElement in entryElements)
+                entryElement.SetBlendVariableNames(blendVariable1Prop.stringValue, evt.newValue);
         }
 
         private void AddEntry()
@@ -832,6 +877,8 @@ public class NewNewAnimationPlayerEditor : Editor
             serializedObject.ApplyModifiedProperties();
 
             var entryElement = new BlendTree2DEntry(editor, entriesProp.GetArrayElementAtIndex(entriesProp.arraySize - 1));
+            entryElement.SetBlendVariableNames(blendVariable1Prop.stringValue, blendVariable2Prop.stringValue);
+            entryElements.Add(entryElement);
             visualElement.Add(entryElement.visualElement);
 
             visualElement.Remove(addEntryButton);
@@ -841,6 +888,9 @@ public class NewNewAnimationPlayerEditor : Editor
 
     public class BlendTree2DEntry : AnimationPlayerUINode
     {
+        private FloatField threshold1Field;
+        private FloatField threshold2Field;
+
         public BlendTree2DEntry(NewNewAnimationPlayerEditor editor, SerializedProperty entryProp) : base(editor)
         {
             visualElement = new VisualElement();
@@ -851,17 +901,23 @@ public class NewNewAnimationPlayerEditor : Editor
             clipField.objectType = typeof(AnimationClip);
             clipField.BindProperty(entryProp.FindPropertyRelative(nameof(BlendTreeEntry.clip)));
 
-            var threshold1Field = new FloatField("threshold");
+            threshold1Field = new FloatField();
             threshold1Field.AddToClassList("blendTreeEntry__threshold");
             threshold1Field.BindProperty(entryProp.FindPropertyRelative(nameof(BlendTreeEntry2D.threshold1)));
 
-            var threshold2Field = new FloatField("threshold 2");
+            threshold2Field = new FloatField();
             threshold2Field.AddToClassList("blendTreeEntry__threshold");
             threshold2Field.BindProperty(entryProp.FindPropertyRelative(nameof(BlendTreeEntry2D.threshold2)));
 
             visualElement.Add(clipField);
             visualElement.Add(threshold1Field);
             visualElement.Add(threshold2Field);
+        }
+
+        public void SetBlendVariableNames(string blendVar1, string blendVar2)
+        {
+            threshold1Field.label = $"When \"{blendVar1}\" = ";
+            threshold2Field.label = $"When \"{blendVar2}\" = ";
         }
     }
 

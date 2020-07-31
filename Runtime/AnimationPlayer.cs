@@ -22,6 +22,9 @@ namespace Animation_Player
 
         public static int DefaultState => 0;
 
+        private static AnimationClip _dummyEmptyClip;
+        internal static AnimationClip dummyEmptyClip => _dummyEmptyClip != null ? dummyEmptyClip : _dummyEmptyClip = new AnimationClip();
+
         public AnimationLayer[] layers;
         public TransitionData defaultTransition;
 
@@ -30,12 +33,13 @@ namespace Animation_Player
 
         //Runtime fields:
 
-        private bool hasAwoken;
-        private PlayableGraph graph;
-        private Playable rootPlayable;
-        private string visualizerClientName;
+        [NonSerialized] private bool hasAwoken;
+        [NonSerialized] private Playable rootPlayable;
+        [NonSerialized] private string visualizerClientName;
+        [NonSerialized] private Renderer[] childRenderersForVisibilityChecks;
 
-        private Renderer[] childRenderersForVisibilityChecks;
+        private PlayableGraph graph;
+        public PlayableGraph Graph => graph;
 
         private bool _cullCheckingActive;
         public bool CullCheckingActive {
@@ -62,12 +66,12 @@ namespace Animation_Player
 
         private void Awake()
         {
-            if(hasAwoken)
+            if (hasAwoken)
                 return;
+            hasAwoken = true;
 
             AnimationPlayerUpdater.RegisterAnimationPlayer(this);
 
-            hasAwoken = true;
             EnsureVersionUpgraded();
 
             if (layers.Length == 0)
@@ -209,6 +213,24 @@ namespace Animation_Player
             if (graph.IsValid())
                 graph.Destroy();
         }
+
+#if UNITY_EDITOR
+        private bool applyRootMotionWasActive;
+        public void EnterPreview()
+        {
+            hasAwoken = false;
+            Awake();
+            applyRootMotionWasActive = OutputAnimator.applyRootMotion;
+        }
+
+        public void ExitPreview()
+        {
+            OnDestroy();
+            hasAwoken = false;
+            if (OutputAnimator != null)
+                OutputAnimator.applyRootMotion = applyRootMotionWasActive;
+        }
+#endif
 
         /// <summary>
         /// Ensures that the AnimationPlayer is ready - ie. has had Awake called. Use this if you're calling something before you can be sure that the

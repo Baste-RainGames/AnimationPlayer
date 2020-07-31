@@ -11,18 +11,43 @@ namespace Animation_Player {
 [CustomEditor(typeof(AnimationPlayer))]
 public class AnimationPlayerEditor : Editor {
     private UIRoot uiRoot;
+    private AnimationPlayerPreviewer previewer;
+
+    public override bool RequiresConstantRepaint() => previewer.IsPreviewing;
 
     private void OnEnable()
     {
         var directReference = (AnimationPlayer) target;
+        previewer = new AnimationPlayerPreviewer(directReference);
         if (directReference.layers == null)
             InitializeJustAddedAnimationPlayer();
 
         Undo.undoRedoPerformed += HandleUndoRedo;
     }
 
-    private void OnDisable() => Undo.undoRedoPerformed -= HandleUndoRedo;
+    private void OnDisable()
+    {
+        Undo.undoRedoPerformed -= HandleUndoRedo;
+        previewer.StopPreview();
+    }
+
     private void HandleUndoRedo() => RebuildUI();
+
+    // private void OnSceneGUI()
+    // {
+    //     if (previewer.IsPreviewing)
+    //     {
+    //         previewer.Update();
+    //     }
+    // }
+
+    public override void OnInspectorGUI()
+    {
+        if (previewer.IsPreviewing)
+        {
+            previewer.Update();
+        }
+    }
 
     private void InitializeJustAddedAnimationPlayer()
     {
@@ -42,6 +67,9 @@ public class AnimationPlayerEditor : Editor {
 
     private void RebuildUI()
     {
+        if (uiRoot == null)
+            return;
+
         serializedObject.Update();
 
         var parentElement = uiRoot.visualElement.parent;
@@ -716,7 +744,34 @@ public class AnimationPlayerEditor : Editor {
         {
             parentSection.Add(new HorizontalDivider());
 
+            var label = new Label("Preview:");
+            label.AddToClassList("label");
+            parentSection.Add(label);
 
+            var playSection = new VisualElement();
+            playSection.AddToClassList("animationLayer__editStatesSection__stateSet__state__preview__playSection");
+            parentSection.Add(playSection);
+
+            var playPauseButton = new Button {text="play"};
+            var stopButton = new Button {text="stop"};
+            var playbackSlider = new Slider();
+
+            playSection.Add(playPauseButton);
+            playSection.Add(stopButton);
+            playSection.Add(playbackSlider);
+
+            playPauseButton.clickable = new Clickable(StartPreview);
+            stopButton.clickable = new Clickable(StopPreview);
+        }
+
+        private void StartPreview()
+        {
+            editor.previewer.StartPreview(0, 0);
+        }
+
+        private void StopPreview()
+        {
+            editor.previewer.StopPreview();
         }
 
         protected virtual void FillAlwaysVisibleSection(VisualElement section)
@@ -741,7 +796,8 @@ public class AnimationPlayerEditor : Editor {
 
         protected virtual void FillOnlyVisibleWhenExpandedSection(VisualElement section)
         {
-            var speedField = new DoubleField("State Speed");
+            var speedField = new DoubleField("Playback Speed");
+            speedField.tooltip = "Clips in the state will be played with this speed multiplier";
             speedField.BindProperty(stateProp.FindPropertyRelative(nameof(AnimationPlayerState.speed)));
 
             section.Add(speedField);

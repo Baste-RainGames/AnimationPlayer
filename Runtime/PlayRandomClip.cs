@@ -57,19 +57,14 @@ namespace Animation_Player
                                                   Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers,
                                                   List<BlendTreeController2D> all2DControllers)
         {
-            playedClip = clips.GetRandomIdx();
-            return GeneratePlayableFor(graph, playedClip);
-        }
-
-
-        private Playable GeneratePlayableFor(PlayableGraph graph, int clipIdx)
-        {
-            playedClip = clipIdx;
-            var clipPlayable = AnimationClipPlayable.Create(graph, ClipsToUse[playedClip]);
+            playedClip = clips.Count == 0 ? -1 : clips.GetRandomIdx();
+            var clip = playedClip == -1 ? AnimationPlayer.dummyEmptyClip : ClipsToUse[playedClip];
+            var clipPlayable = AnimationClipPlayable.Create(graph, clip);
             clipPlayable.SetApplyFootIK(true);
             clipPlayable.SetSpeed(speed);
             return clipPlayable;
         }
+
 
         public override void OnWillStartPlaying(ref Playable ownPlayable)
         {

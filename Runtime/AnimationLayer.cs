@@ -63,7 +63,7 @@ namespace Animation_Player
             containingGraph = graph;
             if (states.Count == 0)
             {
-                stateMixer = AnimationMixerPlayable.Create(graph, 0, false);
+                stateMixer = AnimationMixerPlayable.Create(graph);
                 return;
             }
 
@@ -74,7 +74,7 @@ namespace Animation_Player
 
             runtimePlayables = new Playable[states.Count];
 
-            stateMixer = AnimationMixerPlayable.Create(graph, states.Count, false);
+            stateMixer = AnimationMixerPlayable.Create(graph, states.Count);
             stateMixer.SetInputWeight(0, 1f);
             currentPlayedState = 0;
 
@@ -255,7 +255,7 @@ namespace Animation_Player
                     stateMixer.SetInputWeight(i, 0);
                 stateMixer.SetInputWeight(transitionStateindex, 1);
 
-                transitionState.SetTime(0); // Fix for a bug where this is set to some other value on startup (for example 0.333 in one test?)
+                transitionState.SetTime(0); // Fix for an issue where this is set to some other value on startup (for example 0.333 in one test?)
 
                 transitioning = true;
                 transitionStartTime = Time.time;
@@ -702,45 +702,19 @@ namespace Animation_Player
                 InitializeLayerBlending(containingGraph, layerIndex, layerMixer);
         }
 
-#if UNITY_EDITOR
-        public GUIContent[] layersForEditor;
-#endif
-
         [SerializeField] private List<SingleClip>     serializedSingleClipStates   = new List<SingleClip>();
         [SerializeField] private List<BlendTree1D>    serializedBlendTree1Ds       = new List<BlendTree1D>();
         [SerializeField] private List<BlendTree2D>    serializedBlendTree2Ds       = new List<BlendTree2D>();
         [SerializeField] private List<PlayRandomClip> serializedSelectRandomStates = new List<PlayRandomClip>();
         [SerializeField] private List<Sequence>       serializedSequences          = new List<Sequence>();
-        [SerializeField] private SerializedGUID[]     serializedStateOrder;
 
         public void OnBeforeSerialize()
         {
-            //@TODO: all of these null checks are probably bogus since we new the lists in their declarations.
-            // delete them if there's no errors.
-
-            // if (serializedSingleClipStates == null)
-            //     serializedSingleClipStates = new List<SingleClip>();
-            // else
-                serializedSingleClipStates.Clear();
-
-            // if (serializedBlendTree1Ds == null)
-            //     serializedBlendTree1Ds = new List<BlendTree1D>();
-            // else
-                serializedBlendTree1Ds.Clear();
-
-            // if (serializedBlendTree2Ds == null)
-            //     serializedBlendTree2Ds = new List<BlendTree2D>();
-            // else
-                serializedBlendTree2Ds.Clear();
-            // if (serializedSelectRandomStates == null)
-            //     serializedSelectRandomStates = new List<PlayRandomClip>();
-            // else
-                serializedSelectRandomStates.Clear();
-
-            // if (serializedSequences == null)
-            //     serializedSequences = new List<Sequence>();
-            // else
-                serializedSequences.Clear();
+            serializedSingleClipStates.Clear();
+            serializedBlendTree1Ds.Clear();
+            serializedBlendTree2Ds.Clear();
+            serializedSelectRandomStates.Clear();
+            serializedSequences.Clear();
 
             foreach (var state in states)
             {
@@ -767,12 +741,6 @@ namespace Animation_Player
                         continue;
                 }
             }
-
-            serializedStateOrder = new SerializedGUID[states.Count];
-            for (int i = 0; i < states.Count; i++)
-            {
-                serializedStateOrder[i] = states[i].GUID;
-            }
         }
 
         public void OnAfterDeserialize()
@@ -798,23 +766,6 @@ namespace Animation_Player
             foreach (var sequence in serializedSequences) {
                 states.Add(sequence);
             }
-
-            serializedSingleClipStates.Clear();
-            serializedBlendTree1Ds.Clear();
-            serializedBlendTree2Ds.Clear();
-            serializedSelectRandomStates.Clear();
-            serializedSequences.Clear();
-
-            states.Sort(CompareListIndices);
-        }
-
-        private int CompareListIndices(AnimationPlayerState x, AnimationPlayerState y)
-        {
-            var xIndex = Array.IndexOf(serializedStateOrder, x.GUID);
-            var yIndex = Array.IndexOf(serializedStateOrder, y.GUID);
-            if (xIndex < yIndex)
-                return -1;
-            return xIndex > yIndex ? 1 : 0;
         }
 
         private struct PlayAtTimeInstruction

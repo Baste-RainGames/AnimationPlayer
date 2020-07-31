@@ -50,6 +50,7 @@
     padding-top: 5px;
 }
 
+
 .animationLayer__editStatesSection__stateSet__state {
     margin-top: 5px;
 }
@@ -65,6 +66,15 @@
 
 .animationLayer__editStatesSection__stateSet__state__nameSection__deleteButton {
     width: 25px;
+}
+
+.animationLayer__editStatesSection__stateSet__state__preview__playSection {
+    flex-direction: row;
+}
+
+.animationLayer__editStatesSection__stateSet__state__preview__playSection .unity-base-slider {
+    min-width: 100px;
+    flex-grow: 1;
 }
 
 .animationLayer__editStatesSection__stateSet__state__addButton {

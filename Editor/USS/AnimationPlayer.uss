@@ -22,7 +22,7 @@
 .animationLayer__statesHeader {
     flex-direction: row;
     justify-content: space-between;
-    border-width: 1px 1px 0 1px;
+    border-width: 1px 1px 1px 1px;
     border-color: black;
 }
 
@@ -40,7 +40,7 @@
 }
 
 .animationLayer__editStatesSection__stateSet {
-    border-width: 1px 1px 1px 1px;
+    border-width: 0 1px 1px 1px;
     border-color: black;
 }
 
@@ -49,8 +49,33 @@
     -unity-font-style: bold;
 }
 
+.animationLayer__editStatesSection__stateSet__state {
+    margin-top: 5px;
+}
+
+.animationLayer__editStatesSection__stateSet__state__addButton {
+    max-width: 100px;
+/*
+    // margin: auto to center the element, but it breaks when displaying/hiding the ui
+    margin: auto;
+*/
+}
+
 .animationLayer__editStatesSection__stateSet__state:hover {
-    background-color: #ff3e3f;
+    background-color: #2A2A2A;
+}
+
+.animationLayer__editStatesSection__stateSet__state__toggleExpanded {
+
+}
+
+.animationLayer__editStatesSection__stateSet__state__toggleExpanded:hover {
+    background-color: #202020;
+}
+
+.animationLayer__editStatesSection__stateSet__state__toggleExpanded .unity-label {
+    margin: auto;
+    width: 20px;
 }
 
 .label {

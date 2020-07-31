@@ -215,20 +215,20 @@ namespace Animation_Player
         }
 
 #if UNITY_EDITOR
-        private bool applyRootMotionWasActive;
+        private Vector3 positionBeforePreview;
         public void EnterPreview()
         {
             hasAwoken = false;
             Awake();
-            applyRootMotionWasActive = OutputAnimator.applyRootMotion;
+            positionBeforePreview = transform.position;
         }
 
         public void ExitPreview()
         {
             OnDestroy();
             hasAwoken = false;
-            if (OutputAnimator != null)
-                OutputAnimator.applyRootMotion = applyRootMotionWasActive;
+            if (positionBeforePreview != transform.position)
+                transform.position = positionBeforePreview;
         }
 #endif
 

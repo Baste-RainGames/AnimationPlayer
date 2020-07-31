@@ -33,19 +33,12 @@ public class AnimationPlayerEditor : Editor {
 
     private void HandleUndoRedo() => RebuildUI();
 
-    // private void OnSceneGUI()
-    // {
-    //     if (previewer.IsPreviewing)
-    //     {
-    //         previewer.Update();
-    //     }
-    // }
-
-    public override void OnInspectorGUI()
+    private void OnSceneGUI()
     {
         if (previewer.IsPreviewing)
         {
             previewer.Update();
+            SceneView.lastActiveSceneView.Repaint();
         }
     }
 

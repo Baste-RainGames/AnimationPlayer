@@ -53,10 +53,19 @@
     margin-top: 5px;
 }
 
+.animationLayer__editStatesSection__stateSet__state__nameSection {
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.animationLayer__editStatesSection__stateSet__state__nameSection__deleteButton {
+    width: 25px;
+}
+
 .animationLayer__editStatesSection__stateSet__state__addButton {
     max-width: 100px;
 /*
-    // margin: auto to center the element, but it breaks when displaying/hiding the ui
+    margin: auto to center the element, but it breaks when displaying/hiding the ui
     margin: auto;
 */
 }

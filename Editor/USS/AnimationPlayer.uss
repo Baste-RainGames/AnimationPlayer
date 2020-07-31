@@ -58,6 +58,10 @@
     justify-content: space-between;
 }
 
+.animationLayer__editStatesSection__stateSet__state__nameSection .unity-text-field {
+    flex-grow: 1;
+}
+
 .animationLayer__editStatesSection__stateSet__state__nameSection__deleteButton {
     width: 25px;
 }

@@ -679,8 +679,8 @@ public class NewNewAnimationPlayerEditor : Editor {
         public readonly SerializedProperty stateProp;
         private readonly SerializedProperty stateListProp;
         private int stateIndex;
-        protected readonly VisualElement alwaysVisibleSection;
-        protected readonly VisualElement onlyVisibleWhenExpandedSection;
+        private readonly VisualElement alwaysVisibleSection;
+        private readonly VisualElement onlyVisibleWhenExpandedSection;
         private readonly Label toggleExpandedLabel;
 
         protected StateDisplay(NewNewAnimationPlayerEditor editor, SerializedProperty stateListProp, int stateIndex, SerializedProperty stateProp) :
@@ -706,18 +706,13 @@ public class NewNewAnimationPlayerEditor : Editor {
             visualElement.Add(onlyVisibleWhenExpandedSection);
             visualElement.Add(toggleExpandedButton);
 
-            var nameField = CreateNameSection(stateProp);
-
-            var speedField = new DoubleField("State Speed");
-            speedField.BindProperty(stateProp.FindPropertyRelative(nameof(AnimationPlayerState.speed)));
-
-            alwaysVisibleSection.Add(nameField);
-            onlyVisibleWhenExpandedSection.Add(speedField);
+            FillAlwaysVisibleSection(alwaysVisibleSection);
+            FillOnlyVisibleWhenExpandedSection(onlyVisibleWhenExpandedSection);
 
             onlyVisibleWhenExpandedSection.SetDisplayed(false);
         }
 
-        private VisualElement CreateNameSection(SerializedProperty stateProp)
+        protected virtual void FillAlwaysVisibleSection(VisualElement section)
         {
             var nameSection = new VisualElement();
             nameSection.AddToClassList("animationLayer__editStatesSection__stateSet__state__nameSection");
@@ -734,7 +729,15 @@ public class NewNewAnimationPlayerEditor : Editor {
             nameSection.Add(nameField);
             nameSection.Add(deleteButton);
 
-            return nameSection;
+            section.Add(nameSection);
+        }
+
+        protected virtual void FillOnlyVisibleWhenExpandedSection(VisualElement section)
+        {
+            var speedField = new DoubleField("State Speed");
+            speedField.BindProperty(stateProp.FindPropertyRelative(nameof(AnimationPlayerState.speed)));
+
+            onlyVisibleWhenExpandedSection.Add(speedField);
         }
 
         private void DeleteState()
@@ -752,15 +755,17 @@ public class NewNewAnimationPlayerEditor : Editor {
     }
 
     public class SingleClipDisplay : StateDisplay {
-        public SingleClipDisplay(NewNewAnimationPlayerEditor editor, SerializedProperty stateListProp, int stateIndex, SerializedProperty singleClipProp)
-            : base(editor, stateListProp, stateIndex, singleClipProp)
+        public SingleClipDisplay(NewNewAnimationPlayerEditor editor, SerializedProperty stateListProp, int stateIndex, SerializedProperty stateProp)
+            : base(editor, stateListProp, stateIndex, stateProp) { }
+
+        protected override void FillAlwaysVisibleSection(VisualElement section)
         {
             var clipField = new ObjectField("Clip")
             {
                 objectType = typeof(AnimationClip)
             };
-            clipField.BindProperty(singleClipProp.FindPropertyRelative(nameof(SingleClip.clip)));
-            alwaysVisibleSection.Add(clipField);
+            clipField.BindProperty(stateProp.FindPropertyRelative(nameof(SingleClip.clip)));
+            section.Add(clipField);
         }
     }
 
@@ -768,19 +773,38 @@ public class NewNewAnimationPlayerEditor : Editor {
         private SerializedProperty entriesProp;
         private List<BlendTree1DEntry> entryElements = new List<BlendTree1DEntry>();
         private SerializedProperty blendVariableProp;
-        private Button addEntryButton;
+        private VisualElement entrySection;
 
         public BlendTree1DDisplay(NewNewAnimationPlayerEditor editor, SerializedProperty stateListProp, int stateIndex, SerializedProperty stateProp)
-            : base(editor, stateListProp, stateIndex, stateProp)
+            : base(editor, stateListProp, stateIndex, stateProp) { }
+
+        protected override void FillAlwaysVisibleSection(VisualElement section)
         {
-            var blendVariableField = new TextField("Blend Variable");
+            base.FillAlwaysVisibleSection(section);
+
             blendVariableProp = stateProp.FindPropertyRelative(nameof(BlendTree1D.blendVariable));
+
+            var blendVariableField = new TextField("Blend Variable");
             blendVariableField.BindProperty(blendVariableProp);
-            alwaysVisibleSection.Add(blendVariableField);
+            blendVariableField.RegisterValueChangedCallback(BlendVariableChanged);
+
+            section.Add(blendVariableField);
+        }
+
+        protected override void FillOnlyVisibleWhenExpandedSection(VisualElement section)
+        {
+            base.FillOnlyVisibleWhenExpandedSection(section);
 
             var compensateForDurationsField = new Toggle("Compensate For Different Durations");
+            compensateForDurationsField.tooltip = "Should the blend tree compensate if the clips in the tree has different durations? This causes clips that " +
+                                                  "play simultaneously to be sped up or slowed down in order to match length. This improves visuals in quite " +
+                                                  "a few instances - for example, it can make blending between a jog and a run have the feet hit the ground " +
+                                                  "at the same time";
             compensateForDurationsField.BindProperty(stateProp.FindPropertyRelative(nameof(BlendTree1D.compensateForDifferentDurations)));
-            onlyVisibleWhenExpandedSection.Add(compensateForDurationsField);
+            section.Add(compensateForDurationsField);
+
+            entrySection = new VisualElement();
+            section.Add(entrySection);
 
             entriesProp = stateProp.FindPropertyRelative(nameof(BlendTree1D.entries));
             for (int i = 0; i < entriesProp.arraySize; i++)
@@ -788,18 +812,16 @@ public class NewNewAnimationPlayerEditor : Editor {
                 var entryElement = new BlendTree1DEntry(editor, entriesProp.GetArrayElementAtIndex(i));
                 entryElements.Add(entryElement);
                 entryElement.SetBlendVariableName(blendVariableProp.stringValue);
-                onlyVisibleWhenExpandedSection.Add(entryElement.visualElement);
+                entrySection.Add(entryElement.visualElement);
             }
 
-            addEntryButton = new Button
+            var addEntryButton = new Button
             {
                 text = "Add Entry",
                 clickable = new Clickable(AddEntry)
             };
             addEntryButton.AddToClassList("animationLayer__editStatesSection__stateSet__state__addButton");
-            onlyVisibleWhenExpandedSection.Add(addEntryButton);
-
-            blendVariableField.RegisterValueChangedCallback(BlendVariableChanged);
+            section.Add(addEntryButton);
         }
 
         private void AddEntry()
@@ -811,12 +833,9 @@ public class NewNewAnimationPlayerEditor : Editor {
             serializedObject.ApplyModifiedProperties();
 
             var entryElement = new BlendTree1DEntry(editor, entriesProp.GetArrayElementAtIndex(entriesProp.arraySize - 1));
-            onlyVisibleWhenExpandedSection.Add(entryElement.visualElement);
+            entrySection.Add(entryElement.visualElement);
             entryElements.Add(entryElement);
             entryElement.SetBlendVariableName(blendVariableProp.stringValue);
-
-            onlyVisibleWhenExpandedSection.Remove(addEntryButton);
-            onlyVisibleWhenExpandedSection.Add(addEntryButton);
         }
 
         private void BlendVariableChanged(ChangeEvent<string> evt)
@@ -858,20 +877,35 @@ public class NewNewAnimationPlayerEditor : Editor {
         private SerializedProperty blendVariable1Prop;
         private SerializedProperty blendVariable2Prop;
         private List<BlendTree2DEntry> entryElements = new List<BlendTree2DEntry>();
-        private Button addEntryButton;
+        private VisualElement entrySection;
 
         public BlendTree2DDisplay(NewNewAnimationPlayerEditor editor, SerializedProperty stateListProp, int stateIndex, SerializedProperty stateProp)
-            : base(editor, stateListProp, stateIndex, stateProp)
+            : base(editor, stateListProp, stateIndex, stateProp) { }
+
+        protected override void FillAlwaysVisibleSection(VisualElement section)
         {
+            base.FillAlwaysVisibleSection(section);
+
             var blendVariableField = new TextField("Blend Variable");
             blendVariable1Prop = stateProp.FindPropertyRelative(nameof(BlendTree2D.blendVariable));
             blendVariableField.BindProperty(blendVariable1Prop);
-            alwaysVisibleSection.Add(blendVariableField);
+            section.Add(blendVariableField);
 
             var blendVariable2Field = new TextField("Blend Variable 2");
             blendVariable2Prop = stateProp.FindPropertyRelative(nameof(BlendTree2D.blendVariable2));
             blendVariable2Field.BindProperty(blendVariable2Prop);
-            alwaysVisibleSection.Add(blendVariable2Field);
+            section.Add(blendVariable2Field);
+
+            blendVariableField.RegisterValueChangedCallback(BlendVariable1Changed);
+            blendVariable2Field.RegisterValueChangedCallback(BlendVariable2Changed);
+        }
+
+        protected override void FillOnlyVisibleWhenExpandedSection(VisualElement section)
+        {
+            base.FillOnlyVisibleWhenExpandedSection(section);
+
+            entrySection = new VisualElement();
+            section.Add(entrySection);
 
             entriesProp = stateProp.FindPropertyRelative(nameof(BlendTree2D.entries));
             for (int i = 0; i < entriesProp.arraySize; i++)
@@ -880,19 +914,16 @@ public class NewNewAnimationPlayerEditor : Editor {
                 entryElement.SetBlendVariableNames(blendVariable1Prop.stringValue, blendVariable2Prop.stringValue);
 
                 entryElements.Add(entryElement);
-                onlyVisibleWhenExpandedSection.Add(entryElement.visualElement);
+                entrySection.Add(entryElement.visualElement);
             }
 
-            addEntryButton = new Button
+            var addEntryButton = new Button
             {
                 text = "Add Entry",
                 clickable = new Clickable(AddEntry)
             };
             addEntryButton.AddToClassList("animationLayer__editStatesSection__stateSet__state__addButton");
-            onlyVisibleWhenExpandedSection.Add(addEntryButton);
-
-            blendVariableField.RegisterValueChangedCallback(BlendVariable1Changed);
-            blendVariable2Field.RegisterValueChangedCallback(BlendVariable2Changed);
+            section.Add(addEntryButton);
         }
 
         private void BlendVariable1Changed(ChangeEvent<string> evt)
@@ -919,10 +950,7 @@ public class NewNewAnimationPlayerEditor : Editor {
             var entryElement = new BlendTree2DEntry(editor, entriesProp.GetArrayElementAtIndex(entriesProp.arraySize - 1));
             entryElement.SetBlendVariableNames(blendVariable1Prop.stringValue, blendVariable2Prop.stringValue);
             entryElements.Add(entryElement);
-            onlyVisibleWhenExpandedSection.Add(entryElement.visualElement);
-
-            onlyVisibleWhenExpandedSection.Remove(addEntryButton);
-            onlyVisibleWhenExpandedSection.Add(addEntryButton);
+            entrySection.Add(entryElement.visualElement);
         }
     }
 
@@ -962,13 +990,21 @@ public class NewNewAnimationPlayerEditor : Editor {
 
     public class SequenceDisplay : StateDisplay {
         private SerializedProperty clipsProp;
+        private VisualElement clipsSection;
 
         public SequenceDisplay(NewNewAnimationPlayerEditor editor, SerializedProperty stateListProp, int stateIndex, SerializedProperty stateProp)
-            : base(editor, stateListProp, stateIndex, stateProp)
+            : base(editor, stateListProp, stateIndex, stateProp) { }
+
+        protected override void FillOnlyVisibleWhenExpandedSection(VisualElement section)
         {
+            base.FillOnlyVisibleWhenExpandedSection(section);
+
             var loopModeField = new EnumField("Loop Mode");
             loopModeField.BindProperty(stateProp.FindPropertyRelative(nameof(Sequence.loopMode)));
-            onlyVisibleWhenExpandedSection.Add(loopModeField);
+            section.Add(loopModeField);
+
+            clipsSection = new VisualElement();
+            section.Add(clipsSection);
 
             clipsProp = stateProp.FindPropertyRelative(nameof(Sequence.clips));
             for (int i = 0; i < clipsProp.arraySize; i++)
@@ -980,7 +1016,7 @@ public class NewNewAnimationPlayerEditor : Editor {
                 clickable = new Clickable(AddClip)
             };
             addClipButton.AddToClassList("animationLayer__editStatesSection__stateSet__state__addButton");
-            onlyVisibleWhenExpandedSection.Add(addClipButton);
+            section.Add(addClipButton);
         }
 
         private void AddClipVisualElement(SerializedProperty clipProp)
@@ -988,7 +1024,7 @@ public class NewNewAnimationPlayerEditor : Editor {
             var clipField = new ObjectField("Clip");
             clipField.objectType = typeof(AnimationClip);
             clipField.BindProperty(clipProp);
-            onlyVisibleWhenExpandedSection.Add(clipField);
+            clipsSection.Add(clipField);
         }
 
         private void AddClip()
@@ -1002,10 +1038,18 @@ public class NewNewAnimationPlayerEditor : Editor {
 
     public class RandomClipDisplay : StateDisplay {
         private SerializedProperty clipsProp;
+        private VisualElement clipsSection;
 
         public RandomClipDisplay(NewNewAnimationPlayerEditor editor, SerializedProperty stateListProp, int stateIndex, SerializedProperty stateProp)
-            : base(editor, stateListProp, stateIndex, stateProp)
+            : base(editor, stateListProp, stateIndex, stateProp) { }
+
+        protected override void FillOnlyVisibleWhenExpandedSection(VisualElement section)
         {
+            base.FillOnlyVisibleWhenExpandedSection(section);
+
+            clipsSection = new VisualElement();
+            section.Add(clipsSection);
+
             clipsProp = stateProp.FindPropertyRelative(nameof(PlayRandomClip.clips));
             for (int i = 0; i < clipsProp.arraySize; i++)
                 AddClipVisualElement(clipsProp.GetArrayElementAtIndex(i));
@@ -1017,7 +1061,7 @@ public class NewNewAnimationPlayerEditor : Editor {
             };
             addClipButton.AddToClassList("unity-button");
             addClipButton.AddToClassList("animationLayer__editStatesSection__stateSet__state__addButton");
-            onlyVisibleWhenExpandedSection.Add(addClipButton);
+            section.Add(addClipButton);
         }
 
         private void AddClipVisualElement(SerializedProperty clipProp)
@@ -1025,7 +1069,7 @@ public class NewNewAnimationPlayerEditor : Editor {
             var clipField = new ObjectField("Clip");
             clipField.objectType = typeof(AnimationClip);
             clipField.BindProperty(clipProp);
-            onlyVisibleWhenExpandedSection.Add(clipField);
+            clipsSection.Add(clipField);
         }
 
         private void AddClip()

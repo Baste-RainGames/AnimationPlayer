@@ -1,12 +1,17 @@
 using UnityEngine;
 using UnityEngine.Playables;
+using UnityEngine.UIElements;
 
-namespace Animation_Player {
-public class AnimationPlayerPreviewer {
-
+namespace Animation_Player
+{
+public class AnimationPlayerPreviewer
+{
     private AnimationPlayer animationPlayer;
     private PlayableGraph graph;
     private float lastTime;
+    private Slider playbackSlider;
+    private int layer;
+    private int state;
 
     public AnimationPlayerPreviewer(AnimationPlayer animationPlayer)
     {
@@ -15,24 +20,29 @@ public class AnimationPlayerPreviewer {
 
     public bool IsPreviewing => graph.IsValid();
 
-    public void StartPreview(int layer, int state)
+    public void StartPreview(int layer, int state, Slider playbackSlider)
     {
+        this.playbackSlider = playbackSlider;
+        this.layer = layer;
+        this.state = state;
+
+        animationPlayer.ExitPreview();
         animationPlayer.EnterPreview();
         animationPlayer.Play(state, layer);
         graph = animationPlayer.Graph;
-        graph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
+        graph.SetTimeUpdateMode(DirectorUpdateMode.GameTime);
 
         lastTime = Time.realtimeSinceStartup;
     }
 
     public void Update()
     {
-        var currentTime = Time.realtimeSinceStartup;
-        var deltaTime = currentTime - lastTime;
         animationPlayer.UpdateSelf();
-        graph.Evaluate(deltaTime);
 
-        lastTime = currentTime;
+        var normalizedStateProgress = (float) animationPlayer.GetNormalizedStateProgress(state, layer);
+
+        playbackSlider.value = normalizedStateProgress;
+
     }
 
     public void StopPreview()

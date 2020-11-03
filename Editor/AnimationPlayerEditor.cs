@@ -36,10 +36,7 @@ public class AnimationPlayerEditor : Editor {
     private void OnSceneGUI()
     {
         if (previewer.IsPreviewing)
-        {
             previewer.Update();
-            SceneView.lastActiveSceneView.Repaint();
-        }
     }
 
     private void InitializeJustAddedAnimationPlayer()
@@ -702,6 +699,7 @@ public class AnimationPlayerEditor : Editor {
         private int stateIndex;
         private readonly VisualElement onlyVisibleWhenExpandedSection;
         private readonly Label toggleExpandedLabel;
+        private Slider playbackSlider;
 
         protected StateDisplay(AnimationPlayerEditor editor, SerializedProperty stateListProp, int stateIndex, SerializedProperty stateProp) :
             base(editor)
@@ -747,7 +745,7 @@ public class AnimationPlayerEditor : Editor {
 
             var playPauseButton = new Button {text="play"};
             var stopButton = new Button {text="stop"};
-            var playbackSlider = new Slider();
+            playbackSlider = new Slider(0f, 1f);
 
             playSection.Add(playPauseButton);
             playSection.Add(stopButton);
@@ -759,7 +757,7 @@ public class AnimationPlayerEditor : Editor {
 
         private void StartPreview()
         {
-            editor.previewer.StartPreview(0, 0);
+            editor.previewer.StartPreview(0, 0, playbackSlider);
         }
 
         private void StopPreview()

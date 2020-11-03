@@ -946,7 +946,24 @@ namespace Animation_Player
             if (stateMixer.GetInputWeight(stateIndex) <= 0f)
                 return 0f;
 
-            return stateMixer.GetInput(stateIndex).GetTime() / states[stateIndex].Duration;
+            var maxTime = states[stateIndex].Duration;
+            var currentTime = stateMixer.GetInput(stateIndex).GetTime();
+
+            var currentTimeWrapped = currentTime % maxTime;
+
+            return InverseLerp(0f, maxTime, currentTimeWrapped);
+
+            double InverseLerp(double a, double b, double value)
+            {
+                return a != b ? Clamp01((value - a) / (b - a)) : 0.0;
+            }
+
+            double Clamp01(double value)
+            {
+                if (value < 0.0)
+                    return 0.0;
+                return value > 1.0 ? 1 : value;
+            }
         }
 
         public (TransitionData transition, string name) GetDefaultTransitionFromTo(int from, int to)

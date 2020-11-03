@@ -22,9 +22,6 @@ namespace Animation_Player
 
         public static int DefaultState => 0;
 
-        private static AnimationClip _dummyEmptyClip;
-        internal static AnimationClip dummyEmptyClip => _dummyEmptyClip != null ? dummyEmptyClip : _dummyEmptyClip = new AnimationClip();
-
         public AnimationLayer[] layers;
         public TransitionData defaultTransition;
 

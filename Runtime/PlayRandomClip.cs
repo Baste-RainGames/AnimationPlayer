@@ -58,7 +58,7 @@ namespace Animation_Player
                                                   List<BlendTreeController2D> all2DControllers)
         {
             playedClip = clips.Count == 0 ? -1 : clips.GetRandomIdx();
-            var clip = playedClip == -1 ? AnimationPlayer.dummyEmptyClip : ClipsToUse[playedClip];
+            var clip = playedClip == -1 ? new AnimationClip() : ClipsToUse[playedClip];
             var clipPlayable = AnimationClipPlayable.Create(graph, clip);
             clipPlayable.SetApplyFootIK(true);
             clipPlayable.SetSpeed(speed);

@@ -33,12 +33,6 @@ public class AnimationPlayerEditor : Editor {
 
     private void HandleUndoRedo() => RebuildUI();
 
-    private void OnSceneGUI()
-    {
-        if (previewer.IsPreviewing)
-            previewer.Update();
-    }
-
     private void InitializeJustAddedAnimationPlayer()
     {
         var layers = serializedObject.FindProperty(nameof(AnimationPlayer.layers));
@@ -53,7 +47,6 @@ public class AnimationPlayerEditor : Editor {
 
         serializedObject.ApplyModifiedProperties();
     }
-
 
     private void RebuildUI()
     {
@@ -700,6 +693,7 @@ public class AnimationPlayerEditor : Editor {
         private readonly VisualElement onlyVisibleWhenExpandedSection;
         private readonly Label toggleExpandedLabel;
         private Slider playbackSlider;
+        private Button playPauseButton;
 
         protected StateDisplay(AnimationPlayerEditor editor, SerializedProperty stateListProp, int stateIndex, SerializedProperty stateProp) :
             base(editor)
@@ -743,21 +737,39 @@ public class AnimationPlayerEditor : Editor {
             playSection.AddToClassList("animationLayer__editStatesSection__stateSet__state__preview__playSection");
             parentSection.Add(playSection);
 
-            var playPauseButton = new Button {text="play"};
+            playPauseButton = new Button {text="play"};
             var stopButton = new Button {text="stop"};
+            var testButton = new Button {text = "test"};
             playbackSlider = new Slider(0f, 1f);
 
             playSection.Add(playPauseButton);
             playSection.Add(stopButton);
+            playSection.Add(testButton);
             playSection.Add(playbackSlider);
 
-            playPauseButton.clickable = new Clickable(StartPreview);
+            testButton.clickable = new Clickable(editor.previewer.Test);
+            playPauseButton.clickable = new Clickable(PlayPauseClicked);
             stopButton.clickable = new Clickable(StopPreview);
         }
 
-        private void StartPreview()
+        private void PlayPauseClicked()
         {
-            editor.previewer.StartPreview(0, 0, playbackSlider);
+            var previewer = editor.previewer;
+            var isPlay = !previewer.IsPreviewing || !previewer.AutomaticPlayback;
+
+            if (isPlay)
+            {
+                playPauseButton.text = "pause";
+                if (!previewer.IsPreviewing)
+                    previewer.StartPreview(0, 0, true, playbackSlider);
+                else
+                    previewer.SetAutomaticPlayback(true);
+            }
+            else
+            {
+                playPauseButton.text = "play";
+                previewer.SetAutomaticPlayback(false);
+            }
         }
 
         private void StopPreview()

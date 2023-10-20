@@ -271,6 +271,21 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
         layers[layer].Play(state);
     }
 
+#if !ANIMATION_PLAYER_FORCE_INTEGER_STATES
+    /// <summary>
+    /// Play a state, using the defined transition between the current state and that state if it exists,
+    /// or the player's default transition if it doesn't.
+    /// The state will immediately be the current played state.
+    /// </summary>
+    /// <param name="state">state name to play</param>
+    /// <param name="layer">Layer the state should be played on</param>
+    public void Play(string state, int layer = 0)
+    {
+        if (TryGetStateIndex(state, layer, out var stateID, nameof(Play)))
+            Play(stateID);
+    }
+#endif
+
     /// <summary>
     /// Play a state, using the transition defined by transition.
     /// The state will immediately be the current played state.
@@ -283,6 +298,21 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
         layers[layer].Play(state, transition);
     }
 
+#if !ANIMATION_PLAYER_FORCE_INTEGER_STATES
+    /// <summary>
+    /// Play a state, using the transition defined by transition.
+    /// The state will immediately be the current played state.
+    /// </summary>
+    /// <param name="state">state index to play</param>
+    /// <param name="transition">transition to use</param>
+    /// <param name="layer">Layer the state should be played on</param>
+    public void Play(string state, string transition, int layer = 0)
+    {
+        if (TryGetStateIndex(state, layer, out var stateID, nameof(Play)))
+            Play(stateID, transition);
+    }
+#endif
+
     /// <summary>
     /// Play a state, using a custom transition. The state will immediately be the current played state.
     /// </summary>
@@ -291,7 +321,7 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     /// <param name="layer">Layer the state should be played on</param>
     public void Play(int state, TransitionData transitionData, int layer = 0)
     {
-        if (transitionData.type == TransitionType.Curve && transitionData.curve != null)
+        if (transitionData is { type: TransitionType.Curve, curve: null })
         {
             Debug.LogError(
                 $"Trying to transition using a curve, but the curve is null! " +
@@ -303,6 +333,20 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
         layers[layer].Play(state, transitionData, "Custom");
     }
 
+#if !ANIMATION_PLAYER_FORCE_INTEGER_STATES
+    /// <summary>
+    /// Play a state, using a custom transition. The state will immediately be the current played state.
+    /// </summary>
+    /// <param name="state">state index to play</param>
+    /// <param name="transitionData">How to transition into the state</param>
+    /// <param name="layer">Layer the state should be played on</param>
+    public void Play(string state, TransitionData transitionData, int layer = 0)
+    {
+        if (TryGetStateIndex(state, layer, out var stateID, nameof(Play)))
+            Play(stateID, transitionData);
+    }
+#endif
+
     /// <summary>
     /// Play a state, using an instant transition. The state will immediately be the current played state.
     /// </summary>
@@ -312,6 +356,19 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     {
         Play(state, TransitionData.Instant(), layer);
     }
+
+#if !ANIMATION_PLAYER_FORCE_INTEGER_STATES
+    /// <summary>
+    /// Play a state, using an instant transition. The state will immediately be the current played state.
+    /// </summary>
+    /// <param name="state">state index to play</param>
+    /// <param name="layer">Layer the state should be played on</param>
+    public void SnapTo(string state, int layer = 0)
+    {
+        if (TryGetStateIndex(state, layer, out int stateID, nameof(SnapTo)))
+            SnapTo(stateID, layer);
+    }
+#endif
 
     /// <summary>
     /// Plays the default state of the state machine
@@ -343,21 +400,51 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
         return layers[layer].GetIndexOfPlayingState() == state;
     }
 
-    public void QueueStateChange(int state) => QueueStateChange(state, default, default, default);
-    public void QueueStateChange(int state, QueueInstruction instruction) => QueueStateChange(state, instruction, default, default);
-    public void QueueStateChange(int state, TransitionData transition) => QueueStateChange(state, default, transition, default);
-    public void QueueStateChange(int state, int layer) => QueueStateChange(state, default, default, layer);
+#if !ANIMATION_PLAYER_FORCE_INTEGER_STATES
+    /// <summary>
+    /// Checks if a specific state is the currently played state. When you Play() a state, that state will immediately be considered the "playing" state.
+    /// </summary>
+    /// <param name="state">State to check if is playing</param>
+    /// <param name="layer">Layer to check if the state is playing on</param>
+    /// <returns>True if state is the state currently playing on layer</returns>
+    public bool IsPlaying(string state, int layer = default)
+    {
+        if (TryGetStateIndex(state, layer, out var stateID, nameof(IsPlaying)))
+            return IsPlaying(stateID, layer);
+        return false;
+    }
+#endif
 
-    public void QueueStateChange(int state, QueueInstruction instruction, TransitionData transition) =>
-        QueueStateChange(state, instruction, transition, default);
-
-    public void QueueStateChange(int state, QueueInstruction instruction, int layer) => QueueStateChange(state, instruction, default, layer);
-    public void QueueStateChange(int state, TransitionData transition, int layer) => QueueStateChange(state, default, transition, layer);
-
-    public void QueueStateChange(int state, QueueInstruction instruction, TransitionData? transition, int layer)
+    /// <summary>
+    /// Queue a state to change. By default, the change happens after the previous state has ended, this can be changed by setting the instruction parameter.
+    /// This method creates a queue if you call it several times in a row. Play(a); Queue(b); Queue(c); will cause a to play, then b to play, then c.
+    /// If you call Play or SnapTo or any other method that changes the played state, the current queue is discarded.
+    /// </summary>
+    /// <param name="state">State to queue change to</param>
+    /// <param name="instruction">When the state change should happen in relation to the previous playing state</param>
+    /// <param name="transition">How to transition between the states</param>
+    /// <param name="layer">Layer to queue the change on</param>
+    public void QueueStateChange(int state, QueueInstruction instruction = default, TransitionData? transition = null, int layer = default)
     {
         layers[layer].QueuePlayCommand(state, instruction, transition, "Custom");
     }
+
+#if !ANIMATION_PLAYER_FORCE_INTEGER_STATES
+    /// <summary>
+    /// Queue a state to change. By default, the change happens after the previous state has ended, this can be changed by setting the instruction parameter.
+    /// This method creates a queue if you call it several times in a row. Play(a); Queue(b); Queue(c); will cause a to play, then b to play, then c.
+    /// If you call Play or SnapTo or any other method that changes the played state, the current queue is discarded.
+    /// </summary>
+    /// <param name="state">State to queue change to</param>
+    /// <param name="instruction">When the state change should happen in relation to the previous playing state</param>
+    /// <param name="transition">How to transition between the states</param>
+    /// <param name="layer">Layer to queue the change on</param>
+    public void QueueStateChange(string state, QueueInstruction instruction = default, TransitionData? transition = null, int layer = default)
+    {
+        if (TryGetStateIndex(state, layer, out var stateID, nameof(QueueStateChange)))
+            QueueStateChange(stateID, instruction, transition, layer);
+    }
+#endif
 
     public void ClearQueuedPlayCommands(int layer = 0)
     {
@@ -399,6 +486,23 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     {
         return layers[layer].GetStateWeight(state);
     }
+
+#if !ANIMATION_PLAYER_FORCE_INTEGER_STATES
+    /// <summary>
+    /// Finds the weight of a state in the layer's blend, eg. how much the state is playing.
+    /// This is a number between 0 and 1, with 0 for "not playing" and 1 for "playing completely"
+    /// These do not neccessarilly sum to 1.
+    /// </summary>
+    /// <param name="state">State to check for</param>
+    /// <param name="layer">Layer to check in</param>
+    /// <returns>The weight for state in layer</returns>
+    public float GetStateWeight(string state, int layer = 0)
+    {
+        if (TryGetStateIndex(state, layer, out var stateID, nameof(GetStateWeight)))
+            return GetStateWeight(stateID, layer);
+        return 0f;
+    }
+#endif
 
     /// <summary>
     /// Get the weight of a layer. This is it's current weight in the playable layer mixer.
@@ -443,6 +547,21 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
         return layers[layer].states[state];
     }
 
+#if !ANIMATION_PLAYER_FORCE_INTEGER_STATES
+    /// <summary>
+    /// Get a state. NOTE; modifying the state at runtime is a bad idea unless you know what you're doing
+    /// </summary>
+    /// <param name="state">State to get</param>
+    /// <param name="layer">Layer to get the state from</param>
+    /// <returns>The state container.</returns>
+    public AnimationPlayerState GetState(string state, int layer = 0)
+    {
+        if (TryGetStateIndex(state, layer, out var stateID, nameof(GetState)))
+            return GetState(stateID, layer);
+        return null;
+    }
+#endif
+
     /// <summary>
     /// Gets the duration of a state. What this is depends on what kind of state it is, and can change if eg. clip swaps are applied.
     /// </summary>
@@ -453,6 +572,21 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     {
         return layers[layer].states[state].Duration;
     }
+
+#if !ANIMATION_PLAYER_FORCE_INTEGER_STATES
+    /// <summary>
+    /// Gets the duration of a state. What this is depends on what kind of state it is, and can change if eg. clip swaps are applied.
+    /// </summary>
+    /// <param name="state">Name of the state to get the duration of</param>
+    /// <param name="layer">Layer to check the duration on</param>
+    /// <returns>The duration of the state.</returns>
+    public float GetStateDuration(string state, int layer = 0)
+    {
+        if (TryGetStateIndex(state, layer, out var stateID, nameof(GetStateDuration)))
+            return GetStateDuration(stateID, layer);
+        return 0f;
+    }
+#endif
 
     /// <summary>
     /// Finds how long a state has been playing - this means how long the state has had a weight above 0.
@@ -465,6 +599,21 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
         return layers[layer].GetHowLongStateHasBeenPlaying(state);
     }
 
+#if !ANIMATION_PLAYER_FORCE_INTEGER_STATES
+    /// <summary>
+    /// Finds how long a state has been playing - this means how long the state has had a weight above 0.
+    /// </summary>
+    /// <param name="state">State to check</param>
+    /// <param name="layer">Layers to check on</param>
+    /// <returns>How long the state has been playing</returns>
+    public double GetHowLongStateHasBeenPlaying(string state, int layer = 0)
+    {
+        if (TryGetStateIndex(state, layer, out var stateID, nameof(GetHowLongStateHasBeenPlaying)))
+            return GetHowLongStateHasBeenPlaying(stateID, layer);
+        return 0f;
+    }
+#endif
+
     /// <summary>
     /// Finds the normalized progress of a state. This means 0 if it just started, and 1 if it's at it's final frame.
     /// </summary>
@@ -475,6 +624,21 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     {
         return layers[layer].GetNormalizedStateProgress(state);
     }
+
+#if !ANIMATION_PLAYER_FORCE_INTEGER_STATES
+    /// <summary>
+    /// Finds the normalized progress of a state. This means 0 if it just started, and 1 if it's at it's final frame.
+    /// </summary>
+    /// <param name="state">State to find the normalized progress of</param>
+    /// <param name="layer">Layer to find the state progress on</param>
+    /// <returns>The normalized progress of the state.</returns>
+    public double GetNormalizedStateProgress(string state, int layer = 0)
+    {
+        if (TryGetStateIndex(state, layer, out var stateID, nameof(GetNormalizedStateProgress)))
+            return GetNormalizedStateProgress(stateID, layer);
+        return 0f;
+    }
+#endif
 
     /// <summary>
     /// Gets the currently playing state. This is the last state you called Play on, and might not even have started blending in yet.
@@ -702,7 +866,13 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
         return -1;
     }
 
+
     public bool TryGetStateIndex(string stateName, out int index, int layer = 0)
+    {
+        return TryGetStateIndex(stateName, layer, out index);
+    }
+
+    private bool TryGetStateIndex(string stateName, int layer, out int stateID, string printErrorWithMethodName = null)
     {
         AssertLayer(layer, nameof(TryGetStateIndex));
 
@@ -711,12 +881,14 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
             var state = layers[layer].states[i];
             if (state.Name == stateName)
             {
-                index = i;
+                stateID = i;
                 return true;
             }
         }
 
-        index = -1;
+        if (printErrorWithMethodName != null)
+            AssertionFailure($"Couldn't find state {stateName} when calling {printErrorWithMethodName}");
+        stateID = -1;
         return false;
     }
 
@@ -1100,23 +1272,6 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     public bool IsInTransition(string transition, int layer = 0)
     {
         return layers[layer].IsInTransition(transition);
-    }
-
-    private bool TryGetStateID(string stateName, int layer, string methodName, out int stateID)
-    {
-        for (var i = 0; i < layers[layer].states.Count; i++)
-        {
-            var state = layers[layer].states[i];
-            if (state.Name == stateName)
-            {
-                stateID = i;
-                return true;
-            }
-        }
-
-        AssertionFailure($"Couldn't find state {stateName} when calling {methodName}");
-        stateID = -1;
-        return false;
     }
 
     // really want Assert.Fail, but that's private

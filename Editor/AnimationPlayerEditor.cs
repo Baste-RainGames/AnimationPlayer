@@ -739,17 +739,14 @@ public class AnimationPlayerEditor : Editor {
 
             playPauseButton = new Button {text="play"};
             var stopButton = new Button {text="stop"};
-            var testButton = new Button {text = "test"};
             playbackSlider = new Slider(0f, 1f);
 
             playSection.Add(playPauseButton);
             playSection.Add(stopButton);
-            playSection.Add(testButton);
             playSection.Add(playbackSlider);
 
-            testButton.clickable = new Clickable(editor.previewer.Test);
             playPauseButton.clickable = new Clickable(PlayPauseClicked);
-            stopButton.clickable = new Clickable(StopPreview);
+            stopButton.clickable      = new Clickable(StopPreview);
         }
 
         private void PlayPauseClicked()
@@ -761,7 +758,7 @@ public class AnimationPlayerEditor : Editor {
             {
                 playPauseButton.text = "pause";
                 if (!previewer.IsPreviewing)
-                    previewer.StartPreview(0, 0, true, playbackSlider);
+                    previewer.StartPreview(0, stateIndex, true, playbackSlider);
                 else
                     previewer.SetAutomaticPlayback(true);
             }
@@ -775,6 +772,7 @@ public class AnimationPlayerEditor : Editor {
         private void StopPreview()
         {
             editor.previewer.StopPreview();
+            playPauseButton.text = "play";
         }
 
         protected virtual void FillAlwaysVisibleSection(VisualElement section)

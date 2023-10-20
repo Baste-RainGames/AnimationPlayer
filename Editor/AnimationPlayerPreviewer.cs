@@ -21,7 +21,7 @@ public class AnimationPlayerPreviewer
     }
 
     public bool IsPreviewing => previewGraph.IsValid();
-    public bool AutomaticPlayback { get; private set; }
+    public bool AutomaticPlayback { get; set; }
 
     public void StartPreview(int layer, int state, bool automaticPlayback, Slider playbackSlider)
     {
@@ -38,15 +38,6 @@ public class AnimationPlayerPreviewer
         lastTime = Time.realtimeSinceStartup;
 
         EditorApplication.update += Update;
-    }
-
-    public void SetAutomaticPlayback(bool automaticPlayback)
-    {
-        if (!IsPreviewing)
-            return;
-
-        AutomaticPlayback = automaticPlayback;
-        previewGraph.SetTimeUpdateMode(automaticPlayback ? DirectorUpdateMode.GameTime : DirectorUpdateMode.Manual);
     }
 
     public void Update()

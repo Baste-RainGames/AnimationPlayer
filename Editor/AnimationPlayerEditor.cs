@@ -281,6 +281,10 @@ public class AnimationPlayerEditor : Editor {
         }
     }
 
+    // @TODO: we're making one LayerUI for each layer, instead of having one that we fill with data.
+    // Same with the other sections.
+    // Re-populating everything with the correct data is a better approach in general
+    // Easier to handle, less data to deal with.
     public class LayerUI : AnimationPlayerUINode {
         public readonly SerializedProperty serializedProperty;
         public readonly EditStatesSection editStatesSection;
@@ -297,7 +301,7 @@ public class AnimationPlayerEditor : Editor {
 
             var editLayerSection = new EditLayerSection(editor, layerIndex, serializedProperty);
             var addAndSearchStatesSection = new AddAndSearchStatesSection(editor);
-            editStatesSection = new EditStatesSection(editor, serializedProperty);
+            editStatesSection = new EditStatesSection(editor, layerIndex, serializedProperty);
 
             rootVisualElement.Add(editLayerSection.rootVisualElement);
             rootVisualElement.Add(addAndSearchStatesSection.rootVisualElement);
@@ -483,7 +487,7 @@ public class AnimationPlayerEditor : Editor {
 
             layerProp.serializedObject.ApplyModifiedProperties();
 
-            root.layersContainer.layers[root.selectedLayer].editStatesSection.OnStateAdded(stateType);
+            root.layersContainer.layers[root.selectedLayer].editStatesSection.OnStateAdded(stateType, root.selectedLayer);
 
             SerializedProperty AppendToArray(string arrayPropName)
             {
@@ -519,18 +523,18 @@ public class AnimationPlayerEditor : Editor {
         public readonly SequenceSection sequenceSection;
         public readonly RandomClipSection randomClipSection;
 
-        public EditStatesSection(AnimationPlayerEditor editor, SerializedProperty layerProperty) : base(editor)
+        public EditStatesSection(AnimationPlayerEditor editor, int currentSelectedLayer, SerializedProperty layerProperty) : base(editor)
         {
             rootVisualElement = new VisualElement();
             rootVisualElement.AddToClassList("animationLayer__subSection");
             rootVisualElement.AddToClassList("animationLayer__editStatesSection");
 
-            singleClipSection = new SingleClipSection(editor, layerProperty);
-            blendTree1DSection = new BlendTree1DSection(editor, layerProperty);
-            blendTree2DSection = new BlendTree2DSection(editor, layerProperty);
-            sequenceSection = new SequenceSection(editor, layerProperty);
-            randomClipSection = new RandomClipSection(editor, layerProperty);
-            noStatesLabel = new NoStatesLabel(editor, layerProperty, this);
+            singleClipSection  = new SingleClipSection (editor, currentSelectedLayer, layerProperty);
+            blendTree1DSection = new BlendTree1DSection(editor, currentSelectedLayer, layerProperty);
+            blendTree2DSection = new BlendTree2DSection(editor, currentSelectedLayer, layerProperty);
+            sequenceSection    = new SequenceSection   (editor, currentSelectedLayer, layerProperty);
+            randomClipSection  = new RandomClipSection (editor, currentSelectedLayer, layerProperty);
+            noStatesLabel      = new NoStatesLabel     (editor, layerProperty, this);
 
             rootVisualElement.Add(noStatesLabel.rootVisualElement);
             rootVisualElement.Add(singleClipSection.rootVisualElement);
@@ -540,19 +544,19 @@ public class AnimationPlayerEditor : Editor {
             rootVisualElement.Add(randomClipSection.rootVisualElement);
         }
 
-        public void OnStateAdded(Type stateType)
+        public void OnStateAdded(Type stateType, int layerIndex)
         {
             noStatesLabel.rootVisualElement.SetDisplayed(false);
             if (stateType == typeof(SingleClip))
-                singleClipSection.OnStateAdded();
+                singleClipSection.OnStateAdded(layerIndex);
             else if (stateType == typeof(BlendTree1D))
-                blendTree1DSection.OnStateAdded();
+                blendTree1DSection.OnStateAdded(layerIndex);
             else if (stateType == typeof(BlendTree2D))
-                blendTree2DSection.OnStateAdded();
+                blendTree2DSection.OnStateAdded(layerIndex);
             else if (stateType == typeof(PlayRandomClip))
-                randomClipSection.OnStateAdded();
+                randomClipSection.OnStateAdded(layerIndex);
             else if (stateType == typeof(Sequence))
-                sequenceSection.OnStateAdded();
+                sequenceSection.OnStateAdded(layerIndex);
             else
                 Debug.LogError($"Adding state of type {stateType.Name} not implemented!");
         }
@@ -611,7 +615,7 @@ public class AnimationPlayerEditor : Editor {
         private SerializedProperty stateListProp;
         private List<TStateDisplay> childDisplays = new List<TStateDisplay>();
 
-        protected StateSection(AnimationPlayerEditor editor, SerializedProperty layerProperty) : base(editor)
+        protected StateSection(AnimationPlayerEditor editor, int currentSelectedLayerIndex, SerializedProperty layerProperty) : base(editor)
         {
             rootVisualElement = new VisualElement();
             rootVisualElement.AddToClassList("animationLayer__editStatesSection__stateSet");
@@ -625,22 +629,22 @@ public class AnimationPlayerEditor : Editor {
 
             for (int i = 0; i < stateListProp.arraySize; i++)
             {
-                var display = CreateDisplayForState(stateListProp, i);
+                var display = CreateDisplayForState(stateListProp, currentSelectedLayerIndex, i);
                 childDisplays.Add(display);
                 rootVisualElement.Add(display.rootVisualElement);
             }
         }
 
-        protected abstract TStateDisplay CreateDisplayForState(SerializedProperty stateListProp, int stateIndex);
+        protected abstract TStateDisplay CreateDisplayForState(SerializedProperty stateListProp, int layerIndex, int stateIndex);
 
         protected abstract string LabelText { get; }
         protected abstract string ListPropName { get; }
 
-        public void OnStateAdded()
+        public void OnStateAdded(int layerIndex)
         {
             rootVisualElement.SetDisplayed(stateListProp.arraySize > 0);
 
-            var display = CreateDisplayForState(stateListProp, stateListProp.arraySize - 1);
+            var display = CreateDisplayForState(stateListProp, layerIndex, stateListProp.arraySize - 1);
             childDisplays.Add(display);
             rootVisualElement.Add(display.rootVisualElement);
         }
@@ -659,51 +663,56 @@ public class AnimationPlayerEditor : Editor {
     }
 
     public class SingleClipSection : StateSection<SingleClipDisplay> {
-        public SingleClipSection(AnimationPlayerEditor editor, SerializedProperty layerProperty) : base(editor, layerProperty) { }
+        public SingleClipSection(AnimationPlayerEditor editor, int currentSelectedLayer, SerializedProperty layerProperty)
+            : base(editor, currentSelectedLayer, layerProperty) { }
 
-        protected override SingleClipDisplay CreateDisplayForState(SerializedProperty stateListProp, int stateIndex) =>
-            new SingleClipDisplay(editor, stateListProp, stateIndex, stateListProp.GetArrayElementAtIndex(stateIndex));
+        protected override SingleClipDisplay CreateDisplayForState(SerializedProperty stateListProp, int layerIndex, int stateIndex) =>
+            new SingleClipDisplay(editor, stateListProp, layerIndex, stateIndex, stateListProp.GetArrayElementAtIndex(stateIndex));
 
         protected override string LabelText { get; } = "Single Clips States";
         protected override string ListPropName { get; } = "serializedSingleClipStates";
     }
 
     public class BlendTree1DSection : StateSection<BlendTree1DDisplay> {
-        public BlendTree1DSection(AnimationPlayerEditor editor, SerializedProperty layerProperty) : base(editor, layerProperty) { }
+        public BlendTree1DSection(AnimationPlayerEditor editor, int currentSelectedLayer, SerializedProperty layerProperty)
+            : base(editor, currentSelectedLayer, layerProperty) { }
 
-        protected override BlendTree1DDisplay CreateDisplayForState(SerializedProperty stateListProp, int stateIndex) =>
-            new BlendTree1DDisplay(editor, stateListProp, stateIndex, stateListProp.GetArrayElementAtIndex(stateIndex));
+        protected override BlendTree1DDisplay CreateDisplayForState(SerializedProperty stateListProp, int layerIndex, int stateIndex) =>
+            new BlendTree1DDisplay(editor, stateListProp, layerIndex, stateIndex, stateListProp.GetArrayElementAtIndex(stateIndex));
 
         protected override string LabelText { get; } = "1D Blend Trees";
         protected override string ListPropName { get; } = "serializedBlendTree1Ds";
     }
 
     public class BlendTree2DSection : StateSection<BlendTree2DDisplay> {
-        public BlendTree2DSection(AnimationPlayerEditor editor, SerializedProperty layerProperty) : base(editor, layerProperty) { }
+        public BlendTree2DSection(AnimationPlayerEditor editor, int currentSelectedLayer, SerializedProperty layerProperty)
+            : base(editor, currentSelectedLayer, layerProperty) { }
 
-        protected override BlendTree2DDisplay CreateDisplayForState(SerializedProperty stateListProp, int stateIndex) =>
-            new BlendTree2DDisplay(editor, stateListProp, stateIndex, stateListProp.GetArrayElementAtIndex(stateIndex));
+        protected override BlendTree2DDisplay CreateDisplayForState(SerializedProperty stateListProp, int layerIndex, int stateIndex) =>
+            new BlendTree2DDisplay(editor, stateListProp, layerIndex, stateIndex, stateListProp.GetArrayElementAtIndex(stateIndex));
 
         protected override string LabelText { get; } = "2D Blend Trees";
         protected override string ListPropName { get; } = "serializedBlendTree2Ds";
     }
 
     public class SequenceSection : StateSection<SequenceDisplay> {
-        public SequenceSection(AnimationPlayerEditor editor, SerializedProperty layerProperty) : base(editor, layerProperty) { }
+        public SequenceSection(AnimationPlayerEditor editor, int currentSelectedLayer, SerializedProperty layerProperty)
+            : base(editor, currentSelectedLayer, layerProperty) { }
 
-        protected override SequenceDisplay CreateDisplayForState(SerializedProperty stateListProp, int stateIndex) =>
-            new SequenceDisplay(editor, stateListProp, stateIndex, stateListProp.GetArrayElementAtIndex(stateIndex));
+        protected override SequenceDisplay CreateDisplayForState(SerializedProperty stateListProp, int layerIndex, int stateIndex) =>
+            new SequenceDisplay(editor, stateListProp, layerIndex, stateIndex, stateListProp.GetArrayElementAtIndex(stateIndex));
 
         protected override string LabelText { get; } = "Sequences";
         protected override string ListPropName { get; } = "serializedSequences";
     }
 
     public class RandomClipSection : StateSection<RandomClipDisplay> {
-        public RandomClipSection(AnimationPlayerEditor editor, SerializedProperty layerProperty) : base(editor, layerProperty) { }
+        public RandomClipSection(AnimationPlayerEditor editor, int currentSelectedLayer, SerializedProperty layerProperty)
+            : base(editor, currentSelectedLayer, layerProperty) { }
 
-        protected override RandomClipDisplay CreateDisplayForState(SerializedProperty stateListProp, int stateIndex)
+        protected override RandomClipDisplay CreateDisplayForState(SerializedProperty stateListProp, int layerIndex, int stateIndex)
         {
-            return new RandomClipDisplay(editor, stateListProp, stateIndex, stateListProp.GetArrayElementAtIndex(stateIndex));
+            return new RandomClipDisplay(editor, stateListProp, layerIndex, stateIndex, stateListProp.GetArrayElementAtIndex(stateIndex));
         }
 
         protected override string LabelText { get; } = "Random Clip States";
@@ -713,16 +722,18 @@ public class AnimationPlayerEditor : Editor {
     public abstract class StateDisplay : AnimationPlayerUINode {
         public readonly SerializedProperty stateProp;
         private readonly SerializedProperty stateListProp;
+        private int layerIndex;
         private int stateIndex;
         private readonly VisualElement onlyVisibleWhenExpandedSection;
         private readonly Label toggleExpandedLabel;
         private Slider playbackSlider;
         private Button playPauseButton;
 
-        protected StateDisplay(AnimationPlayerEditor editor, SerializedProperty stateListProp, int stateIndex, SerializedProperty stateProp) :
+        protected StateDisplay(   AnimationPlayerEditor editor, SerializedProperty stateListProp, int layerIndex, int stateIndex, SerializedProperty stateProp) :
             base(editor)
         {
             this.stateProp = stateProp;
+            this.layerIndex = layerIndex;
             this.stateIndex = stateIndex;
             this.stateListProp = stateListProp;
 
@@ -782,14 +793,14 @@ public class AnimationPlayerEditor : Editor {
             {
                 playPauseButton.text = "pause";
                 if (!previewer.IsPreviewing)
-                    previewer.StartPreview(0, stateIndex, true, playbackSlider);
+                    previewer.StartPreview(layerIndex, stateIndex, true, playbackSlider);
                 else
-                    previewer.SetAutomaticPlayback(true);
+                    previewer.AutomaticPlayback = true;
             }
             else
             {
                 playPauseButton.text = "play";
-                previewer.SetAutomaticPlayback(false);
+                previewer.AutomaticPlayback = false;
             }
         }
 
@@ -843,8 +854,8 @@ public class AnimationPlayerEditor : Editor {
     }
 
     public class SingleClipDisplay : StateDisplay {
-        public SingleClipDisplay(AnimationPlayerEditor editor, SerializedProperty stateListProp, int stateIndex, SerializedProperty stateProp)
-            : base(editor, stateListProp, stateIndex, stateProp) { }
+        public SingleClipDisplay(AnimationPlayerEditor editor, SerializedProperty stateListProp, int layerIndex, int stateIndex, SerializedProperty stateProp)
+            : base(editor, stateListProp, layerIndex, stateIndex, stateProp) { }
 
         protected override void FillAlwaysVisibleSection(VisualElement section)
         {
@@ -863,8 +874,8 @@ public class AnimationPlayerEditor : Editor {
         private SerializedProperty blendVariableProp;
         private VisualElement entrySection;
 
-        public BlendTree1DDisplay(AnimationPlayerEditor editor, SerializedProperty stateListProp, int stateIndex, SerializedProperty stateProp)
-            : base(editor, stateListProp, stateIndex, stateProp) { }
+        public BlendTree1DDisplay(AnimationPlayerEditor editor, SerializedProperty stateListProp, int layerIndex, int stateIndex, SerializedProperty stateProp)
+            : base(editor, stateListProp, layerIndex, stateIndex, stateProp) { }
 
         protected override void FillAlwaysVisibleSection(VisualElement section)
         {
@@ -967,8 +978,8 @@ public class AnimationPlayerEditor : Editor {
         private List<BlendTree2DEntry> entryElements = new List<BlendTree2DEntry>();
         private VisualElement entrySection;
 
-        public BlendTree2DDisplay(AnimationPlayerEditor editor, SerializedProperty stateListProp, int stateIndex, SerializedProperty stateProp)
-            : base(editor, stateListProp, stateIndex, stateProp) { }
+        public BlendTree2DDisplay(AnimationPlayerEditor editor, SerializedProperty stateListProp, int layerIndex, int stateIndex, SerializedProperty stateProp)
+            : base(editor, stateListProp, layerIndex, stateIndex, stateProp) { }
 
         protected override void FillAlwaysVisibleSection(VisualElement section)
         {
@@ -1080,8 +1091,8 @@ public class AnimationPlayerEditor : Editor {
         private SerializedProperty clipsProp;
         private VisualElement clipsSection;
 
-        public SequenceDisplay(AnimationPlayerEditor editor, SerializedProperty stateListProp, int stateIndex, SerializedProperty stateProp)
-            : base(editor, stateListProp, stateIndex, stateProp) { }
+        public SequenceDisplay(AnimationPlayerEditor editor, SerializedProperty stateListProp, int layerIndex, int stateIndex, SerializedProperty stateProp)
+            : base(editor, stateListProp, layerIndex, stateIndex, stateProp) { }
 
         protected override void FillOnlyVisibleWhenExpandedSection(VisualElement section)
         {
@@ -1128,8 +1139,8 @@ public class AnimationPlayerEditor : Editor {
         private SerializedProperty clipsProp;
         private VisualElement clipsSection;
 
-        public RandomClipDisplay(AnimationPlayerEditor editor, SerializedProperty stateListProp, int stateIndex, SerializedProperty stateProp)
-            : base(editor, stateListProp, stateIndex, stateProp) { }
+        public RandomClipDisplay(AnimationPlayerEditor editor, SerializedProperty stateListProp, int layerIndex, int stateIndex, SerializedProperty stateProp)
+            : base(editor, stateListProp, layerIndex, stateIndex, stateProp) { }
 
         protected override void FillOnlyVisibleWhenExpandedSection(VisualElement section)
         {

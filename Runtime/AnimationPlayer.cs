@@ -22,7 +22,7 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
 
     public static int DefaultState => 0;
 
-    public AnimationLayer[] layers;
+    public List<AnimationLayer> layers;
     public TransitionData defaultTransition;
 
     [SerializeField] internal List<ClipSwapCollection> clipSwapCollections = new List<ClipSwapCollection>();
@@ -38,7 +38,6 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     public PlayableGraph Graph => graph;
 
     private bool _cullCheckingActive;
-
     public bool CullCheckingActive
     {
         get => _cullCheckingActive;
@@ -47,16 +46,13 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
             if (_cullCheckingActive != value)
             {
                 _cullCheckingActive = true;
-                if (value)
-                    childRenderersForVisibilityChecks = GetComponentsInChildren<Renderer>();
-                else
-                    childRenderersForVisibilityChecks = null;
+                childRenderersForVisibilityChecks = value ? GetComponentsInChildren<Renderer>() : null;
             }
         }
     }
 
-    private Dictionary<string, float> blendVariableValues = new Dictionary<string, float>();
-    private List<string> blendVariablesUpdatedThisFrame = new List<string>();
+    private readonly Dictionary<string, float> blendVariableValues = new ();
+    private readonly List<string>              blendVariablesUpdatedThisFrame = new ();
 
     public Animator OutputAnimator { get; private set; }
 
@@ -74,10 +70,10 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
 
         EnsureVersionUpgraded();
 
-        if (layers.Length == 0)
+        if (layers.Count == 0)
             return;
         bool anyLayersWithStates = false;
-        for (int i = 0; i < layers.Length; i++)
+        for (int i = 0; i < layers.Count; i++)
         {
             if (layers[i].states.Count > 0)
             {
@@ -97,18 +93,18 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
         OutputAnimator = gameObject.EnsureComponent<Animator>();
         AnimationPlayableOutput animOutput = AnimationPlayableOutput.Create(graph, $"{name}_animation_player", OutputAnimator);
 
-        for (var i = 0; i < layers.Length; i++)
+        for (var i = 0; i < layers.Count; i++)
             layers[i].InitializeSelf(graph, defaultTransition, clipSwapCollections, blendVariableValues);
 
-        if (layers.Length <= 1)
+        if (layers.Count <= 1)
         {
             rootPlayable = layers[0].stateMixer;
         }
         else
         {
-            var layerMixer = AnimationLayerMixerPlayable.Create(graph, layers.Length);
+            var layerMixer = AnimationLayerMixerPlayable.Create(graph, layers.Count);
 
-            for (var i = 0; i < layers.Length; i++)
+            for (var i = 0; i < layers.Count; i++)
                 layers[i].InitializeLayerBlending(graph, i, layerMixer);
 
             rootPlayable = layerMixer;
@@ -162,32 +158,16 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
 
     public void AddLayer(int index, AnimationLayerType type, float weight, AvatarMask mask = null)
     {
-        AnimationLayer newLayer = new AnimationLayer();
-        newLayer.type = type;
-        newLayer.startWeight = weight;
-        newLayer.states = new List<AnimationPlayerState>();
-        newLayer.transitions = new List<StateTransition>();
-        newLayer.mask = mask;
-
-        AnimationLayer[] newLayers = new AnimationLayer[layers.Length + 1];
-        for (int i = 0; i < newLayers.Length; i++)
+        var newLayer = new AnimationLayer
         {
-            if (i < index)
-            {
-                newLayers[i] = layers[i];
-            }
-            else if (i == index)
-            {
-                newLayers[i] = newLayer;
-            }
-            else
-            {
-                newLayers[i] = layers[i - 1];
-            }
-        }
+            type = type,
+            startWeight = weight,
+            states = new (),
+            transitions = new (),
+            mask = mask
+        };
 
-        layers = newLayers;
-
+        layers.Insert(index, newLayer);
         layers[index].InitializeSelf(graph, defaultTransition, clipSwapCollections, blendVariableValues);
     }
 
@@ -512,7 +492,7 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     /// <returns>The weight of layer in the layer mixer.</returns>
     public float GetLayerWeight(int layer)
     {
-        if (layers.Length < 2)
+        if (layers.Count < 2)
         {
             // The root playable is the layer's state mixer if there's only a single layer, so we need this special case
             return 1;
@@ -528,7 +508,7 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     /// <param name="weight">Weight to set the layer to. \</param>
     public void SetLayerWeight(int layer, float weight)
     {
-        if (layers.Length < 2)
+        if (layers.Count < 2)
         {
             Debug.LogWarning($"You're setting the weight of {layer} to {weight}, but there's only one layer!");
         }
@@ -898,7 +878,7 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     /// </summary>
     public int GetLayerIndex(string layerName)
     {
-        for (int i = 0; i < layers.Length; i++)
+        for (int i = 0; i < layers.Count; i++)
         {
             if (layers[i].name == layerName)
                 return i;
@@ -1291,7 +1271,7 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     [Conditional("UNITY_ASSERTIONS")]
     public void AssertLayer(int layer, string methodName)
     {
-        if (layer < 0 || layer > layers.Length - 1)
+        if (layer < 0 || layer > layers.Count - 1)
             AssertionFailure($"layer {layer} is out of bounds when calling {methodName}");
     }
 }

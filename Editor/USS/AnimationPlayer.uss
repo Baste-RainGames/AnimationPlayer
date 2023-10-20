@@ -11,12 +11,21 @@
     flex: 2;
 }
 
+
+.topBar > .unity-popup-field {
+    margin-left: 0;
+    margin-right: 3px;
+}
 .animationLayer {
 
 }
 
 .animationLayer__subSection {
-    margin: 0 0 0 0;
+
+}
+
+.animationLayer__baseLayerLabel {
+    -unity-font-style: bold;
 }
 
 .animationLayer__statesHeader {
@@ -24,11 +33,12 @@
     justify-content: space-between;
     border-width: 1px 1px 1px 1px;
     border-color: black;
+    margin-top: 10px;
 }
 
 .animationLayer__statesHeader__search {
-    width: auto;
     flex-grow: 2;
+    width: 0; /* Unity's uss sets a width of 295px here! 0 makes it just flex normally instead */
 }
 
 .animationLayer__statesHeader__search__textInput {

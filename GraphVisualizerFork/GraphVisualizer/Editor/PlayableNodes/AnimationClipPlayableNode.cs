@@ -1,37 +1,37 @@
 using System.Text;
+
 using UnityEngine.Animations;
 using UnityEngine.Playables;
 
 namespace GraphVisualizer
 {
-    public class AnimationClipPlayableNode : PlayableNode
+public class AnimationClipPlayableNode : PlayableNode
+{
+    public AnimationClipPlayableNode(Playable content, float weight = 1.0f)
+        : base(content, weight) { }
+
+    public override string ToString()
     {
-        public AnimationClipPlayableNode(Playable content, float weight = 1.0f)
-            : base(content, weight)
+        var sb = new StringBuilder();
+
+        sb.AppendLine(base.ToString());
+
+        var p = (Playable) content;
+        if (p.IsValid())
         {
-        }
-
-        public override string ToString()
-        {
-            var sb = new StringBuilder();
-
-            sb.AppendLine(base.ToString());
-
-            var p = (Playable) content;
-            if (p.IsValid())
+            var acp = (AnimationClipPlayable) p;
+            var clip = acp.GetAnimationClip();
+            sb.AppendLine(InfoString("Clip", clip ? clip.name : "(none)"));
+            if (clip)
             {
-                var acp = (AnimationClipPlayable) p;
-                var clip = acp.GetAnimationClip();
-                sb.AppendLine(InfoString("Clip", clip ? clip.name : "(none)"));
-                if (clip)
-                {
-                    sb.AppendLine(InfoString("ClipLength", clip.length));
-                }
-                sb.AppendLine(InfoString("ApplyFootIK", acp.GetApplyFootIK()));
-                sb.AppendLine(InfoString("ApplyPlayableIK", acp.GetApplyPlayableIK()));
+                sb.AppendLine(InfoString("ClipLength", clip.length));
             }
 
-            return sb.ToString();
+            sb.AppendLine(InfoString("ApplyFootIK", acp.GetApplyFootIK()));
+            sb.AppendLine(InfoString("ApplyPlayableIK", acp.GetApplyPlayableIK()));
         }
+
+        return sb.ToString();
     }
+}
 }

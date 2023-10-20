@@ -1,8 +1,8 @@
 ﻿namespace Animation_Player
 {
-    public enum AnimationLayerType
-    {
-        Override,
-        Additive
-    }
+public enum AnimationLayerType
+{
+    Override,
+    Additive
+}
 }

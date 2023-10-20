@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+
 using UnityEngine.Playables;
 
 // Bridge between runtime and editor code: the graph created in runtime code can call GraphVisualizerClient.Show(...)
@@ -39,6 +40,7 @@ public class GraphVisualizerClient
         {
             instance.m_Graphs.Add(graph);
         }
+
         instance.m_GraphNames[graph] = name;
     }
 
@@ -64,6 +66,7 @@ public class GraphVisualizerClient
         {
             return name;
         }
+
         return null;
     }
 }

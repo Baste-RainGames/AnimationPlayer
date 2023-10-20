@@ -6,8 +6,10 @@ using UnityEngine.Experimental.Animations;
 #endif
 using UnityEngine.Playables;
 
-namespace Animation_Player {
-    public interface IIKAnimationPlayerConnection {
-        AnimationScriptPlayable GeneratePlayable(Animator outputAnimator, PlayableGraph graph);
-    }
+namespace Animation_Player
+{
+public interface IIKAnimationPlayerConnection
+{
+    AnimationScriptPlayable GeneratePlayable(Animator outputAnimator, PlayableGraph graph);
+}
 }

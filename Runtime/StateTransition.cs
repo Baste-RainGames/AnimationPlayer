@@ -16,37 +16,21 @@ public class StateTransition
     public bool isDefault;
     public string name = DefaultName;
 
-    [SerializeField] private SerializedGUID fromStateGUID;
-    [SerializeField] private SerializedGUID toStateGUID;
+    [SerializeField, SerializeReference] private AnimationPlayerState fromState;
+    [SerializeField, SerializeReference] private AnimationPlayerState toState;
 
     public TransitionData transitionData;
-
-    private AnimationPlayerState fromState, toState;
 
     public AnimationPlayerState FromState
     {
         get => fromState;
-        set
-        {
-            fromState = value;
-            fromStateGUID = fromState.GUID;
-        }
+        set => fromState = value;
     }
 
     public AnimationPlayerState ToState
     {
         get => toState;
-        set
-        {
-            toState = value;
-            toStateGUID = toState?.GUID ?? SerializedGUID.Empty;
-        }
-    }
-
-    public void FetchStates(List<AnimationPlayerState> allStates)
-    {
-        fromState = allStates.Find(state => state.GUID == fromStateGUID);
-        toState = allStates.Find(state => state.GUID == toStateGUID);
+        set => toState = value;
     }
 }
 

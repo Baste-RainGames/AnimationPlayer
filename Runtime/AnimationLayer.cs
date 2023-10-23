@@ -9,9 +9,9 @@ using UnityEngine.Playables;
 namespace Animation_Player
 {
 [Serializable]
-public class AnimationLayer : ISerializationCallbackReceiver
+public class AnimationLayer
 {
-    //Serialized through ISerializationCallbackReceiver
+    [SerializeReference]
     public List<AnimationPlayerState> states;
     public List<StateTransition> transitions;
 
@@ -66,11 +66,6 @@ public class AnimationLayer : ISerializationCallbackReceiver
         {
             stateMixer = AnimationMixerPlayable.Create(graph);
             return;
-        }
-
-        foreach (var transition in transitions)
-        {
-            transition.FetchStates(states);
         }
 
         runtimePlayables = new Playable[states.Count];
@@ -722,74 +717,6 @@ public class AnimationLayer : ISerializationCallbackReceiver
 
         if (layerMixer.IsValid())
             InitializeLayerBlending(containingGraph, layerIndex, layerMixer);
-    }
-
-    [SerializeField] private List<SingleClip>     serializedSingleClipStates   = new List<SingleClip>();
-    [SerializeField] private List<BlendTree1D>    serializedBlendTree1Ds       = new List<BlendTree1D>();
-    [SerializeField] private List<BlendTree2D>    serializedBlendTree2Ds       = new List<BlendTree2D>();
-    [SerializeField] private List<PlayRandomClip> serializedSelectRandomStates = new List<PlayRandomClip>();
-    [SerializeField] private List<Sequence>       serializedSequences          = new List<Sequence>();
-
-    public void OnBeforeSerialize()
-    {
-        serializedSingleClipStates.Clear();
-        serializedBlendTree1Ds.Clear();
-        serializedBlendTree2Ds.Clear();
-        serializedSelectRandomStates.Clear();
-        serializedSequences.Clear();
-
-        foreach (var state in states)
-        {
-            switch (state)
-            {
-                case SingleClip singleClip:
-                    serializedSingleClipStates.Add(singleClip);
-                    continue;
-                case BlendTree1D blendTree1D:
-                    serializedBlendTree1Ds.Add(blendTree1D);
-                    continue;
-                case BlendTree2D blendTree2D:
-                    serializedBlendTree2Ds.Add(blendTree2D);
-                    continue;
-                case PlayRandomClip playRandomClip:
-                    serializedSelectRandomStates.Add(playRandomClip);
-                    continue;
-                case Sequence sequence:
-                    serializedSequences.Add(sequence);
-                    continue;
-                default:
-                    if (state != null)
-                        Debug.LogError($"Found state in AnimationLayer's states that's of an unknown type, " +
-                                       $"({state.GetType().Name})! Did you forget to implement the serialization?");
-                    continue;
-            }
-        }
-    }
-
-    public void OnAfterDeserialize()
-    {
-        if (states == null)
-            states = new List<AnimationPlayerState>();
-        else
-            states.Clear();
-
-        //AddRangde allocates. No, really!
-        foreach (var state in serializedSingleClipStates)
-            states.Add(state);
-
-        foreach (var state in serializedBlendTree1Ds)
-            states.Add(state);
-
-        foreach (var state in serializedBlendTree2Ds)
-            states.Add(state);
-
-        foreach (var state in serializedSelectRandomStates)
-            states.Add(state);
-
-        foreach (var sequence in serializedSequences)
-        {
-            states.Add(sequence);
-        }
     }
 
     private struct PlayAtTimeInstruction

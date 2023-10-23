@@ -13,9 +13,6 @@ public abstract class AnimationPlayerState
 
     [SerializeField] private bool hasUpdatedName;
 
-    [SerializeField] private SerializedGUID guid;
-    public SerializedGUID GUID => guid;
-
     public List<AnimationEvent> animationEvents = new ();
     public double               speed           = 1d;
 
@@ -27,7 +24,6 @@ public abstract class AnimationPlayerState
         this.name = name;
         speed = 1d;
         hasUpdatedName = !name.StartsWith(defaultName);
-        guid = SerializedGUID.Create();
     }
 
     public string Name
@@ -41,13 +37,6 @@ public abstract class AnimationPlayerState
             hasUpdatedName = true;
             name = value;
         }
-    }
-
-    public void EnsureHasGUID()
-    {
-        //Animation states used to not have guids!
-        if (guid.GUID == Guid.Empty)
-            guid = SerializedGUID.Create();
     }
 
     public bool OnClipAssigned(AnimationClip clip)

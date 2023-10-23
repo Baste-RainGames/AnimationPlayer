@@ -486,7 +486,7 @@ public class AnimationPlayerEditor_Manual : Editor {
             }
 
             HandleSharedProps();
-            HandleGUIDOfNewState();
+            // HandleGUIDOfNewState();
 
             layerProp.serializedObject.ApplyModifiedProperties();
 
@@ -509,12 +509,12 @@ public class AnimationPlayerEditor_Manual : Editor {
                 stateProp.FindPropertyRelative("name").stringValue = $"New {ObjectNames.NicifyVariableName(stateType.Name)}";
             }
 
-            void HandleGUIDOfNewState()
-            {
-                var guid = SerializedGUID.Create().GUID.ToString();
-                stateProp.FindPropertyRelative("guid").FindPropertyRelative("guidSerialized").stringValue = guid;
-                serializedOrder.FindPropertyRelative("guidSerialized").stringValue = guid;
-            }
+            // void HandleGUIDOfNewState()
+            // {
+                // var guid = SerializedGUID.Create().GUID.ToString();
+                // stateProp.FindPropertyRelative("guid").FindPropertyRelative("guidSerialized").stringValue = guid;
+                // serializedOrder.FindPropertyRelative("guidSerialized").stringValue = guid;
+            // }
         }
     }
 

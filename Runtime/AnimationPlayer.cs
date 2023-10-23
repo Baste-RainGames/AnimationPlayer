@@ -1195,13 +1195,14 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
         if (versionNumber == lastVersion)
             return false;
 
+        // Version 1 introduced GUIDs. Version 3 unintroduced them. And also broke backwards compatibility!
         if (versionNumber < 1 && layers != null)
         {
             foreach (var layer in layers)
             {
                 foreach (var state in layer.states)
                 {
-                    state.EnsureHasGUID();
+                    // state.EnsureHasGUID();
                 }
             }
         }

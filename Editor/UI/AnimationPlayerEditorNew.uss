@@ -1,0 +1,12 @@
+.middle-bar-toggle {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.category-view {
+    flex-grow: 1;
+}
+
+.selected-layer-dropdown {
+    margin-right: 3px; /* Match the buttons to the right*/
+}

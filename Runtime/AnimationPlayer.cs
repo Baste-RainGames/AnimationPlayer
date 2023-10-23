@@ -16,12 +16,11 @@ namespace Animation_Player
 public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
 {
     // Serialized data:
-    private const int lastVersion = 2;
+    private const int lastVersion = 3;
     [SerializeField, HideInInspector] private int versionNumber;
     [SerializeField] private bool showInVisualizer;
 
     public static int DefaultState => 0;
-
     public List<AnimationLayer> layers;
     public TransitionData defaultTransition;
 

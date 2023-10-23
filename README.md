@@ -22,7 +22,7 @@ The AnimationPlayer is a Unity Component which is used to play animations. Like 
 
 Unlike the AnimatorController, the AnimationPlayer does not listen for variables to trigger transitions between states. Instead, you tell it to play a state. The AnimationPlayer checks if there's a transition defined from the current state to the state you told it to play. If a transition is defined, it's used. If not, a (user-defined) default transition is used.
 
-This both makes the API a lot simpler, and makes the player a lot less bug prone. When you call Play("Attack"), you're guaranteed that the animation player will start transitioning to "Attack" right away.
+This both makes the API a lot simpler, and makes the player a lot less bug prone. When you call Play("Attack"), you're guaranteed that the animation player will start transitioning to "Attack" right away. 
 
 Both animators and the programmers should at all times feel like they know what's going on. 
 

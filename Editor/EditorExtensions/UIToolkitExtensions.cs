@@ -24,5 +24,10 @@ public static class UIToolkitExtensions {
     }
 
     public static bool IsDisplayed(this VisualElement visualElement) => visualElement.style.display != DisplayStyle.None;
+
+    public static VisualElement WithClass(this VisualElement visualElement, string @class) {
+        visualElement.AddToClassList(@class);
+        return visualElement;
+    }
 }
 }

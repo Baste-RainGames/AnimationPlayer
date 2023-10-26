@@ -31,6 +31,11 @@ public class AnimationEvent
         registeredActions.Add(listener);
     }
 
+    public void RegisterListenerForCurrentState(Action listener)
+    {
+        registeredActionsForCurrentState.Add(listener);
+    }
+
     public void ClearRegisteredForCurrentState()
     {
         registeredActionsForCurrentState.Clear();
@@ -42,11 +47,6 @@ public class AnimationEvent
             action();
         foreach (var action in registeredActionsForCurrentState)
             action();
-    }
-
-    public void RegisterListenerForCurrentState(Action listener)
-    {
-        registeredActionsForCurrentState.Add(listener);
     }
 }
 }

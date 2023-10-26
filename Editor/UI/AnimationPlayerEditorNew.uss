@@ -8,5 +8,10 @@
 }
 
 .selected-layer-dropdown {
-    margin-right: 3px; /* Match the buttons to the right*/
+    margin-right: 3px;
+}
+
+.state-list--state-label {
+    -unity-text-align: middle-left;
+    margin-left: 5px;
 }

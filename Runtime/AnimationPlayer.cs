@@ -15,6 +15,14 @@ namespace Animation_Player
 {
 public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
 {
+    [ContextMenu("Temp/Add state")]
+    public void AddState()
+    {
+        var state = SingleClip.Create("State");
+        layers[0].states.Add(state);
+        UnityEditor.EditorUtility.SetDirty(this);
+    }
+
     // Serialized data:
     private const int lastVersion = 3;
     [SerializeField, HideInInspector] private int versionNumber;

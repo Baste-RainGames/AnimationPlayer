@@ -10,7 +10,6 @@ namespace Animation_Player
 public abstract class AnimationPlayerState
 {
     [SerializeField] private string name;
-
     [SerializeField] private bool hasUpdatedName;
 
     public List<AnimationEvent> animationEvents = new ();

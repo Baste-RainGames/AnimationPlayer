@@ -1,5 +1,12 @@
-﻿using UnityEditor;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
+using UnityEditor;
+using UnityEditor.UIElements;
+
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Animation_Player
@@ -7,42 +14,53 @@ namespace Animation_Player
 [CustomEditor(typeof(AnimationPlayer))]
 public class AnimationPlayerEditor_UXML : Editor
 {
-    private static VisualTreeAsset LoadVisualTree() {
-        // Editor/UI/AnimationPlayerEditorNew.uss
-        return AssetDatabase.LoadAssetAtPath <VisualTreeAsset> ( AssetDatabase.GUIDToAssetPath("127de2295f82bdc48a4e27786dfc0be3") );
-    }
-
+    private VisualElement root;
     private Toggle statesToggle;
     private Toggle transitionsToggle;
     private Toggle layerToggle;
     private Toggle editPlayerSettingsToggle;
     private Toggle viewMetaDataToggle;
 
-    private VisualElement editStatesView;
+    private EditStateSection editStateView;
+    private StateList stateList;
     private VisualElement editTransitionsView;
     private VisualElement editLayerView;
     private VisualElement editPlayerSettingsView;
     private VisualElement metaDataView;
+    private Label errorLabel;
 
+    private static Dictionary<Type, AnimationStateEditor> editorsForStateTypes;
+
+    private new AnimationPlayer target => (AnimationPlayer) base.target;
+
+    private SerializedProperty layersProp;
+
+    [SerializeField] private UIState uiState;
+    [SerializeField] private int selectedLayer;
+    [SerializeField] private int selectedState;
+
+    private SerializedProperty SelectedLayerProp => layersProp.GetArrayElementAtIndex(selectedLayer);
+    private SerializedProperty SelectedStateProp => SelectedLayerProp.FindPropertyRelative("states").GetArrayElementAtIndex(selectedState);
 
     public override VisualElement CreateInspectorGUI()
     {
-        var visualTreeAsset = LoadVisualTree();
-        var root = new VisualElement();
+        var path = "Packages/com.baste.animationplayer/Editor/UI/AnimationPlayerEditor.uxml";
+        var visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(path);
+        root = new ();
         visualTreeAsset.CloneTree(root);
 
-        SetupCallbacks(root);
-        SetState(UIState.EditStates);
-        return root;
-    }
+        layersProp = serializedObject.FindProperty(nameof(AnimationPlayer.layers));
 
-    private void SetupCallbacks(VisualElement root)
-    {
-        SetupUIStateSelection(root);
-    }
+        errorLabel = root.Q<Label>("ErrorLabel");
+        errorLabel.SetDisplayed(false);
 
-    private void SetupUIStateSelection(VisualElement root)
-    {
+        editStateView          = new EditStateSection(root, errorLabel);
+        stateList              = new StateList(this);
+        editTransitionsView    = root.Q("EditTransitionsView");
+        editLayerView          = root.Q("EditLayerView");
+        editPlayerSettingsView = root.Q("EditPlayerSettingsView");
+        metaDataView           = root.Q("MetaDataView");
+
         var middleBar = root.Q("MiddleBar");
 
         statesToggle             = middleBar.Q<Toggle>("EditStatesToggle");
@@ -51,39 +69,117 @@ public class AnimationPlayerEditor_UXML : Editor
         editPlayerSettingsToggle = middleBar.Q<Toggle>("EditPlayerSettingsToggle");
         viewMetaDataToggle       = middleBar.Q<Toggle>("ViewMetaDataToggle");
 
-        editStatesView         = root.Q("EditStatesView");
-        editTransitionsView    = root.Q("EditTransitionsView");
-        editLayerView          = root.Q("EditLayerView");
-        editPlayerSettingsView = root.Q("EditPlayerSettingsView");
-        metaDataView           = root.Q("MetaDataView");
+        statesToggle            .RegisterValueChangedCallback(c => UIStateClicked(c, UIState.EditStates));
+        transitionsToggle       .RegisterValueChangedCallback(c => UIStateClicked(c, UIState.EditTransitions));
+        layerToggle             .RegisterValueChangedCallback(c => UIStateClicked(c, UIState.EditLayer));
+        editPlayerSettingsToggle.RegisterValueChangedCallback(c => UIStateClicked(c, UIState.EditPlayerSettings));
+        viewMetaDataToggle      .RegisterValueChangedCallback(c => UIStateClicked(c, UIState.ViewMetaData));
 
-        statesToggle            .RegisterValueChangedCallback(c => StateClicked(c, UIState.EditStates));
-        transitionsToggle       .RegisterValueChangedCallback(c => StateClicked(c, UIState.EditTransitions));
-        layerToggle             .RegisterValueChangedCallback(c => StateClicked(c, UIState.EditLayer));
-        editPlayerSettingsToggle.RegisterValueChangedCallback(c => StateClicked(c, UIState.EditPlayerSettings));
-        viewMetaDataToggle      .RegisterValueChangedCallback(c => StateClicked(c, UIState.ViewMetaData));
+        var topBar = root.Q("TopBar");
+        var layerDropdown = topBar.Q<DropdownField>("SelectedLayerDropdown");
+        layerDropdown.choices = new (layersProp.arraySize);
+        for (int i = 0; i < layersProp.arraySize; i++)
+            layerDropdown.choices.Add(layersProp.GetArrayElementAtIndex(i).FindPropertyRelative("name").stringValue);
+        layerDropdown.index = selectedLayer;
 
-        void StateClicked(ChangeEvent<bool> evt, UIState state)
+        layerDropdown.RegisterValueChangedCallback(SelectedLayerChanged);
+
+        SetUIState(UIState.EditStates, true);
+        SetLayer(selectedLayer, true);
+        SetAnimationState(selectedState, true);
+
+        return root;
+
+        void UIStateClicked(ChangeEvent<bool> evt, UIState state)
         {
             if (!evt.newValue)
                 return;
-            SetState(state);
+            SetUIState(state);
+        }
+
+        void SelectedLayerChanged(ChangeEvent<string> _)
+        {
+            SetLayer(layerDropdown.index);
         }
     }
 
-    private void SetState(UIState state)
+    private void SetLayer(int selectedLayer, bool skipUndo = false)
     {
-        editStatesView        .SetDisplayed(state == UIState.EditStates);
-        editTransitionsView   .SetDisplayed(state == UIState.EditTransitions);
-        editLayerView         .SetDisplayed(state == UIState.EditLayer);
-        editPlayerSettingsView.SetDisplayed(state == UIState.EditPlayerSettings);
-        metaDataView          .SetDisplayed(state == UIState.ViewMetaData);
+        if (!skipUndo)
+            Undo.RecordObject(this, "Set Selected Layer");
 
-        statesToggle            .SetValueWithoutNotify(state == UIState.EditStates);
-        transitionsToggle       .SetValueWithoutNotify(state == UIState.EditTransitions);
-        layerToggle             .SetValueWithoutNotify(state == UIState.EditLayer);
-        editPlayerSettingsToggle.SetValueWithoutNotify(state == UIState.EditPlayerSettings);
-        viewMetaDataToggle      .SetValueWithoutNotify(state == UIState.ViewMetaData);
+        this.selectedLayer = selectedLayer;
+        stateList.SetLayer(layersProp.GetArrayElementAtIndex(selectedLayer));
+    }
+
+    private void SetAnimationState(int selectedState, bool skipUndo = false)
+    {
+        if (!skipUndo)
+            Undo.RecordObject(this, "Set Selected State");
+        this.selectedState = selectedState;
+
+        try
+        {
+            if (layersProp.arraySize == 0)
+            {
+                ShowError("No Layers");
+                return;
+            }
+
+            if (selectedLayer < 0 || selectedLayer >= layersProp.arraySize)
+            {
+                ShowError($"Selected layer {selectedLayer} out of bounds! There are {layersProp.arraySize} layers");
+                return;
+            }
+
+            var statesProp = layersProp.GetArrayElementAtIndex(selectedLayer).FindPropertyRelative("states");
+            if (statesProp.arraySize == 0)
+            {
+                ShowError("No States");
+                return;
+            }
+
+            if (selectedState < 0 || selectedState >= statesProp.arraySize)
+            {
+                ShowError($"Selected state {selectedState} out of bounds! There are {statesProp.arraySize} states");
+                return;
+            }
+
+            var state = statesProp.GetArrayElementAtIndex(selectedState);
+            editStateView.ShowAnimationState(state);
+        }
+        catch (Exception e)
+        {
+            Debug.LogException(e);
+            ShowError(e.ToString());
+        }
+    }
+
+    private void ShowError(string error)
+    {
+        errorLabel.text = error;
+        errorLabel.SetDisplayed(true);
+    }
+
+    private void SetUIState(UIState uiState, bool skipUndo = false)
+    {
+        if (!skipUndo)
+            Undo.RecordObject(this, "Set UI State");
+        this.uiState = uiState;
+
+        editStateView         .SetDisplayed(uiState == UIState.EditStates);
+        editTransitionsView   .SetDisplayed(uiState == UIState.EditTransitions);
+        editLayerView         .SetDisplayed(uiState == UIState.EditLayer);
+        editPlayerSettingsView.SetDisplayed(uiState == UIState.EditPlayerSettings);
+        metaDataView          .SetDisplayed(uiState == UIState.ViewMetaData);
+
+        stateList.SetDisplayed(uiState is UIState.EditStates or UIState.EditTransitions);
+
+        statesToggle            .SetValueWithoutNotify(uiState == UIState.EditStates);
+        transitionsToggle       .SetValueWithoutNotify(uiState == UIState.EditTransitions);
+        layerToggle             .SetValueWithoutNotify(uiState == UIState.EditLayer);
+        editPlayerSettingsToggle.SetValueWithoutNotify(uiState == UIState.EditPlayerSettings);
+        viewMetaDataToggle      .SetValueWithoutNotify(uiState == UIState.ViewMetaData);
     }
 
     private enum UIState
@@ -93,6 +189,156 @@ public class AnimationPlayerEditor_UXML : Editor
         EditLayer,
         EditPlayerSettings,
         ViewMetaData,
+    }
+
+    [Serializable]
+    private class StateList
+    {
+        public ListView listView;
+        private readonly VisualElement root;
+        private readonly AnimationPlayerEditor_UXML parentEditor;
+
+        public StateList(AnimationPlayerEditor_UXML parentEditor)
+        {
+            this.parentEditor = parentEditor;
+            root = parentEditor.root.Q("StateList");
+            listView = root.Q<ListView>();
+
+            listView.makeItem = () => new Label().WithClass("state-list--state-label");
+            listView.bindItem = (ve, index) =>
+            {
+                ((Label) ve).text = parentEditor.layersProp
+                                                .GetArrayElementAtIndex(parentEditor.selectedLayer)
+                                                .FindPropertyRelative(nameof(AnimationLayer.states))
+                                                .GetArrayElementAtIndex(index)
+                                                .FindPropertyRelative("name")
+                                                .stringValue;
+            };
+
+            var addButton = (Button) typeof(BaseListView).GetField("m_AddButton", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(listView);
+            addButton.clickable = new Clickable(ShowAddStateMenu);
+
+            listView.selectedIndicesChanged += indices =>
+            {
+                var index = indices.First(); // the listView is set to single selection mode, so there's always only one element in here. Silly API.
+                parentEditor.SetAnimationState(index);
+            };
+        }
+
+        private void ShowAddStateMenu()
+        {
+            var gm = new GenericMenu();
+            foreach (var stateType in editorsForStateTypes.Keys)
+                gm.AddItem(new GUIContent(stateType.Name), false, () => AddStateOfType(stateType));
+            gm.ShowAsContext();
+
+            void AddStateOfType(Type type)
+            {
+                var editor = editorsForStateTypes[type];
+                var statesProp = parentEditor.SelectedLayerProp.FindPropertyRelative(nameof(AnimationLayer.states));
+
+                parentEditor.serializedObject.Update();
+
+                var newState = editor.CreateNewState(statesProp.arraySize);
+                statesProp.arraySize++;
+                statesProp.GetArrayElementAtIndex(statesProp.arraySize - 1).managedReferenceValue = newState;
+
+                parentEditor.serializedObject.ApplyModifiedProperties();
+            }
+        }
+
+        public void SetLayer(SerializedProperty layer)
+        {
+            listView.Unbind();
+            listView.BindProperty(layer.FindPropertyRelative(nameof(AnimationLayer.states)));
+        }
+
+        public void SetDisplayed(bool displayed)
+        {
+            root.SetDisplayed(displayed);
+        }
+    }
+
+    [Serializable]
+    private class EditStateSection
+    {
+        private readonly Label errorLabel;
+        private readonly VisualElement editStateRoot;
+        private readonly VisualElement selectedStateRoot;
+
+        private AnimationStateEditor shownEditor;
+
+        public EditStateSection(VisualElement entireUIRoot, Label errorLabel)
+        {
+            editStateRoot = entireUIRoot.Q("EditStatesView");
+            selectedStateRoot = editStateRoot.Q("SelectedState");
+            this.errorLabel = errorLabel;
+        }
+
+        public void SetDisplayed(bool displayed)
+        {
+            editStateRoot.SetDisplayed(displayed);
+        }
+
+        public void ShowAnimationState(SerializedProperty stateProperty)
+        {
+            if (shownEditor != null)
+            {
+                shownEditor.ClearBindings(stateProperty);
+                shownEditor.RootVisualElement.parent.Remove(shownEditor.RootVisualElement);
+                shownEditor = null;
+            }
+
+            if (stateProperty.managedReferenceValue == null)
+            {
+                ShowError("State is null");
+                return;
+            }
+
+            var stateType = stateProperty.managedReferenceValue.GetType();
+            if (editorsForStateTypes.TryGetValue(stateType, out var editor))
+            {
+
+                editor.GenerateUI();
+                editor.BindUI(stateProperty);
+
+                shownEditor = editor;
+                selectedStateRoot.Add(shownEditor.RootVisualElement);
+                errorLabel.SetDisplayed(false);
+            }
+            else
+            {
+                ShowError("No known editor for state type " + stateType);
+            }
+        }
+
+        private void ShowError(string error)
+        {
+            selectedStateRoot.SetDisplayed(false);
+            errorLabel.text = error;
+            errorLabel.SetDisplayed(true);
+        }
+    }
+
+    static AnimationPlayerEditor_UXML()
+    {
+        editorsForStateTypes = new();
+        var editorTypes = TypeCache.GetTypesDerivedFrom(typeof(AnimationStateEditor));
+        foreach (var editorType in editorTypes)
+        {
+            if (editorType.IsAbstract)
+                continue;
+            try
+            {
+                var editor = (AnimationStateEditor) Activator.CreateInstance(editorType);
+                editorsForStateTypes[editor.GetEditedType()] = editor;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Exception when trying to create a {editorType.FullName}. It must have a parameterless, public constructor!");
+                Debug.LogException(e);
+            }
+        }
     }
 }
 }

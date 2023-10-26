@@ -7,9 +7,6 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace Animation_Player
-{ }
-
 namespace Animation_Player {
 // [CustomEditor(typeof(AnimationPlayer))]
 public class AnimationPlayerEditor_Manual : Editor {

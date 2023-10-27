@@ -17,7 +17,6 @@ public class Sequence : AnimationPlayerState
     private int indexOfPlayedClip;
 
     private ClipSwapHandler _clipsToUse;
-
     private ClipSwapHandler ClipsToUse
     {
         get
@@ -215,5 +214,7 @@ public enum SequenceLoopMode
 {
     DontLoop,
     LoopEntireSequence,
+    // @TODO: in the Teslagrad2 SpriteAnimator, having a "loop final clip" mode was really usefull! That's kinda covered in AnimationPlayer by having clip
+    // transitions, so it might seem to not be necessary, but sometimes you want to have the same intro to a loop no matter how you blend to it.
 }
 }

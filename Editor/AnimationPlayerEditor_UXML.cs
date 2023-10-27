@@ -27,6 +27,7 @@ public class AnimationPlayerEditor_UXML : Editor
     private VisualElement editLayerView;
     private VisualElement editPlayerSettingsView;
     private VisualElement metaDataView;
+    private VisualElement layerBar;
     private Label errorLabel;
 
     private static Dictionary<Type, AnimationStateEditor> editorsForStateTypes;
@@ -61,13 +62,13 @@ public class AnimationPlayerEditor_UXML : Editor
         editPlayerSettingsView = root.Q("EditPlayerSettingsView");
         metaDataView           = root.Q("MetaDataView");
 
-        var middleBar = root.Q("MiddleBar");
+        var stateBar = root.Q("StateBar");
 
-        statesToggle             = middleBar.Q<Toggle>("EditStatesToggle");
-        transitionsToggle        = middleBar.Q<Toggle>("EditTransitionsToggle");
-        layerToggle              = middleBar.Q<Toggle>("EditLayerToggle");
-        editPlayerSettingsToggle = middleBar.Q<Toggle>("EditPlayerSettingsToggle");
-        viewMetaDataToggle       = middleBar.Q<Toggle>("ViewMetaDataToggle");
+        statesToggle             = stateBar.Q<Toggle>("EditStatesToggle");
+        transitionsToggle        = stateBar.Q<Toggle>("EditTransitionsToggle");
+        layerToggle              = stateBar.Q<Toggle>("EditLayerToggle");
+        editPlayerSettingsToggle = stateBar.Q<Toggle>("EditPlayerSettingsToggle");
+        viewMetaDataToggle       = stateBar.Q<Toggle>("ViewMetaDataToggle");
 
         statesToggle            .RegisterValueChangedCallback(c => UIStateClicked(c, UIState.EditStates));
         transitionsToggle       .RegisterValueChangedCallback(c => UIStateClicked(c, UIState.EditTransitions));
@@ -75,8 +76,8 @@ public class AnimationPlayerEditor_UXML : Editor
         editPlayerSettingsToggle.RegisterValueChangedCallback(c => UIStateClicked(c, UIState.EditPlayerSettings));
         viewMetaDataToggle      .RegisterValueChangedCallback(c => UIStateClicked(c, UIState.ViewMetaData));
 
-        var topBar = root.Q("TopBar");
-        var layerDropdown = topBar.Q<DropdownField>("SelectedLayerDropdown");
+        layerBar = root.Q("LayerBar");
+        var layerDropdown = layerBar.Q<DropdownField>("SelectedLayerDropdown");
         layerDropdown.choices = new (layersProp.arraySize);
         for (int i = 0; i < layersProp.arraySize; i++)
             layerDropdown.choices.Add(layersProp.GetArrayElementAtIndex(i).FindPropertyRelative("name").stringValue);
@@ -174,6 +175,7 @@ public class AnimationPlayerEditor_UXML : Editor
         metaDataView          .SetDisplayed(uiState == UIState.ViewMetaData);
 
         stateList.SetDisplayed(uiState is UIState.EditStates or UIState.EditTransitions);
+        layerBar.SetDisplayed (uiState is UIState.EditStates or UIState.EditTransitions or UIState.EditLayer);
 
         statesToggle            .SetValueWithoutNotify(uiState == UIState.EditStates);
         transitionsToggle       .SetValueWithoutNotify(uiState == UIState.EditTransitions);
@@ -207,12 +209,15 @@ public class AnimationPlayerEditor_UXML : Editor
             listView.makeItem = () => new Label().WithClass("state-list--state-label");
             listView.bindItem = (ve, index) =>
             {
-                ((Label) ve).text = parentEditor.layersProp
-                                                .GetArrayElementAtIndex(parentEditor.selectedLayer)
-                                                .FindPropertyRelative(nameof(AnimationLayer.states))
-                                                .GetArrayElementAtIndex(index)
-                                                .FindPropertyRelative("name")
-                                                .stringValue;
+                var stateProp = parentEditor.layersProp
+                                            .GetArrayElementAtIndex(parentEditor.selectedLayer)
+                                            .FindPropertyRelative(nameof(AnimationLayer.states))
+                                            .GetArrayElementAtIndex(index);
+
+                var stateName = stateProp.FindPropertyRelative("name").stringValue;
+                var stateType = stateProp.managedReferenceValue.GetType().Name;
+
+                ((Label) ve).text = $"{stateName}  ({stateType})";
             };
 
             var addButton = (Button) typeof(BaseListView).GetField("m_AddButton", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(listView);
@@ -220,6 +225,7 @@ public class AnimationPlayerEditor_UXML : Editor
 
             listView.selectedIndicesChanged += indices =>
             {
+                Debug.Log(indices.PrettyPrint());
                 var index = indices.First(); // the listView is set to single selection mode, so there's always only one element in here. Silly API.
                 parentEditor.SetAnimationState(index);
             };
@@ -270,7 +276,7 @@ public class AnimationPlayerEditor_UXML : Editor
 
         public EditStateSection(VisualElement entireUIRoot, Label errorLabel)
         {
-            editStateRoot = entireUIRoot.Q("EditStatesView");
+            editStateRoot = entireUIRoot.Q("EditStateView");
             selectedStateRoot = editStateRoot.Q("SelectedState");
             this.errorLabel = errorLabel;
         }
@@ -331,7 +337,12 @@ public class AnimationPlayerEditor_UXML : Editor
             try
             {
                 var editor = (AnimationStateEditor) Activator.CreateInstance(editorType);
-                editorsForStateTypes[editor.GetEditedType()] = editor;
+                var editedType = editor.GetEditedType();
+                if (editorsForStateTypes.ContainsKey(editedType))
+                {
+                    Debug.LogError("There are two ");
+                }
+                editorsForStateTypes[editedType] = editor;
             }
             catch (Exception e)
             {

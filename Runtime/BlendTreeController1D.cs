@@ -1,6 +1,4 @@
-﻿using System;
-
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
 
@@ -115,15 +113,14 @@ public class BlendTreeController1D
         }
     }
 
-    public float GetMinThreshold() => runtimeData[0].threshold;
-    public float GetMaxThreshold() => runtimeData[runtimeData.Length - 1].threshold;
+    public float GetMinThreshold() => runtimeData[ 0].threshold;
+    public float GetMaxThreshold() => runtimeData[^1].threshold;
 
     private struct BlendTreeData
     {
         public AnimationClipPlayable playable;
         public float duration;
         public float threshold;
-//            public float defaultSpeed;
     }
 
     public void PlayableChanged(int index, AnimationClipPlayable newPlayable)

@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
-using UnityEngine.Serialization;
 
 namespace Animation_Player
 {
@@ -14,8 +13,9 @@ public class BlendTree1D : AnimationPlayerState
     public const string DefaultName = "New Blend Tree";
 
     public string blendVariable;
-    [FormerlySerializedAs("blendTree")] public List<BlendTreeEntry1D> entries;
-    public bool compensateForDifferentDurations = true; // @TODO: this should be setable from the editor, no?
+    public bool compensateForDifferentDurations = true;
+
+    public List<BlendTreeEntry1D> entries;
 
     private BlendTreeController1D controller;
 

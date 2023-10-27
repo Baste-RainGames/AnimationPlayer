@@ -1,27 +1,27 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
     <Style src="project://database/Packages/com.baste.animationplayer/Editor/UI/AnimationPlayerEditorNew.uss?fileID=7433441132597879392&amp;guid=d8ce903d29a9e0a4dbcd0a6e394057ae&amp;type=3#AnimationPlayerEditorNew" />
     <ui:Label tabindex="-1" text="Errors goes here" parse-escape-sequences="true" display-tooltip-when-elided="true" name="ErrorLabel" style="color: rgb(255, 0, 0);" />
-    <uie:Toolbar name="TopBar">
-        <ui:DropdownField label="Selected Layer" index="0" focusable="false" name="SelectedLayerDropdown" class="selected-layer-dropdown" style="flex-grow: 1;" />
-        <ui:Button text="Add Layer" parse-escape-sequences="true" display-tooltip-when-elided="true" />
-        <ui:Button text="Remove Layer" parse-escape-sequences="true" display-tooltip-when-elided="true" />
-    </uie:Toolbar>
-    <uie:Toolbar name="MiddleBar" style="min-height: 21px; max-height: 50px;">
+    <uie:Toolbar name="StateBar" style="min-height: 21px; max-height: 50px;">
         <uie:ToolbarToggle focusable="false" label="States" value="true" name="EditStatesToggle" class="middle-bar-toggle" />
         <uie:ToolbarToggle focusable="false" label="Transitions" value="false" name="EditTransitionsToggle" class="middle-bar-toggle" />
         <uie:ToolbarToggle focusable="false" label="Layer Settings" name="EditLayerToggle" class="middle-bar-toggle" style="flex-grow: 1;" />
         <uie:ToolbarToggle focusable="false" label="Player Settings" name="EditPlayerSettingsToggle" class="middle-bar-toggle" style="flex-grow: 1;" />
         <uie:ToolbarToggle focusable="false" label="Metadata" name="ViewMetaDataToggle" class="middle-bar-toggle" style="flex-grow: 1;" />
     </uie:Toolbar>
-    <ui:VisualElement name="EditStatesView" class="category-view">
+    <uie:Toolbar name="LayerBar">
+        <ui:DropdownField label="Selected Layer" index="0" focusable="false" name="SelectedLayerDropdown" class="selected-layer-dropdown" style="flex-grow: 1;" />
+        <ui:Button text="Add Layer" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+        <ui:Button text="Remove Layer" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+    </uie:Toolbar>
+    <ui:VisualElement name="EditStateView" class="category-view">
         <ui:VisualElement name="SelectedState" />
     </ui:VisualElement>
-    <ui:VisualElement name="EditTransitionsView" class="category-view" style="display: none;">
+    <ui:VisualElement name="EditTransitionsView" class="category-view" style="display: none; flex-grow: 0;">
         <ui:Label tabindex="-1" text="Edit Transition" parse-escape-sequences="true" display-tooltip-when-elided="true" />
     </ui:VisualElement>
-    <ui:VisualElement name="StateList">
+    <ui:VisualElement name="StateList" style="flex-grow: 1;">
         <ui:Label tabindex="-1" text="States" parse-escape-sequences="true" display-tooltip-when-elided="true" name="StatesLabel" style="margin-top: 5px; -unity-font-style: bold;" />
-        <ui:ListView focusable="true" show-border="true" reorderable="true" show-add-remove-footer="true" />
+        <ui:ListView focusable="true" show-border="true" reorderable="true" show-add-remove-footer="true" reorder-mode="Animated" />
     </ui:VisualElement>
     <ui:VisualElement name="EditLayerView" class="category-view" style="flex-direction: column; display: none;">
         <ui:TextField label="Layer Name" value="Base Layer" name="LayerNameInput" />

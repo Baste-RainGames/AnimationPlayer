@@ -14,8 +14,8 @@ public class PlayRandomClip : AnimationPlayerState
     private int playedClip;
 
     public  List<AnimationClip> clips = new List<AnimationClip>();
-    private ClipSwapHandler _clipsToUse;
 
+    private ClipSwapHandler _clipsToUse;
     private ClipSwapHandler ClipsToUse
     {
         get

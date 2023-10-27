@@ -15,3 +15,18 @@
     -unity-text-align: middle-left;
     margin-left: 5px;
 }
+
+.blend-tree-drawer--blend-tree-entry {
+    flex-direction: row;
+    margin-right: 6px;
+}
+
+.blend-tree-drawer--blend-tree-entry .unity-base-field {
+    width: 50%;
+    border-width: 0 3px;
+    flex-shrink: 1;
+}
+
+.blend-tree-drawer--blend-tree-entry .unity-base-field .unity-label {
+    min-width: 50px;
+}

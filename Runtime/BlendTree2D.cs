@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 using UnityEngine.Animations;
 using UnityEngine.Playables;
-using UnityEngine.Serialization;
 
 namespace Animation_Player
 {
@@ -16,7 +15,7 @@ public class BlendTree2D : AnimationPlayerState
     public string blendVariable2;
 
     //@TODO: should we compensate for different durations like we do in the 1D blend tree?
-    [FormerlySerializedAs("blendTree")] public List<BlendTreeEntry2D> entries;
+    public List<BlendTreeEntry2D> entries;
 
     private BlendTree2D() { }
 

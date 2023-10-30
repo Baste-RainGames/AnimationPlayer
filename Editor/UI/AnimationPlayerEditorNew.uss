@@ -16,6 +16,10 @@
     margin-left: 5px;
 }
 
+.state-list--state-label-line {
+    flex-direction: row;
+}
+
 .blend-tree-drawer--blend-tree-entry {
     flex-direction: row;
     margin-right: 6px;

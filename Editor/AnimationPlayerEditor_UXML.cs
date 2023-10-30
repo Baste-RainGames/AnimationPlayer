@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 
 using UnityEditor;
@@ -206,7 +205,9 @@ public class AnimationPlayerEditor_UXML : Editor
             root = parentEditor.root.Q("StateList");
             listView = root.Q<ListView>();
 
-            listView.makeItem = () => new Label().WithClass("state-list--state-label");
+            listView.makeItem = () => new VisualElement().WithClass("state-list--state-label-line")
+                                                         .WithChild(new Label().WithName("name").WithClass("state-list--state-label"))
+                                                         .WithChild(new Label().WithName("type").WithClass("state-list--state-label"));
             listView.bindItem = (ve, index) =>
             {
                 var stateProp = parentEditor.layersProp
@@ -214,10 +215,15 @@ public class AnimationPlayerEditor_UXML : Editor
                                             .FindPropertyRelative(nameof(AnimationLayer.states))
                                             .GetArrayElementAtIndex(index);
 
-                var stateName = stateProp.FindPropertyRelative("name").stringValue;
-                var stateType = stateProp.managedReferenceValue.GetType().Name;
-
-                ((Label) ve).text = $"{stateName}  ({stateType})";
+                var nameLabel = ve.Q<Label>("name");
+                var typeLabel = ve.Q<Label>("type");
+                nameLabel.BindProperty(stateProp.FindPropertyRelative("name"));
+                typeLabel.text = $"({stateProp.managedReferenceValue.GetType().Name})";
+            };
+            listView.unbindItem = (ve, _) =>
+            {
+                var nameLabel = ve.Q<Label>("name");
+                nameLabel.Unbind();
             };
 
             var addButton = (Button) typeof(BaseListView).GetField("m_AddButton", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(listView);
@@ -225,9 +231,12 @@ public class AnimationPlayerEditor_UXML : Editor
 
             listView.selectedIndicesChanged += indices =>
             {
-                Debug.Log(indices.PrettyPrint());
-                var index = indices.First(); // the listView is set to single selection mode, so there's always only one element in here. Silly API.
-                parentEditor.SetAnimationState(index);
+                // Code is silly because listView returns an IEnumerable instead of eg. an IReadOnlyList or something where we can actullay check the count lol
+                foreach (var index in indices)
+                {
+                    parentEditor.SetAnimationState(index);
+                    break;
+                }
             };
         }
 
@@ -257,6 +266,10 @@ public class AnimationPlayerEditor_UXML : Editor
         {
             listView.Unbind();
             listView.BindProperty(layer.FindPropertyRelative(nameof(AnimationLayer.states)));
+
+            // listView.Unbind();
+            // listView.bindingPath = layer.FindPropertyRelative(nameof(AnimationLayer.states)).propertyPath;
+            // listView.Bind(layer.serializedObject);
         }
 
         public void SetDisplayed(bool displayed)

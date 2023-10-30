@@ -1,8 +1,10 @@
 using UnityEngine.Assertions;
 using UnityEngine.UIElements;
 
-namespace Animation_Player {
-public static class UIToolkitExtensions {
+namespace Animation_Player
+{
+public static class UIToolkitExtensions
+{
     public static void Replace(this VisualElement parentElement, VisualElement toReplace, VisualElement replaceWith)
     {
         Assert.IsNotNull(parentElement, nameof(parentElement));
@@ -25,8 +27,21 @@ public static class UIToolkitExtensions {
 
     public static bool IsDisplayed(this VisualElement visualElement) => visualElement.style.display != DisplayStyle.None;
 
-    public static VisualElement WithClass(this VisualElement visualElement, string @class) {
+    public static VisualElement WithClass(this VisualElement visualElement, string @class)
+    {
         visualElement.AddToClassList(@class);
+        return visualElement;
+    }
+
+    public static VisualElement WithName(this VisualElement visualElement, string name)
+    {
+        visualElement.name = name;
+        return visualElement;
+    }
+
+    public static VisualElement WithChild(this VisualElement visualElement, VisualElement child)
+    {
+        visualElement.Add(child);
         return visualElement;
     }
 }

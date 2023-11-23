@@ -59,10 +59,9 @@ public class Sequence : AnimationPlayerState
             }
             else
             {
-                // if (ClipsToUse.Count == 0)
-                //     return false;
-                // return ClipsToUse[ClipsToUse.Count - 1].isLooping;
-                return false;
+                if (ClipsToUse.Count == 0)
+                    return false;
+                return ClipsToUse[^1].isLooping;
             }
         }
     }
@@ -105,7 +104,7 @@ public class Sequence : AnimationPlayerState
         if (currentClipTime < currentClipDuration)
             return;
 
-        if (indexOfPlayedClip == ClipsToUse.Count - 1 && loopMode == SequenceLoopMode.DontLoop)
+        if (indexOfPlayedClip == ClipsToUse.Count - 1 && loopMode == SequenceLoopMode.UseLoopModeOfFinalClip)
             return;
 
         indexOfPlayedClip = (currentClipIndex + 1) % ClipsToUse.Count;
@@ -212,9 +211,7 @@ public class Sequence : AnimationPlayerState
 
 public enum SequenceLoopMode
 {
-    DontLoop,
+    UseLoopModeOfFinalClip,
     LoopEntireSequence,
-    // @TODO: in the Teslagrad2 SpriteAnimator, having a "loop final clip" mode was really usefull! That's kinda covered in AnimationPlayer by having clip
-    // transitions, so it might seem to not be necessary, but sometimes you want to have the same intro to a loop no matter how you blend to it.
 }
 }

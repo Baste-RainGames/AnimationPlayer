@@ -34,3 +34,12 @@
 .blend-tree-drawer--blend-tree-entry .unity-base-field .unity-label {
     min-width: 50px;
 }
+
+.transition-list--entry {
+    height:44px;
+}
+
+.transition-list--entry-line {
+    flex-direction: row;
+    height: 22px;
+}

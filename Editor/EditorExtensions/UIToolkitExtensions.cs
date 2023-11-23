@@ -1,3 +1,5 @@
+using System;
+
 using UnityEngine.Assertions;
 using UnityEngine.UIElements;
 
@@ -5,6 +7,16 @@ namespace Animation_Player
 {
 public static class UIToolkitExtensions
 {
+    public static VisualElement CloneRoot(this VisualTreeAsset treeAsset)
+    {
+        var treeWithTemplateContainer = treeAsset.CloneTree();
+        if (treeWithTemplateContainer.childCount > 1)
+            throw new Exception("Can only call CloneRoot on VisualTreeAssets with a single root element");
+        var root = treeWithTemplateContainer[0];
+        treeWithTemplateContainer.Remove(root);
+        return root;
+    }
+
     public static void Replace(this VisualElement parentElement, VisualElement toReplace, VisualElement replaceWith)
     {
         Assert.IsNotNull(parentElement, nameof(parentElement));

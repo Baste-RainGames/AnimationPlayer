@@ -15,13 +15,14 @@
     </uie:Toolbar>
     <ui:VisualElement name="StateList" style="flex-grow: 1;">
         <ui:Label tabindex="-1" text="States" parse-escape-sequences="true" display-tooltip-when-elided="true" name="StatesLabel" style="margin-top: 5px; -unity-font-style: bold;" />
-        <ui:ListView focusable="true" show-border="true" show-add-remove-footer="true" />
+        <ui:ListView focusable="true" show-border="true" show-add-remove-footer="true" name="States" />
     </ui:VisualElement>
     <ui:VisualElement name="EditStateView" class="category-view">
         <ui:VisualElement name="SelectedState" />
     </ui:VisualElement>
-    <ui:VisualElement name="EditTransitionsView" class="category-view" style="display: none; flex-grow: 0;">
-        <ui:Label tabindex="-1" text="Edit Transition" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+    <ui:VisualElement name="EditTransitionsView" class="category-view" style="display: flex;">
+        <ui:Label tabindex="-1" text="Transitions From [State]" parse-escape-sequences="true" display-tooltip-when-elided="true" name="TransitionsFromLabel" />
+        <ui:ListView focusable="true" name="Transitions" show-border="true" show-add-remove-footer="true" fixed-item-height="44" />
     </ui:VisualElement>
     <ui:VisualElement name="EditLayerView" class="category-view" style="flex-direction: column; display: none;">
         <ui:TextField label="Layer Name" value="Base Layer" name="LayerNameInput" />

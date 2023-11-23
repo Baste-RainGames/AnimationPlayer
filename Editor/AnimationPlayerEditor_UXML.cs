@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 
 using UnityEditor;
@@ -20,9 +21,9 @@ public class AnimationPlayerEditor_UXML : Editor
     private Toggle editPlayerSettingsToggle;
     private Toggle viewMetaDataToggle;
 
-    private EditStateSection editStateView;
     private StateList stateList;
-    private VisualElement editTransitionsView;
+    private StateEditor stateEditor;
+    private TransitionEditor transitionEditor;
     private VisualElement editLayerView;
     private VisualElement editPlayerSettingsView;
     private VisualElement metaDataView;
@@ -36,15 +37,21 @@ public class AnimationPlayerEditor_UXML : Editor
     private SerializedProperty layersProp;
 
     [SerializeField] private UIState uiState;
-    [SerializeField] private int selectedLayer;
-    [SerializeField] private int selectedState;
+    [SerializeField] private int selectedLayerIndex;
+    [SerializeField] private int selectedStateIndex;
 
-    private SerializedProperty SelectedLayerProp => layersProp.GetArrayElementAtIndex(selectedLayer);
-    private SerializedProperty SelectedStateProp => SelectedLayerProp.FindPropertyRelative("states").GetArrayElementAtIndex(selectedState);
+    private SerializedProperty SelectedLayerProp => layersProp.GetArrayElementAtIndex(selectedLayerIndex);
+    private SerializedProperty SelectedStateProp => SelectedLayerProp.FindPropertyRelative("states").GetArrayElementAtIndex(selectedStateIndex);
+
+    private void OnEnable()
+    {
+        if (target.EnsureVersionUpgraded())
+            EditorUtility.SetDirty(target);
+    }
 
     public override VisualElement CreateInspectorGUI()
     {
-        var path = "Packages/com.baste.animationplayer/Editor/UI/AnimationPlayerEditor.uxml";
+        const string path = "Packages/com.baste.animationplayer/Editor/UI/AnimationPlayerEditor.uxml";
         var visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(path);
         root = new ();
         visualTreeAsset.CloneTree(root);
@@ -54,9 +61,9 @@ public class AnimationPlayerEditor_UXML : Editor
         errorLabel = root.Q<Label>("ErrorLabel");
         errorLabel.SetDisplayed(false);
 
-        editStateView          = new EditStateSection(root, errorLabel);
         stateList              = new StateList(this);
-        editTransitionsView    = root.Q("EditTransitionsView");
+        stateEditor            = new StateEditor(root, errorLabel);
+        transitionEditor       = new TransitionEditor(this, root, errorLabel);
         editLayerView          = root.Q("EditLayerView");
         editPlayerSettingsView = root.Q("EditPlayerSettingsView");
         metaDataView           = root.Q("MetaDataView");
@@ -80,13 +87,13 @@ public class AnimationPlayerEditor_UXML : Editor
         layerDropdown.choices = new (layersProp.arraySize);
         for (int i = 0; i < layersProp.arraySize; i++)
             layerDropdown.choices.Add(layersProp.GetArrayElementAtIndex(i).FindPropertyRelative("name").stringValue);
-        layerDropdown.index = selectedLayer;
+        layerDropdown.index = selectedLayerIndex;
 
         layerDropdown.RegisterValueChangedCallback(SelectedLayerChanged);
 
         SetUIState(UIState.EditStates, true);
-        SetLayer(selectedLayer, true);
-        SetAnimationState(selectedState, true);
+        SetLayer(selectedLayerIndex, true);
+        SetAnimationState(selectedStateIndex, true);
 
         return root;
 
@@ -108,15 +115,15 @@ public class AnimationPlayerEditor_UXML : Editor
         if (!skipUndo)
             Undo.RecordObject(this, "Set Selected Layer");
 
-        this.selectedLayer = selectedLayer;
+        this.selectedLayerIndex = selectedLayer;
         stateList.SetLayer(layersProp.GetArrayElementAtIndex(selectedLayer));
     }
 
-    private void SetAnimationState(int selectedState, bool skipUndo = false)
+    private void SetAnimationState(int selectedStateIndex, bool skipUndo = false)
     {
         if (!skipUndo)
             Undo.RecordObject(this, "Set Selected State");
-        this.selectedState = selectedState;
+        this.selectedStateIndex = selectedStateIndex;
 
         try
         {
@@ -126,27 +133,30 @@ public class AnimationPlayerEditor_UXML : Editor
                 return;
             }
 
-            if (selectedLayer < 0 || selectedLayer >= layersProp.arraySize)
+            if (selectedLayerIndex < 0 || selectedLayerIndex >= layersProp.arraySize)
             {
-                ShowError($"Selected layer {selectedLayer} out of bounds! There are {layersProp.arraySize} layers");
+                ShowError($"Selected layer {selectedLayerIndex} out of bounds! There are {layersProp.arraySize} layers");
                 return;
             }
 
-            var statesProp = layersProp.GetArrayElementAtIndex(selectedLayer).FindPropertyRelative("states");
+            var statesProp = layersProp.GetArrayElementAtIndex(selectedLayerIndex).FindPropertyRelative("states");
             if (statesProp.arraySize == 0)
             {
                 ShowError("No States");
                 return;
             }
 
-            if (selectedState < 0 || selectedState >= statesProp.arraySize)
+            if (selectedStateIndex < 0 || selectedStateIndex >= statesProp.arraySize)
             {
-                ShowError($"Selected state {selectedState} out of bounds! There are {statesProp.arraySize} states");
+                ShowError($"Selected state {selectedStateIndex} out of bounds! There are {statesProp.arraySize} states");
                 return;
             }
 
-            var state = statesProp.GetArrayElementAtIndex(selectedState);
-            editStateView.ShowAnimationState(state);
+            var state = statesProp.GetArrayElementAtIndex(selectedStateIndex);
+            var layer = layersProp.GetArrayElementAtIndex(selectedLayerIndex);
+
+            stateEditor     .ShowAnimationState(state);
+            transitionEditor.OnSelectedAnimationStateChanged();
         }
         catch (Exception e)
         {
@@ -167,8 +177,8 @@ public class AnimationPlayerEditor_UXML : Editor
             Undo.RecordObject(this, "Set UI State");
         this.uiState = uiState;
 
-        editStateView         .SetDisplayed(uiState == UIState.EditStates);
-        editTransitionsView   .SetDisplayed(uiState == UIState.EditTransitions);
+        stateEditor           .SetDisplayed(uiState == UIState.EditStates);
+        transitionEditor      .SetDisplayed(uiState == UIState.EditTransitions);
         editLayerView         .SetDisplayed(uiState == UIState.EditLayer);
         editPlayerSettingsView.SetDisplayed(uiState == UIState.EditPlayerSettings);
         metaDataView          .SetDisplayed(uiState == UIState.ViewMetaData);
@@ -195,7 +205,7 @@ public class AnimationPlayerEditor_UXML : Editor
     [Serializable]
     private class StateList
     {
-        public ListView listView;
+        [SerializeField] private ListView listView;
         private readonly VisualElement root;
         private readonly AnimationPlayerEditor_UXML parentEditor;
 
@@ -211,7 +221,7 @@ public class AnimationPlayerEditor_UXML : Editor
             listView.bindItem = (ve, index) =>
             {
                 var stateProp = parentEditor.layersProp
-                                            .GetArrayElementAtIndex(parentEditor.selectedLayer)
+                                            .GetArrayElementAtIndex(parentEditor.selectedLayerIndex)
                                             .FindPropertyRelative(nameof(AnimationLayer.states))
                                             .GetArrayElementAtIndex(index);
 
@@ -222,8 +232,7 @@ public class AnimationPlayerEditor_UXML : Editor
             };
             listView.unbindItem = (ve, _) =>
             {
-                var nameLabel = ve.Q<Label>("name");
-                nameLabel.Unbind();
+                ve.Unbind();
             };
 
             var addButton = (Button) typeof(BaseListView).GetField("m_AddButton", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(listView);
@@ -259,6 +268,8 @@ public class AnimationPlayerEditor_UXML : Editor
                 statesProp.GetArrayElementAtIndex(statesProp.arraySize - 1).managedReferenceValue = newState;
 
                 parentEditor.serializedObject.ApplyModifiedProperties();
+                parentEditor.SetAnimationState(statesProp.arraySize - 1);
+                listView.SetSelectionWithoutNotify(new[] { statesProp.arraySize - 1 });
             }
         }
 
@@ -266,10 +277,6 @@ public class AnimationPlayerEditor_UXML : Editor
         {
             listView.Unbind();
             listView.BindProperty(layer.FindPropertyRelative(nameof(AnimationLayer.states)));
-
-            // listView.Unbind();
-            // listView.bindingPath = layer.FindPropertyRelative(nameof(AnimationLayer.states)).propertyPath;
-            // listView.Bind(layer.serializedObject);
         }
 
         public void SetDisplayed(bool displayed)
@@ -279,24 +286,163 @@ public class AnimationPlayerEditor_UXML : Editor
     }
 
     [Serializable]
-    private class EditStateSection
+    private class TransitionEditor
+    {
+        private readonly AnimationPlayerEditor_UXML parentEditor;
+        private readonly Label errorLabel;
+        private readonly VisualElement transitionEditorRoot;
+        private readonly Label transitionFromLabel;
+        private readonly ListView transitionsList;
+
+        private readonly List<SerializedProperty> transitions = new();
+
+        public TransitionEditor(AnimationPlayerEditor_UXML parentEditor, VisualElement entireUIRoot, Label errorLabel)
+        {
+            this.parentEditor = parentEditor;
+            this.errorLabel = errorLabel;
+            transitionEditorRoot = entireUIRoot.Q("EditTransitionsView");
+            transitionFromLabel = transitionEditorRoot.Q<Label>("TransitionsFromLabel");
+            transitionsList = transitionEditorRoot.Q<ListView>("Transitions");
+
+            transitionsList.itemsSource = transitions;
+
+            const string path = "Packages/com.baste.animationplayer/Editor/UI/TransitionListEntry.uxml";
+            transitionsList.makeItem = () => AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(path).CloneRoot();
+
+            transitionsList.bindItem = BindTransitionListItem;
+            transitionsList.unbindItem = (ve, _) =>
+            {
+                ve.Unbind();
+            };
+
+            var addButton = (Button) typeof(BaseListView).GetField("m_AddButton", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(transitionsList);
+            addButton.clickable = new Clickable(() =>
+            {
+                var transitionsProp = parentEditor.SelectedLayerProp.FindPropertyRelative(nameof(AnimationLayer.transitions));
+                transitionsProp.arraySize++;
+
+                var newTransition = transitionsProp.GetArrayElementAtIndex(transitionsProp.arraySize - 1);
+                newTransition.FindPropertyRelative(nameof(StateTransition.fromState)).managedReferenceValue = parentEditor.SelectedStateProp.managedReferenceValue;
+
+                transitions.Add(transitionsProp);
+            });
+        }
+
+        public void SetDisplayed(bool displayed)
+        {
+            transitionEditorRoot.SetDisplayed(displayed);
+        }
+
+        public void OnSelectedAnimationStateChanged()
+        {
+            transitionFromLabel.text = $"Transitions from {parentEditor.SelectedStateProp.FindPropertyRelative("name").stringValue}";
+
+            transitions.Clear();
+
+            var transitionsProp = parentEditor.SelectedLayerProp.FindPropertyRelative(nameof(AnimationLayer.transitions));
+            var selectedStateObject = (AnimationPlayerState) parentEditor.SelectedStateProp.managedReferenceValue;
+
+            for (int i = 0; i < transitionsProp.arraySize; i++)
+            {
+                var transition = transitionsProp.GetArrayElementAtIndex(i);
+                var fromState = transition.FindPropertyRelative(nameof(StateTransition.fromState)).managedReferenceValue;
+
+                if (fromState == selectedStateObject)
+                    transitions.Add(transition);
+            }
+
+            transitionsList.RefreshItems();
+        }
+
+        private void BindTransitionListItem(VisualElement ve, int index)
+        {
+            var transitionsProp = parentEditor.SelectedLayerProp.FindPropertyRelative(nameof(AnimationLayer.transitions));
+            var transitionProp = transitionsProp.GetArrayElementAtIndex(index);
+
+            var nameProp           = transitionProp.FindPropertyRelative(nameof(StateTransition.name));
+            var toStateProp        = transitionProp.FindPropertyRelative(nameof(StateTransition.toState));
+            var transitionDataProp = transitionProp.FindPropertyRelative(nameof(StateTransition.transitionData));
+
+            var transitionTypeProp = transitionDataProp.FindPropertyRelative(nameof(StateTransition.transitionData.type));
+            var curveProp          = transitionDataProp.FindPropertyRelative(nameof(StateTransition.transitionData.curve));
+            var durationProp       = transitionDataProp.FindPropertyRelative(nameof(StateTransition.transitionData.duration));
+            var clipProp           = transitionDataProp.FindPropertyRelative(nameof(StateTransition.transitionData.clip));
+
+            var topRow    = ve.Q("TopRow");
+            var bottomRow = ve.Q("BottomRow");
+
+            var transitionTypeField = topRow.Q<EnumField>("TransitionType");
+            var toStateDropdown     = topRow.Q<DropdownField>("ToStateDropdown");
+
+            var nameField     = bottomRow.Q<TextField>  ("TransitionName");
+            var durationField = bottomRow.Q<FloatField> ("Duration");
+            var curveField    = bottomRow.Q<CurveField> ("Curve");
+            var clipField     = bottomRow.Q<ObjectField>("Clip");
+
+            transitionTypeField.BindProperty(transitionTypeProp);
+            nameField          .BindProperty(nameProp);
+            durationField      .BindProperty(durationProp);
+            curveField         .BindProperty(curveProp);
+            clipField          .BindProperty(clipProp);
+
+            clipField.objectType = typeof(AnimationClip);
+
+            var statesProp = parentEditor.SelectedLayerProp.FindPropertyRelative(nameof(AnimationLayer.states));
+            var states = new List<AnimationPlayerState>();
+            for (int i = 0; i < statesProp.arraySize; i++)
+            {
+                var state = statesProp.GetArrayElementAtIndex(i);
+                if (state.propertyPath != parentEditor.SelectedStateProp.propertyPath)
+                    states.Add((AnimationPlayerState) state.managedReferenceValue);
+            }
+
+            var stateNames = states.Select(s => s.Name).ToList();
+
+            toStateDropdown.choices = stateNames;
+            toStateDropdown.index = states.IndexOf((AnimationPlayerState) toStateProp.managedReferenceValue);
+            toStateDropdown.RegisterValueChangedCallback(_ =>
+            {
+                toStateProp.managedReferenceValue = states[toStateDropdown.index];
+            });
+
+            DisplayFieldsForType((TransitionType) transitionTypeProp.intValue);
+            transitionTypeField.RegisterValueChangedCallback(evt =>
+            {
+                if (evt.newValue != null) // Seems to get null when we change UI?
+                {
+                    var newValue = (TransitionType) evt.newValue;
+                    DisplayFieldsForType(newValue);
+                }
+
+            });
+
+            void DisplayFieldsForType(TransitionType transitionType)
+            {
+                clipField .SetDisplayed(transitionType == TransitionType.Clip);
+                curveField.SetDisplayed(transitionType == TransitionType.Curve);
+            }
+        }
+    }
+
+    [Serializable]
+    private class StateEditor
     {
         private readonly Label errorLabel;
-        private readonly VisualElement editStateRoot;
+        private readonly VisualElement stateEditorRoot;
         private readonly VisualElement selectedStateRoot;
 
         private AnimationStateEditor shownEditor;
 
-        public EditStateSection(VisualElement entireUIRoot, Label errorLabel)
+        public StateEditor(VisualElement entireUIRoot, Label errorLabel)
         {
-            editStateRoot = entireUIRoot.Q("EditStateView");
-            selectedStateRoot = editStateRoot.Q("SelectedState");
+            stateEditorRoot = entireUIRoot.Q("EditStateView");
+            selectedStateRoot = stateEditorRoot.Q("SelectedState");
             this.errorLabel = errorLabel;
         }
 
         public void SetDisplayed(bool displayed)
         {
-            editStateRoot.SetDisplayed(displayed);
+            stateEditorRoot.SetDisplayed(displayed);
         }
 
         public void ShowAnimationState(SerializedProperty stateProperty)

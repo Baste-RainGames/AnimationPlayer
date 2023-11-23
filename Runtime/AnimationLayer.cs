@@ -110,8 +110,8 @@ public class AnimationLayer
             if (!transition.isDefault)
                 continue;
 
-            var fromState = states.IndexOf(transition.FromState);
-            var toState = states.IndexOf(transition.ToState);
+            var fromState = states.IndexOf(transition.fromState);
+            var toState = states.IndexOf(transition.toState);
             if (fromState == -1 || toState == -1)
             {
                 //TODO: fixme
@@ -173,7 +173,7 @@ public class AnimationLayer
 
         foreach (var t in transitions)
         {
-            if (t.FromState == transitionFrom && t.ToState == transitionTo && t.name == transition)
+            if (t.fromState == transitionFrom && t.toState == transitionTo && t.name == transition)
             {
                 return Play(state, t.transitionData, transition);
             }

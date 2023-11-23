@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 using UnityEngine;
 
@@ -16,22 +15,10 @@ public class StateTransition
     public bool isDefault;
     public string name = DefaultName;
 
-    [SerializeField, SerializeReference] private AnimationPlayerState fromState;
-    [SerializeField, SerializeReference] private AnimationPlayerState toState;
+    [SerializeReference] public AnimationPlayerState fromState;
+    [SerializeReference] public AnimationPlayerState toState;
 
     public TransitionData transitionData;
-
-    public AnimationPlayerState FromState
-    {
-        get => fromState;
-        set => fromState = value;
-    }
-
-    public AnimationPlayerState ToState
-    {
-        get => toState;
-        set => toState = value;
-    }
 }
 
 /// <summary>

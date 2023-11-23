@@ -23,6 +23,21 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
         UnityEditor.EditorUtility.SetDirty(this);
     }
 
+    [ContextMenu("Temp/Add transition")]
+    public void AddTransition()
+    {
+        var transition = new StateTransition()
+        {
+            fromState = layers[0].states[0],
+            toState = layers[0].states[1],
+            name = "The State",
+            isDefault = true,
+            transitionData = TransitionData.Linear(1f)
+        };
+        layers[0].transitions.Add(transition);
+        UnityEditor.EditorUtility.SetDirty(this);
+    }
+
     // Serialized data:
     private const int lastVersion = 3;
     [SerializeField, HideInInspector] private int versionNumber;
@@ -253,9 +268,9 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     /// </summary>
     /// <param name="state">state index to play</param>
     /// <param name="layer">Layer the state should be played on</param>
-    public void Play(int state, int layer = 0)
+    public AnimationPlayerState Play(int state, int layer = 0)
     {
-        layers[layer].Play(state);
+        return layers[layer].Play(state);
     }
 
 #if !ANIMATION_PLAYER_FORCE_INTEGER_STATES
@@ -266,10 +281,11 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     /// </summary>
     /// <param name="state">state name to play</param>
     /// <param name="layer">Layer the state should be played on</param>
-    public void Play(string state, int layer = 0)
+    public AnimationPlayerState Play(string state, int layer = 0)
     {
         if (TryGetStateIndex(state, layer, out var stateID, nameof(Play)))
-            Play(stateID);
+            return Play(stateID);
+        return null;
     }
 #endif
 
@@ -280,9 +296,9 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     /// <param name="state">state index to play</param>
     /// <param name="transition">transition to use</param>
     /// <param name="layer">Layer the state should be played on</param>
-    public void Play(int state, string transition, int layer = 0)
+    public AnimationPlayerState Play(int state, string transition, int layer = 0)
     {
-        layers[layer].Play(state, transition);
+        return layers[layer].Play(state, transition);
     }
 
 #if !ANIMATION_PLAYER_FORCE_INTEGER_STATES
@@ -293,10 +309,11 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     /// <param name="state">state index to play</param>
     /// <param name="transition">transition to use</param>
     /// <param name="layer">Layer the state should be played on</param>
-    public void Play(string state, string transition, int layer = 0)
+    public AnimationPlayerState Play(string state, string transition, int layer = 0)
     {
         if (TryGetStateIndex(state, layer, out var stateID, nameof(Play)))
-            Play(stateID, transition);
+            return Play(stateID, transition);
+        return null;
     }
 #endif
 
@@ -306,7 +323,7 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     /// <param name="state">state index to play</param>
     /// <param name="transitionData">How to transition into the state</param>
     /// <param name="layer">Layer the state should be played on</param>
-    public void Play(int state, TransitionData transitionData, int layer = 0)
+    public AnimationPlayerState Play(int state, TransitionData transitionData, int layer = 0)
     {
         if (transitionData is { type: TransitionType.Curve, curve: null })
         {
@@ -314,10 +331,10 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
                 $"Trying to transition using a curve, but the curve is null! " +
                 $"Error happened for AnimationPlayer on GameObject {gameObject.name})", gameObject
             );
-            return;
+            return null;
         }
 
-        layers[layer].Play(state, transitionData, "Custom");
+        return layers[layer].Play(state, transitionData, "Custom");
     }
 
 #if !ANIMATION_PLAYER_FORCE_INTEGER_STATES
@@ -327,10 +344,11 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     /// <param name="state">state index to play</param>
     /// <param name="transitionData">How to transition into the state</param>
     /// <param name="layer">Layer the state should be played on</param>
-    public void Play(string state, TransitionData transitionData, int layer = 0)
+    public AnimationPlayerState Play(string state, TransitionData transitionData, int layer = 0)
     {
         if (TryGetStateIndex(state, layer, out var stateID, nameof(Play)))
-            Play(stateID, transitionData);
+            return Play(stateID, transitionData);
+        return null;
     }
 #endif
 
@@ -339,9 +357,9 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     /// </summary>
     /// <param name="state">state index to play</param>
     /// <param name="layer">Layer the state should be played on</param>
-    public void SnapTo(int state, int layer = 0)
+    public AnimationPlayerState SnapTo(int state, int layer = 0)
     {
-        Play(state, TransitionData.Instant(), layer);
+        return Play(state, TransitionData.Instant(), layer);
     }
 
 #if !ANIMATION_PLAYER_FORCE_INTEGER_STATES
@@ -350,10 +368,11 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     /// </summary>
     /// <param name="state">state index to play</param>
     /// <param name="layer">Layer the state should be played on</param>
-    public void SnapTo(string state, int layer = 0)
+    public AnimationPlayerState SnapTo(string state, int layer = 0)
     {
         if (TryGetStateIndex(state, layer, out int stateID, nameof(SnapTo)))
-            SnapTo(stateID, layer);
+            return SnapTo(stateID, layer);
+        return null;
     }
 #endif
 
@@ -361,9 +380,9 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     /// Plays the default state of the state machine
     /// </summary>
     /// <param name="layer">Layer to play the default state on</param>
-    public void PlayDefaultState(int layer = 0)
+    public AnimationPlayerState PlayDefaultState(int layer = 0)
     {
-        Play(0, layer);
+        return Play(0, layer);
     }
 
     /// <summary>
@@ -371,9 +390,9 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     /// </summary>
     /// <param name="transitionData">Custom transition to use</param>
     /// <param name="layer">Layer to play the default state on</param>
-    public void PlayDefaultState(TransitionData transitionData, int layer = 0)
+    public AnimationPlayerState PlayDefaultState(TransitionData transitionData, int layer = 0)
     {
-        Play(0, transitionData, layer);
+        return Play(0, transitionData, layer);
     }
 
     /// <summary>
@@ -385,6 +404,17 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     public bool IsPlaying(int state, int layer = default)
     {
         return layers[layer].GetIndexOfPlayingState() == state;
+    }
+
+    /// <summary>
+    /// Checks if a specific state is the currently played state. When you Play() a state, that state will immediately be considered the "playing" state.
+    /// </summary>
+    /// <param name="state">State to check if is playing</param>
+    /// <param name="layer">Layer to check if the state is playing on</param>
+    /// <returns>True if state is the state currently playing on layer</returns>
+    public bool IsPlaying(AnimationPlayerState state, int layer = default)
+    {
+        return layers[layer].GetCurrentPlayingState() == state;
     }
 
 #if !ANIMATION_PLAYER_FORCE_INTEGER_STATES
@@ -584,6 +614,24 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     public double GetHowLongStateHasBeenPlaying(int state, int layer = 0)
     {
         return layers[layer].GetHowLongStateHasBeenPlaying(state);
+    }
+
+    public double GetHowLongStateHasBeenPlaying(AnimationPlayerState state, int layer = 0)
+    {
+        if (state == null)
+        {
+            Debug.LogError($"Asking how long a null state has been playing on layer {layer}", this);
+            return 0;
+        }
+
+        var index = layers[layer].states.IndexOf(state);
+        if (index == -1)
+        {
+            Debug.LogError($"Asking how long {state} has been playing on layer {layer}, but it's not one of the states on that layer!");
+            return 0;
+        }
+
+        return layers[layer].GetHowLongStateHasBeenPlaying(index);
     }
 
 #if !ANIMATION_PLAYER_FORCE_INTEGER_STATES
@@ -1202,6 +1250,16 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     {
         if (versionNumber == lastVersion)
             return false;
+
+        // Fresh AnimationPlayer, might need to be default-initialized.
+        if (versionNumber == 0)
+        {
+            if (layers == null || layers.Count == 0)
+                layers = new()
+                {
+                    AnimationLayer.CreateLayer()
+                };
+        }
 
         // Version 1 introduced GUIDs. Version 3 unintroduced them. And also broke backwards compatibility!
         if (versionNumber < 1 && layers != null)

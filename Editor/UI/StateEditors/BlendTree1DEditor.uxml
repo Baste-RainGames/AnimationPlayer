@@ -5,6 +5,6 @@
         <ui:TextField picking-mode="Ignore" label="Blend Variable" value="blendVariable" name="blendVariable" />
         <ui:Toggle label="Compensate For Different Durations" name="compensate" />
         <ui:DoubleField label="Speed" value="1" name="speed" />
-        <ui:ListView focusable="true" show-add-remove-footer="true" header-title="Entries" show-foldout-header="true" show-border="true" reorderable="true" name="entries" />
+        <ui:ListView focusable="true" show-add-remove-footer="true" header-title="Entries" show-foldout-header="true" show-border="true" reorderable="true" name="entries" reorder-mode="Animated" />
     </ui:VisualElement>
 </ui:UXML>

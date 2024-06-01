@@ -3,6 +3,6 @@
         <ui:Label tabindex="-1" text="Selected State" parse-escape-sequences="true" display-tooltip-when-elided="true" />
         <ui:TextField picking-mode="Ignore" label="Name" value="My State" name="name" style="height: 18px;" />
         <ui:DoubleField label="Speed" value="1" name="speed" />
-        <ui:ListView focusable="true" show-add-remove-footer="true" header-title="Clips" show-foldout-header="true" show-border="true" reorderable="true" name="clips" />
+        <ui:ListView focusable="true" show-add-remove-footer="true" header-title="Clips" show-foldout-header="true" show-border="true" reorderable="true" name="clips" reorder-mode="Animated" />
     </ui:VisualElement>
 </ui:UXML>

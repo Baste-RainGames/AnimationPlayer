@@ -281,7 +281,7 @@ public class AnimationLayer
             {
                 if (transitionData.duration <= 0f)
                 {
-                    runtimePlayables[newState].SetTime(0);
+                    runtimePlayables[newState].SetTime(transitionData.timeOffsetIntoNewState);
                 }
                 else
                 {
@@ -304,7 +304,7 @@ public class AnimationLayer
 
                     copy.SetTime(original.GetTime());
 
-                    runtimePlayables[newState].SetTime(0);
+                    runtimePlayables[newState].SetTime(transitionData.timeOffsetIntoNewState);
                     stateMixer.SetInputWeight(copyIndex, currentWeightOfState);
                     stateMixer.SetInputWeight(newState,  0);
                 }
@@ -903,17 +903,35 @@ public class AnimationLayer
         return (null, -1f);
     }
 
-    public double GetNormalizedStateProgress(int stateIndex)
+    public double GetStateAbsoluteTime(int stateIndex)
     {
         if (stateMixer.GetInputWeight(stateIndex) <= 0f)
             return 0f;
 
-        var maxTime = states[stateIndex].Duration;
+        return stateMixer.GetInput(stateIndex).GetTime();
+    }
+
+    public double GetStateWrappedTime(int stateIndex)
+    {
+        if (stateMixer.GetInputWeight(stateIndex) <= 0f)
+            return 0f;
+
+        return stateMixer.GetInput(stateIndex).GetTime() % states[stateIndex].Duration;
+    }
+
+    public double GetNormalizedStateProgress(int stateIndex, bool wrapIfStateLoops)
+    {
+        if (stateMixer.GetInputWeight(stateIndex) <= 0f)
+            return 0f;
+
+        var state = states[stateIndex];
+        var maxTime = state.Duration;
         var currentTime = stateMixer.GetInput(stateIndex).GetTime();
 
-        var currentTimeWrapped = currentTime % maxTime;
+        if (wrapIfStateLoops && state.Loops)
+            currentTime %= maxTime;
 
-        return InverseLerp(0f, maxTime, currentTimeWrapped);
+        return InverseLerp(0f, maxTime, currentTime);
 
         double InverseLerp(double a, double b, double value)
         {

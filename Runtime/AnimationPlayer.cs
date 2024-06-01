@@ -9,35 +9,11 @@ using UnityEngine.Playables;
 using UnityEngine.Profiling;
 
 using Debug = UnityEngine.Debug;
-using UObject = UnityEngine.Object;
 
 namespace Animation_Player
 {
 public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
 {
-    [ContextMenu("Temp/Add state")]
-    public void AddState()
-    {
-        var state = SingleClip.Create("State");
-        layers[0].states.Add(state);
-        UnityEditor.EditorUtility.SetDirty(this);
-    }
-
-    [ContextMenu("Temp/Add transition")]
-    public void AddTransition()
-    {
-        var transition = new StateTransition()
-        {
-            fromState = layers[0].states[0],
-            toState = layers[0].states[1],
-            name = "The State",
-            isDefault = true,
-            transitionData = TransitionData.Linear(1f)
-        };
-        layers[0].transitions.Add(transition);
-        UnityEditor.EditorUtility.SetDirty(this);
-    }
-
     // Serialized data:
     private const int lastVersion = 3;
     [SerializeField, HideInInspector] private int versionNumber;
@@ -160,7 +136,7 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
 
             if (!CullCheckingActive)
             {
-                Debug.LogError($"Asking AnimationPlayer {name} if it's culled before first activating cull checking (CullCheckingActive = true", gameObject);
+                Debug.LogError($"Asking AnimationPlayer {name} if it's culled before first activating cull checking (CullCheckingActive = true)", gameObject);
                 return false;
             }
 
@@ -653,11 +629,12 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     /// Finds the normalized progress of a state. This means 0 if it just started, and 1 if it's at it's final frame.
     /// </summary>
     /// <param name="state">State to find the normalized progress of</param>
+    /// <param name="wrapIfStateLoops">If the state is looping, should the normalized state progress reset to 0 when the state loops?</param>
     /// <param name="layer">Layer to find the state progress on</param>
     /// <returns>The normalized progress of the state.</returns>
-    public double GetNormalizedStateProgress(int state, int layer = 0)
+    public double GetNormalizedStateProgress(int state, int layer = 0, bool wrapIfStateLoops = true)
     {
-        return layers[layer].GetNormalizedStateProgress(state);
+        return layers[layer].GetNormalizedStateProgress(state, wrapIfStateLoops);
     }
 
 #if !ANIMATION_PLAYER_FORCE_INTEGER_STATES
@@ -665,12 +642,45 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     /// Finds the normalized progress of a state. This means 0 if it just started, and 1 if it's at it's final frame.
     /// </summary>
     /// <param name="state">State to find the normalized progress of</param>
+    /// <param name="wrapIfStateLoops">If the state is looping, should the normalized state progress reset to 0 when the state loops?</param>
     /// <param name="layer">Layer to find the state progress on</param>
     /// <returns>The normalized progress of the state.</returns>
-    public double GetNormalizedStateProgress(string state, int layer = 0)
+    public double GetNormalizedStateProgress(string state, int layer = 0, bool wrapIfStateLoops = true)
     {
         if (TryGetStateIndex(state, layer, out var stateID, nameof(GetNormalizedStateProgress)))
-            return GetNormalizedStateProgress(stateID, layer);
+            return GetNormalizedStateProgress(stateID, layer, wrapIfStateLoops);
+        return 0f;
+    }
+#endif
+
+    /// <summary>
+    /// Gets the current time for a state. If the state isn't playing, will always return 0.
+    /// Use the wrapped parameter to control what information you get for looping states. If it's true, you'll get the current time
+    /// into the state, if it's false you get the absolute duration the state has been playing for.
+    /// </summary>
+    /// <param name="state">State to find the current state time of</param>
+    /// <param name="wrapped">Should the time be wrapped?</param>
+    /// <param name="layer">Layer to look in</param>
+    /// <returns>How many seconds the state has been playing for</returns>
+    public double GetCurrentStateTime(int state, bool wrapped = true, int layer = 0)
+    {
+        return layers[layer].GetStateAbsoluteTime(state);
+    }
+
+#if !ANIMATION_PLAYER_FORCE_INTEGER_STATES
+    /// <summary>
+    /// Gets the current time for a state. If the state isn't playing, will always return 0.
+    /// Use the wrapped parameter to control what information you get for looping states. If it's true, you'll get the current time
+    /// into the state, if it's false you get the absolute duration the state has been playing for.
+    /// </summary>
+    /// <param name="state">State to find the current state time of</param>
+    /// <param name="wrapped">Should the time be wrapped?</param>
+    /// <param name="layer">Layer to look in</param>
+    /// <returns>How many seconds the state has been playing for</returns>
+    public double GetCurrentStateTime(string state, bool wrapped = true, int layer = 0)
+    {
+        if (TryGetStateIndex(state, layer, out var stateID, nameof(GetCurrentStateTime)))
+            return layers[layer].GetStateAbsoluteTime(stateID);
         return 0f;
     }
 #endif

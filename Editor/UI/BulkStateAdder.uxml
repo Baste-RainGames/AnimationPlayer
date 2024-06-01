@@ -1,0 +1,12 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <ui:Label text="Add New State(s) from clips" parse-escape-sequences="true" display-tooltip-when-elided="true" enable-rich-text="false" style="-unity-text-align: upper-center;" />
+    <ui:ListView focusable="true" header-title="Clips" show-foldout-header="true" reorderable="true" show-add-remove-footer="true" name="ClipList" />
+    <ui:VisualElement name="Buttons" style="flex-direction: column;">
+        <ui:Button text="Add as X SingleClip states" parse-escape-sequences="true" display-tooltip-when-elided="true" name="SingleClip" />
+        <ui:Button text="Add as Sequence of X clips" parse-escape-sequences="true" display-tooltip-when-elided="true" name="Sequence" />
+        <ui:Button text="Add as Random Selection with X clips" parse-escape-sequences="true" display-tooltip-when-elided="true" name="RandomSelection" />
+        <ui:Button text="Add as 1D BlendTree with X clips" parse-escape-sequences="true" display-tooltip-when-elided="true" name="BlendTree1D" />
+        <ui:Button text="Add as 2D BlendTree with X clips" parse-escape-sequences="true" display-tooltip-when-elided="true" name="BlendTree2D" />
+        <ui:Button text="Cancel" parse-escape-sequences="true" display-tooltip-when-elided="true" name="Cancel" />
+    </ui:VisualElement>
+</ui:UXML>

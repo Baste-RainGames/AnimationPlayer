@@ -1,39 +1,44 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
-    <Style src="project://database/Packages/com.baste.animationplayer/Editor/UI/AnimationPlayerEditorNew.uss?fileID=7433441132597879392&amp;guid=d8ce903d29a9e0a4dbcd0a6e394057ae&amp;type=3#AnimationPlayerEditorNew" />
-    <ui:Label tabindex="-1" text="Errors goes here" parse-escape-sequences="true" display-tooltip-when-elided="true" name="ErrorLabel" style="color: rgb(255, 0, 0);" />
-    <uie:Toolbar name="StateBar" style="min-height: 21px; max-height: 50px;">
-        <uie:ToolbarToggle focusable="false" label="States" value="true" name="EditStatesToggle" class="middle-bar-toggle" />
-        <uie:ToolbarToggle focusable="false" label="Transitions" value="false" name="EditTransitionsToggle" class="middle-bar-toggle" />
-        <uie:ToolbarToggle focusable="false" label="Layer Settings" name="EditLayerToggle" class="middle-bar-toggle" style="flex-grow: 1;" />
-        <uie:ToolbarToggle focusable="false" label="Player Settings" name="EditPlayerSettingsToggle" class="middle-bar-toggle" style="flex-grow: 1;" />
-        <uie:ToolbarToggle focusable="false" label="Metadata" name="ViewMetaDataToggle" class="middle-bar-toggle" style="flex-grow: 1;" />
-    </uie:Toolbar>
-    <uie:Toolbar name="LayerBar">
-        <ui:DropdownField label="Selected Layer" index="0" focusable="false" name="SelectedLayerDropdown" class="selected-layer-dropdown" style="flex-grow: 1;" />
-        <ui:Button text="Add Layer" parse-escape-sequences="true" display-tooltip-when-elided="true" />
-        <ui:Button text="Remove Layer" parse-escape-sequences="true" display-tooltip-when-elided="true" />
-    </uie:Toolbar>
-    <ui:VisualElement name="StateList" style="flex-grow: 1;">
-        <ui:Label tabindex="-1" text="States" parse-escape-sequences="true" display-tooltip-when-elided="true" name="StatesLabel" style="margin-top: 5px; -unity-font-style: bold;" />
-        <ui:ListView focusable="true" show-border="true" show-add-remove-footer="true" name="States" />
-    </ui:VisualElement>
-    <ui:VisualElement name="EditStateView" class="category-view">
-        <ui:VisualElement name="SelectedState" />
-    </ui:VisualElement>
-    <ui:VisualElement name="EditTransitionsView" class="category-view" style="display: flex;">
-        <ui:Label tabindex="-1" text="Transitions From [State]" parse-escape-sequences="true" display-tooltip-when-elided="true" name="TransitionsFromLabel" />
-        <ui:ListView focusable="true" name="Transitions" show-border="true" show-add-remove-footer="true" fixed-item-height="44" />
-    </ui:VisualElement>
-    <ui:VisualElement name="EditLayerView" class="category-view" style="flex-direction: column; display: none;">
-        <ui:TextField label="Layer Name" value="Base Layer" name="LayerNameInput" />
-        <ui:Slider picking-mode="Ignore" label="Layer Weight" value="42" high-value="1" show-input-field="true" name="LayerWeigthSlider" />
-        <uie:ObjectField label="Avatar Mask" name="AvatarMaskField" />
-        <ui:EnumField label="Layer Type" type="Animation_Player.AnimationLayerType, AnimationPlayer" name="LayerTypeField" />
-    </ui:VisualElement>
-    <ui:VisualElement name="EditPlayerSettingsView" class="category-view" style="display: none;">
-        <ui:Label tabindex="-1" text="Edit Player Settings" parse-escape-sequences="true" display-tooltip-when-elided="true" />
-    </ui:VisualElement>
-    <ui:VisualElement name="MetaDataView" class="category-view" style="display: none;">
-        <ui:Label tabindex="-1" text="View Metadata" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+    <Style src="project://database/Packages/com.baste.animationplayer/Editor/UI/AnimationPlayerStylesNew.uss?fileID=7433441132597879392&amp;guid=d8ce903d29a9e0a4dbcd0a6e394057ae&amp;type=3#AnimationPlayerStylesNew" />
+    <ui:VisualElement name="MainUIRoot" style="flex-grow: 1;">
+        <ui:Label tabindex="-1" text="Runtime Info Goes Here" parse-escape-sequences="true" display-tooltip-when-elided="true" name="RuntimeInfoLabel" />
+        <ui:Label tabindex="-1" text="Errors Goes Here" parse-escape-sequences="true" display-tooltip-when-elided="true" name="ErrorLabel" style="color: rgb(255, 0, 0);" />
+        <uie:Toolbar name="StateBar" style="min-height: 21px; max-height: 50px;">
+            <uie:ToolbarToggle focusable="false" label="States" value="true" name="EditStatesToggle" class="middle-bar-toggle" />
+            <uie:ToolbarToggle focusable="false" label="Transitions" value="false" name="EditTransitionsToggle" class="middle-bar-toggle" />
+            <uie:ToolbarToggle focusable="false" label="Layer Settings" name="EditLayerToggle" class="middle-bar-toggle" style="flex-grow: 1;" />
+            <uie:ToolbarToggle focusable="false" label="Player Settings" name="EditPlayerSettingsToggle" class="middle-bar-toggle" style="flex-grow: 1;" />
+            <uie:ToolbarToggle focusable="false" label="Metadata" name="ViewMetaDataToggle" class="middle-bar-toggle" style="flex-grow: 1;" />
+        </uie:Toolbar>
+        <uie:Toolbar name="LayerBar">
+            <ui:DropdownField label="Selected Layer" index="0" focusable="false" name="SelectedLayerDropdown" class="selected-layer-dropdown" style="flex-grow: 1;" />
+            <ui:Button text="Add Layer" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+            <ui:Button text="Remove Layer" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+        </uie:Toolbar>
+        <ui:VisualElement name="StateList" style="flex-grow: 1;">
+            <ui:ListView focusable="true" show-border="true" show-add-remove-footer="true" name="States" reorderable="true" show-foldout-header="true" header-title="States" horizontal-scrolling="true" reorder-mode="Animated" />
+        </ui:VisualElement>
+        <ui:VisualElement name="DragAndDropTarget" style="flex-grow: 1; background-color: rgba(255, 0, 0, 0.49); height: 40px;">
+            <ui:Label tabindex="-1" text="Drag clips here to add them as states!" parse-escape-sequences="true" display-tooltip-when-elided="true" style="-unity-text-align: middle-center; flex-grow: 1;" />
+        </ui:VisualElement>
+        <ui:VisualElement name="EditStateView" class="category-view">
+            <ui:VisualElement name="SelectedState" />
+        </ui:VisualElement>
+        <ui:VisualElement name="EditTransitionsView" class="category-view" style="display: flex;">
+            <ui:Label tabindex="-1" text="Transitions From [State]" parse-escape-sequences="true" display-tooltip-when-elided="true" name="TransitionsFromLabel" />
+            <ui:ListView focusable="true" name="Transitions" show-border="true" show-add-remove-footer="true" fixed-item-height="44" />
+        </ui:VisualElement>
+        <ui:VisualElement name="EditLayerView" class="category-view" style="flex-direction: column; display: none;">
+            <ui:TextField label="Layer Name" value="Base Layer" name="LayerNameInput" />
+            <ui:Slider picking-mode="Ignore" label="Layer Weight" value="42" high-value="1" show-input-field="true" name="LayerWeigthSlider" />
+            <uie:ObjectField label="Avatar Mask" name="AvatarMaskField" />
+            <ui:EnumField label="Layer Type" type="Animation_Player.AnimationLayerType, AnimationPlayer" name="LayerTypeField" />
+        </ui:VisualElement>
+        <ui:VisualElement name="EditPlayerSettingsView" class="category-view" style="display: none;">
+            <ui:Label tabindex="-1" text="Edit Player Settings" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+        </ui:VisualElement>
+        <ui:VisualElement name="MetaDataView" class="category-view" style="display: none;">
+            <ui:Label tabindex="-1" text="View Metadata" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

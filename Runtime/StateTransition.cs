@@ -49,9 +49,10 @@ public enum TransitionType
 public struct TransitionData
 {
     public TransitionType type;
-    public float duration;
+    public float          duration;
+    public double         timeOffsetIntoNewState;
     public AnimationCurve curve;
-    public AnimationClip clip;
+    public AnimationClip  clip;
 
     public static TransitionData Linear(float duration)
     {

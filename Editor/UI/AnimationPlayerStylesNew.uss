@@ -7,6 +7,10 @@
     flex-grow: 1;
 }
 
+#DragAndDropTarget {
+    margin: 10px 20px 20px;
+}
+
 .selected-layer-dropdown {
     margin-right: 3px;
 }

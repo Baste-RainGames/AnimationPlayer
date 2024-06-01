@@ -4,6 +4,6 @@
         <ui:TextField picking-mode="Ignore" label="Name" value="My State" name="name" style="height: 18px;" />
         <ui:DoubleField label="Speed" value="1" name="speed" />
         <ui:EnumField label="Loop Mode" type="Animation_Player.SequenceLoopMode, AnimationPlayer" name="loopMode" />
-        <ui:ListView focusable="true" show-add-remove-footer="true" header-title="Clips" show-foldout-header="true" show-border="true" reorderable="true" name="clips" />
+        <ui:ListView focusable="true" show-add-remove-footer="true" header-title="Clips" show-foldout-header="true" show-border="true" reorderable="true" name="clips" reorder-mode="Animated" />
     </ui:VisualElement>
 </ui:UXML>

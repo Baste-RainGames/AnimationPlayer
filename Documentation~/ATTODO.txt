@@ -2,6 +2,10 @@
 + means "done!"
 * means "working on RIGHT THE FUCK NOW"
 
+This seems smart:
+https://forum.unity.com/threads/prevent-animator-from-auto-updating.417019/#post-4192480
+tl;dr: Stuff several Animators into the same graph in order to batch update them
+
 Animation states:
     - Have the states get a GUID rather than an index, to support reordering and stuff better.
     - Different kinds of states:

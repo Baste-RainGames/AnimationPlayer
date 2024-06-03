@@ -78,6 +78,7 @@ public class AnimationPlayerEditor_UXML : Editor
 
     private AnimationPlayerState lastDisplayedState;
     private Coroutine updateRuntimeInfoCoroutine;
+
     private IEnumerator UpdateRuntimeInfoLabel()
     {
         while (true)
@@ -656,21 +657,48 @@ public class AnimationPlayerEditor_UXML : Editor
         }
     }
 
+    public static Comparison<Type> AddTypesSorter = SortTypesForAddStatDropdown;
+    private static readonly Type[] builtinTypeOrder =
+    {
+        typeof(SingleClipEditor),
+        typeof(SequenceEditor),
+        typeof(RandomClipEditor),
+        typeof(BlendTree1DEditor),
+        typeof(BlendTree2DEditor),
+    };
+
+    private static int SortTypesForAddStatDropdown(Type x, Type y)
+    {
+        var xBuiltinOrder = Array.IndexOf(builtinTypeOrder, x);
+        var yBuiltinOrder = Array.IndexOf(builtinTypeOrder, y);
+
+        if (xBuiltinOrder != -1 && yBuiltinOrder != -1)
+            return xBuiltinOrder.CompareTo(yBuiltinOrder);
+        if (xBuiltinOrder != -1)
+            return -1;
+        if (yBuiltinOrder != -1)
+            return 1;
+        return string.Compare(x.Name, y.Name, StringComparison.InvariantCultureIgnoreCase);
+    }
+
     static AnimationPlayerEditor_UXML()
     {
         editorsForStateTypes = new();
-        var editorTypes = TypeCache.GetTypesDerivedFrom(typeof(AnimationStateEditor));
+        var editorTypes = TypeCache.GetTypesDerivedFrom(typeof(AnimationStateEditor)).ToList();
+
+        editorTypes.RemoveAll(t => t.IsAbstract);
+        editorTypes.Sort(AddTypesSorter);
+
         foreach (var editorType in editorTypes)
         {
-            if (editorType.IsAbstract)
-                continue;
             try
             {
                 var editor = (AnimationStateEditor) Activator.CreateInstance(editorType);
                 var editedType = editor.GetEditedType();
                 if (editorsForStateTypes.ContainsKey(editedType))
                 {
-                    Debug.LogError("There are two ");
+                    Debug.LogError($"There are two (or more) editors for the type {editedType.Name} - {editorType.Name} and " +
+                                   $"{editorsForStateTypes[editedType].GetType()}. The last one found by TypeCache will be used.");
                 }
                 editorsForStateTypes[editedType] = editor;
             }

@@ -40,12 +40,12 @@ public class AnimationPlayerEditor_UXML : Editor
 
     private new AnimationPlayer target => (AnimationPlayer) base.target;
 
-    private SerializedProperty layersProp;
 
     [SerializeField] private UIState uiState;
     [SerializeField] private int selectedLayerIndex;
     [SerializeField] private int selectedStateIndex;
 
+    private SerializedProperty layersProp => serializedObject.FindProperty(nameof(AnimationPlayer.layers));
     private SerializedProperty SelectedLayerProp => layersProp.GetArrayElementAtIndex(selectedLayerIndex);
     private SerializedProperty SelectedStateProp => SelectedLayerProp.FindPropertyRelative("states").GetArrayElementAtIndex(selectedStateIndex);
 
@@ -62,6 +62,7 @@ public class AnimationPlayerEditor_UXML : Editor
         }
         
         EditorApplication.update += UpdateDragAndDropTarget;
+        Undo.undoRedoEvent += UndoRedo;
     }
 
     private void OnDisable()
@@ -74,6 +75,7 @@ public class AnimationPlayerEditor_UXML : Editor
 
         currentBulkStateAdder?.Deactivate();
         EditorApplication.update -= UpdateDragAndDropTarget;
+        Undo.undoRedoEvent -= UndoRedo;
     }
 
     private AnimationPlayerState lastDisplayedState;
@@ -103,8 +105,6 @@ public class AnimationPlayerEditor_UXML : Editor
         visualTreeAsset.CloneTree(entireUIRoot);
 
         mainUIRoot = entireUIRoot.Q("MainUIRoot");
-
-        layersProp = serializedObject.FindProperty(nameof(AnimationPlayer.layers));
 
         runtimeInfoLabel = mainUIRoot.Q<Label>("RuntimeInfoLabel");
         runtimeInfoLabel.SetDisplayed(false);
@@ -170,6 +170,14 @@ public class AnimationPlayerEditor_UXML : Editor
         if (dragAndDropClipTarget != null) // null for one editor frame during recompile
            dragAndDropClipTarget.SetDisplayed(uiState == UIState.EditStates && DragAndDrop.objectReferences.Any(o => o is AnimationClip));
     }
+    
+    private void UndoRedo(in UndoRedoInfo undo)
+    {
+        serializedObject.Update();
+        
+        SetLayer(selectedLayerIndex, true);
+        SetAnimationState(selectedStateIndex, true);
+    }
 
     private void SetupDragAndDropTester(VisualElement tester)
     {
@@ -212,7 +220,7 @@ public class AnimationPlayerEditor_UXML : Editor
     private void SetLayer(int selectedLayer, bool skipUndo = false)
     {
         if (!skipUndo)
-            Undo.RecordObject(this, "Set Selected Layer");
+            Undo.RecordObject(this, "Set Selected Layer to " + selectedLayer);
 
         this.selectedLayerIndex = selectedLayer;
         stateList.SetLayer(layersProp.GetArrayElementAtIndex(selectedLayer));
@@ -221,7 +229,9 @@ public class AnimationPlayerEditor_UXML : Editor
     private void SetAnimationState(int selectedStateIndex, bool skipUndo = false)
     {
         if (!skipUndo)
-            Undo.RecordObject(this, "Set Selected State");
+            Undo.RecordObject(this, "Set Selected State to " + selectedStateIndex);
+        
+        stateList.listView.SetSelectionWithoutNotify(new [] { selectedStateIndex });
         this.selectedStateIndex = selectedStateIndex;
 
         try
@@ -303,7 +313,7 @@ public class AnimationPlayerEditor_UXML : Editor
     [Serializable]
     private class StateList
     {
-        [SerializeField] private ListView listView;
+        public ListView listView;
         private readonly VisualElement root;
         private readonly AnimationPlayerEditor_UXML parentEditor;
 
@@ -320,9 +330,13 @@ public class AnimationPlayerEditor_UXML : Editor
                     parentEditor.stateEditor.RenamePressedOnState();
             }
 
-            listView.makeItem = () => new VisualElement().WithClass("state-list--state-label-line")
-                                                         .WithChild(new Label().WithName("name").WithClass("state-list--state-label"))
-                                                         .WithChild(new Label().WithName("type").WithClass("state-list--state-label"));
+            listView.makeItem = () =>
+            {
+                var item = new VisualElement().WithClass("state-list--state-label-line")
+                                              .WithChild(new Label().WithName("name").WithClass("state-list--state-label"))
+                                              .WithChild(new Label().WithName("type").WithClass("state-list--state-label"));
+                return item;
+            };
             listView.bindItem = (ve, index) =>
             {
                 var stateProp = parentEditor.layersProp
@@ -350,11 +364,18 @@ public class AnimationPlayerEditor_UXML : Editor
 
             listView.selectedIndicesChanged += indices =>
             {
-                // Code is silly because listView returns an IEnumerable instead of eg. an IReadOnlyList or something where we can actullay check the count lol
-                foreach (var index in indices)
+                // The selected indices changed that we get from an Undo operation gives the index from before the undo operation, not the index after the undo.
+                // This would cause the wrong index (potentially out of bounds) to be selected.
+                // So this message is ignored during undo, and the UndoRedo callback instead sets the correct index in the editor (and on the listview, without notify).
+                // @TODO: Report this as a bug to Unity, it seems wrong!
+                if (Undo.isProcessing)
+                    return;
+
+                // Code is silly because listView returns an IEnumerable instead of eg. an IReadOnlyList or something where we can actually check the count lol
+                var indexList = indices.ToList();
+                if (indexList.Count > 0)
                 {
-                    parentEditor.SetAnimationState(index);
-                    break;
+                    parentEditor.SetAnimationState(indexList[0]);
                 }
             };
         }
@@ -390,7 +411,14 @@ public class AnimationPlayerEditor_UXML : Editor
             statesProp.DeleteArrayElementAtIndex(parentEditor.selectedStateIndex);
             parentEditor.serializedObject.ApplyModifiedProperties();
 
-            parentEditor.SetAnimationState(listView.selectedIndex);
+            var index = listView.selectedIndex;
+            if (index >= statesProp.arraySize)
+            {
+                index = statesProp.arraySize - 1;
+                listView.selectedIndex = index;
+            }
+
+            parentEditor.SetAnimationState(index);
         }
 
         public void SetLayer(SerializedProperty layer)
@@ -630,7 +658,6 @@ public class AnimationPlayerEditor_UXML : Editor
             var stateType = stateProperty.managedReferenceValue.GetType();
             if (editorsForStateTypes.TryGetValue(stateType, out var editor))
             {
-
                 editor.GenerateUI();
                 editor.BindUI(stateProperty);
 

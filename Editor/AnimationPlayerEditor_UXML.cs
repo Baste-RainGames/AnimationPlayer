@@ -493,8 +493,9 @@ public class AnimationPlayerEditor_UXML : Editor
                 }
             };
 
-            transitionsList.itemsRemoved += indices =>
+            transitionsList.itemsRemoved += removedIndices =>
             {
+                var indices = removedIndices.ToList();
                 var transitionsProp = parentEditor.SelectedLayerProp.FindPropertyRelative(nameof(AnimationLayer.transitions));
 
                 foreach (var index in indices)
@@ -508,28 +509,25 @@ public class AnimationPlayerEditor_UXML : Editor
                     transitionsProp.DeleteArrayElementAtIndex(propertyIndex);
                     parentEditor.serializedObject.ApplyModifiedProperties();
                 }
+                
+                var selectedStateObject = (AnimationPlayerState) parentEditor.SelectedStateProp.managedReferenceValue;
 
-                // OnSelectedAnimationStateChanged();
+                int j = 0;
+                for (int i = 0; i < transitionsProp.arraySize; i++)
+                {
+                    var transition = transitionsProp.GetArrayElementAtIndex(i);
+                    var fromState = transition.FindPropertyRelative(nameof(StateTransition.fromState)).managedReferenceValue;
+
+                    if (fromState == selectedStateObject)
+                    {
+                        transitions[j] = transition;
+                        Debug.Log($"{j}: {transitions[j].propertyPath}");
+                        j++;
+                    }
+                }
+                
+                Debug.Log("Should be fixed now! " + j + "/" + transitions.Count);
             };
-        }
-
-        private void AddTransition()
-        {
-            var transitionsProp = parentEditor.SelectedLayerProp.FindPropertyRelative(nameof(AnimationLayer.transitions));
-            var newTransition = transitionsProp.AppendToArray();
-            newTransition.FindPropertyRelative(nameof(StateTransition.fromState)).managedReferenceValue = parentEditor.SelectedStateProp.managedReferenceValue;
-
-            transitions.Add(transitionsProp);
-
-            parentEditor.serializedObject.ApplyModifiedProperties();
-            transitionsList.RefreshItems();
-        }
-
-        public void SetDisplayed(bool displayed)
-        {
-            transitionEditorRoot.SetDisplayed(displayed);
-            if (displayed)
-                OnSelectedAnimationStateChanged();
         }
 
         public void OnSelectedAnimationStateChanged()
@@ -552,9 +550,31 @@ public class AnimationPlayerEditor_UXML : Editor
 
             transitionsList.RefreshItems();
         }
+        
+        private void AddTransition()
+        {
+            var transitionsProp = parentEditor.SelectedLayerProp.FindPropertyRelative(nameof(AnimationLayer.transitions));
+            var newTransition = transitionsProp.AppendToArray();
+            newTransition.FindPropertyRelative(nameof(StateTransition.fromState)).managedReferenceValue = parentEditor.SelectedStateProp.managedReferenceValue;
+
+            transitions.Add(transitionsProp);
+
+            parentEditor.serializedObject.ApplyModifiedProperties();
+            transitionsList.RefreshItems();
+        }
+
+        public void SetDisplayed(bool displayed)
+        {
+            transitionEditorRoot.SetDisplayed(displayed);
+            if (displayed)
+                OnSelectedAnimationStateChanged();
+        }
+
 
         private void BindTransitionListItem(VisualElement ve, int index)
         {
+            Debug.Log($"Please bind to index {index}, " + transitions[index].propertyPath);
+            
             var transitionProp = transitions[index];
 
             var nameProp           = transitionProp.FindPropertyRelative(nameof(StateTransition.name));

@@ -10,10 +10,8 @@ namespace Animation_Player
 [Serializable]
 public class StateTransition
 {
-    private const string DefaultName = "Transition";
-
     public bool isDefault;
-    public string name = DefaultName;
+    public string name;
 
     [SerializeReference] public AnimationPlayerState fromState;
     [SerializeReference] public AnimationPlayerState toState;

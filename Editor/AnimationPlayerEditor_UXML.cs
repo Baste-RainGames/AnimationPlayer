@@ -469,15 +469,23 @@ public class AnimationPlayerEditor_UXML : Editor
                 {
                     var transitionsProp = parentEditor.SelectedLayerProp.FindPropertyRelative(nameof(AnimationLayer.transitions));
                     var newTransition = transitionsProp.AppendToArray();
-                    newTransition.FindPropertyRelative(nameof(StateTransition.fromState)).managedReferenceValue = parentEditor.SelectedStateProp.managedReferenceValue;
+                    
+                    var nameProp      = newTransition.FindPropertyRelative(nameof(StateTransition.name));
+                    var isDefaultProp = newTransition.FindPropertyRelative(nameof(StateTransition.isDefault));
+                    var fromStateProp = newTransition.FindPropertyRelative(nameof(StateTransition.fromState));
+                    var toStateProp   = newTransition.FindPropertyRelative(nameof(StateTransition.toState));
 
-                    newTransition.FindPropertyRelative(nameof(StateTransition.toState)).managedReferenceValue = null;
+                    nameProp.stringValue = "Transition";
+                    isDefaultProp.boolValue = index == 0;
+
+                    fromStateProp.managedReferenceValue = parentEditor.SelectedStateProp.managedReferenceValue;
+                    toStateProp.managedReferenceValue = null;
                     var newData = newTransition.FindPropertyRelative(nameof(StateTransition.transitionData));
 
                     newData.FindPropertyRelative(nameof(TransitionData.type))                   .intValue             = (int) TransitionType.Linear;
                     newData.FindPropertyRelative(nameof(TransitionData.duration))               .floatValue           = 1f;
                     newData.FindPropertyRelative(nameof(TransitionData.timeOffsetIntoNewState)) .doubleValue          = 0f;
-                    newData.FindPropertyRelative(nameof(TransitionData.curve))                  .objectReferenceValue = null;
+                    newData.FindPropertyRelative(nameof(TransitionData.curve))                  .animationCurveValue  = null;
                     newData.FindPropertyRelative(nameof(TransitionData.clip))                   .objectReferenceValue = null;
 
                     parentEditor.serializedObject.ApplyModifiedProperties();
@@ -501,7 +509,7 @@ public class AnimationPlayerEditor_UXML : Editor
                     parentEditor.serializedObject.ApplyModifiedProperties();
                 }
 
-                OnSelectedAnimationStateChanged();
+                // OnSelectedAnimationStateChanged();
             };
         }
 
@@ -590,9 +598,18 @@ public class AnimationPlayerEditor_UXML : Editor
 
             toStateDropdown.choices = stateNames;
 
-            // There's no SetIndexWithoutNotify, so the only way of setting the index without notifying is to set the value and then let that set the index. Fun!
             {
-                toStateDropdown.SetValueWithoutNotify(stateNames[states.IndexOf((AnimationPlayerState) toStateProp.managedReferenceValue)]);
+                // There's no public SetIndexWithoutNotify. There is an internal SetIndexWithoutNotify, but it also finds the element and calls SetValueWithoutNotify. 
+                var indexOfState = states.IndexOf((AnimationPlayerState) toStateProp.managedReferenceValue);
+                if (indexOfState == -1)
+                {
+                    toStateDropdown.SetValueWithoutNotify(null); // When we create a new state, thee
+                }
+                else
+                {
+                    var stateName = stateNames[indexOfState];
+                    toStateDropdown.SetValueWithoutNotify(stateName);
+                }
             }
 
             toStateDropdown.RegisterValueChangedCallback(_ =>

@@ -1,12 +1,12 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
-    <Style src="project://database/Packages/com.baste.animationplayer/Editor/UI/AnimationPlayerEditorNew.uss?fileID=7433441132597879392&amp;guid=d8ce903d29a9e0a4dbcd0a6e394057ae&amp;type=3#AnimationPlayerEditorNew" />
+    <Style src="project://database/Packages/com.baste.animationplayer/Editor/UI/AnimationPlayerStylesNew.uss?fileID=7433441132597879392&amp;guid=d8ce903d29a9e0a4dbcd0a6e394057ae&amp;type=3#AnimationPlayerStylesNew" />
     <ui:VisualElement name="Root" class="blend-tree-drawer--blend-tree-entry transition-list--entry" style="flex-direction: column;">
         <ui:VisualElement name="TopRow" class="transition-list--entry-line" style="flex-grow: 1;">
             <ui:DropdownField label="Target State" index="-1" choices="System.Collections.Generic.List`1[System.String]" name="ToStateDropdown" />
             <ui:EnumField label="Transition Type" type="Animation_Player.TransitionType, AnimationPlayer" name="TransitionType" />
         </ui:VisualElement>
         <ui:VisualElement name="BottomRow" class="transition-list--entry-line">
-            <ui:TextField picking-mode="Ignore" label="Text Field" value="Default" name="TransitionName" />
+            <ui:TextField picking-mode="Ignore" label="Name" value="Default" name="TransitionName" />
             <ui:FloatField label="Duration" value="42.2" name="Duration" />
             <uie:CurveField label="Curve" name="Curve" />
             <uie:ObjectField label="Clip&#10;" name="Clip" />

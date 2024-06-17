@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -13,7 +12,7 @@ using UnityEngine.UIElements;
 namespace Animation_Player
 {
 [CustomEditor(typeof(AnimationPlayer))]
-public class AnimationPlayerEditor_UXML : Editor
+public class AnimationPlayerEditor : Editor
 {
     private Toggle statesToggle;
     private Toggle transitionsToggle;
@@ -315,9 +314,9 @@ public class AnimationPlayerEditor_UXML : Editor
     {
         public ListView listView;
         private readonly VisualElement root;
-        private readonly AnimationPlayerEditor_UXML parentEditor;
+        private readonly AnimationPlayerEditor parentEditor;
 
-        public StateList(AnimationPlayerEditor_UXML parentEditor, VisualElement stateListRoot)
+        public StateList(AnimationPlayerEditor parentEditor, VisualElement stateListRoot)
         {
             this.parentEditor = parentEditor;
             root = stateListRoot;
@@ -431,7 +430,7 @@ public class AnimationPlayerEditor_UXML : Editor
     [Serializable]
     private class TransitionEditor
     {
-        private readonly AnimationPlayerEditor_UXML parentEditor;
+        private readonly AnimationPlayerEditor parentEditor;
         private readonly Label errorLabel;
         private readonly VisualElement transitionEditorRoot;
         private readonly Label transitionFromLabel;
@@ -439,7 +438,7 @@ public class AnimationPlayerEditor_UXML : Editor
 
         private readonly List<SerializedProperty> transitionPropsForSelectedState = new();
 
-        public TransitionEditor(AnimationPlayerEditor_UXML parentEditor, VisualElement entireUIRoot, Label errorLabel)
+        public TransitionEditor(AnimationPlayerEditor parentEditor, VisualElement entireUIRoot, Label errorLabel)
         {
             this.parentEditor = parentEditor;
             this.errorLabel = errorLabel;
@@ -733,7 +732,7 @@ public class AnimationPlayerEditor_UXML : Editor
         return string.Compare(x.Name, y.Name, StringComparison.InvariantCultureIgnoreCase);
     }
 
-    static AnimationPlayerEditor_UXML()
+    static AnimationPlayerEditor()
     {
         editorsForStateTypes = new();
         var editorTypes = TypeCache.GetTypesDerivedFrom(typeof(AnimationStateEditor)).ToList();
@@ -764,7 +763,7 @@ public class AnimationPlayerEditor_UXML : Editor
     
     public class BulkStateAdder
     {
-        private readonly AnimationPlayerEditor_UXML parentEditor;
+        private readonly AnimationPlayerEditor parentEditor;
         private readonly List<AnimationClip> clips;
         private readonly VisualElement uiRoot;
 
@@ -775,7 +774,7 @@ public class AnimationPlayerEditor_UXML : Editor
         private readonly Button blendTree2DButton;
         private readonly Button cancelButton;
 
-        public BulkStateAdder(List<AnimationClip> clips, AnimationPlayerEditor_UXML parentEditor)
+        public BulkStateAdder(List<AnimationClip> clips, AnimationPlayerEditor parentEditor)
         {
             this.parentEditor = parentEditor;
             this.clips = clips;

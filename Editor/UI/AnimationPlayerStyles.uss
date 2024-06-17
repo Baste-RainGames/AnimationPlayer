@@ -47,3 +47,8 @@
     flex-direction: row;
     height: 22px;
 }
+
+.preview-bar {
+    height: 22px;
+    flex-direction: row;
+}

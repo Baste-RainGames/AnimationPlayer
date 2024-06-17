@@ -354,13 +354,8 @@ public class AnimationPlayerEditor_UXML : Editor
                 ve.Unbind();
             };
 
-            // @TODO: Try this instead maybe: https://forum.unity.com/threads/how-to-customize-the-itemsadded-for-a-listview.1175981/#post-7572853
-            // listView.Q<Button>("unity-list-view__add-button").clickable = new Clickable(() =>
-            var addButton = (Button) typeof(BaseListView).GetField("m_AddButton", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(listView);
-            addButton.clickable = new Clickable(ShowAddStateMenu);
-
-            var deleteButton = (Button) typeof(BaseListView).GetField("m_RemoveButton", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(listView);
-            deleteButton.clickable = new Clickable(DeleteSelectedState);
+            listView.Q<Button>(BaseListView.footerAddButtonName)   .clickable = new Clickable(ShowAddStateMenu);
+            listView.Q<Button>(BaseListView.footerRemoveButtonName).clickable = new Clickable(DeleteSelectedState);
 
             listView.selectedIndicesChanged += indices =>
             {
@@ -442,7 +437,7 @@ public class AnimationPlayerEditor_UXML : Editor
         private readonly Label transitionFromLabel;
         private readonly ListView transitionsList;
 
-        private readonly List<SerializedProperty> transitions = new();
+        private readonly List<SerializedProperty> transitionPropsForSelectedState = new();
 
         public TransitionEditor(AnimationPlayerEditor_UXML parentEditor, VisualElement entireUIRoot, Label errorLabel)
         {
@@ -452,7 +447,7 @@ public class AnimationPlayerEditor_UXML : Editor
             transitionFromLabel = transitionEditorRoot.Q<Label>("TransitionsFromLabel");
             transitionsList = transitionEditorRoot.Q<ListView>("Transitions");
 
-            transitionsList.itemsSource = transitions;
+            transitionsList.itemsSource = transitionPropsForSelectedState;
 
             const string path = "Packages/com.baste.animationplayer/Editor/UI/TransitionListEntry.uxml";
             transitionsList.makeItem = () => AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(path).CloneRoot();
@@ -489,26 +484,22 @@ public class AnimationPlayerEditor_UXML : Editor
                     newData.FindPropertyRelative(nameof(TransitionData.clip))                   .objectReferenceValue = null;
 
                     parentEditor.serializedObject.ApplyModifiedProperties();
-                    transitions[index] = newTransition;
+                    transitionPropsForSelectedState[index] = newTransition;
                 }
             };
-
-            transitionsList.itemsRemoved += removedIndices =>
+            
+            transitionsList.Q<Button>(BaseListView.footerRemoveButtonName).clickable = new Clickable(() =>
             {
-                var indices = removedIndices.ToList();
                 var transitionsProp = parentEditor.SelectedLayerProp.FindPropertyRelative(nameof(AnimationLayer.transitions));
+                
+                var property = transitionPropsForSelectedState[transitionsList.selectedIndex];
+                var propertyPath = property.propertyPath;
 
-                foreach (var index in indices)
-                {
-                    var property = transitions[index];
-                    var propertyPath = property.propertyPath;
+                var startOfIndex = propertyPath.LastIndexOf("[", StringComparison.Ordinal) + 1;
+                var propertyIndex = int.Parse(propertyPath[startOfIndex..^1]);
 
-                    var startOfIndex = propertyPath.LastIndexOf("[", StringComparison.Ordinal) + 1;
-                    var propertyIndex = int.Parse(propertyPath[startOfIndex..^1]);
-
-                    transitionsProp.DeleteArrayElementAtIndex(propertyIndex);
-                    parentEditor.serializedObject.ApplyModifiedProperties();
-                }
+                transitionsProp.DeleteArrayElementAtIndex(propertyIndex);
+                parentEditor.serializedObject.ApplyModifiedProperties();
                 
                 var selectedStateObject = (AnimationPlayerState) parentEditor.SelectedStateProp.managedReferenceValue;
 
@@ -520,21 +511,20 @@ public class AnimationPlayerEditor_UXML : Editor
 
                     if (fromState == selectedStateObject)
                     {
-                        transitions[j] = transition;
-                        Debug.Log($"{j}: {transitions[j].propertyPath}");
+                        transitionPropsForSelectedState[j] = transition;
                         j++;
                     }
                 }
-                
-                Debug.Log("Should be fixed now! " + j + "/" + transitions.Count);
-            };
+               
+                transitionsList.viewController.RemoveItem(transitionPropsForSelectedState.Count - 1);
+            });
         }
 
         public void OnSelectedAnimationStateChanged()
         {
             transitionFromLabel.text = $"Transitions from {parentEditor.SelectedStateProp.FindPropertyRelative("name").stringValue}";
 
-            transitions.Clear();
+            transitionPropsForSelectedState.Clear();
 
             var transitionsProp = parentEditor.SelectedLayerProp.FindPropertyRelative(nameof(AnimationLayer.transitions));
             var selectedStateObject = (AnimationPlayerState) parentEditor.SelectedStateProp.managedReferenceValue;
@@ -545,7 +535,7 @@ public class AnimationPlayerEditor_UXML : Editor
                 var fromState = transition.FindPropertyRelative(nameof(StateTransition.fromState)).managedReferenceValue;
 
                 if (fromState == selectedStateObject)
-                    transitions.Add(transition);
+                    transitionPropsForSelectedState.Add(transition);
             }
 
             transitionsList.RefreshItems();
@@ -557,7 +547,7 @@ public class AnimationPlayerEditor_UXML : Editor
             var newTransition = transitionsProp.AppendToArray();
             newTransition.FindPropertyRelative(nameof(StateTransition.fromState)).managedReferenceValue = parentEditor.SelectedStateProp.managedReferenceValue;
 
-            transitions.Add(transitionsProp);
+            transitionPropsForSelectedState.Add(transitionsProp);
 
             parentEditor.serializedObject.ApplyModifiedProperties();
             transitionsList.RefreshItems();
@@ -573,9 +563,7 @@ public class AnimationPlayerEditor_UXML : Editor
 
         private void BindTransitionListItem(VisualElement ve, int index)
         {
-            Debug.Log($"Please bind to index {index}, " + transitions[index].propertyPath);
-            
-            var transitionProp = transitions[index];
+            var transitionProp = transitionPropsForSelectedState[index];
 
             var nameProp           = transitionProp.FindPropertyRelative(nameof(StateTransition.name));
             var toStateProp        = transitionProp.FindPropertyRelative(nameof(StateTransition.toState));

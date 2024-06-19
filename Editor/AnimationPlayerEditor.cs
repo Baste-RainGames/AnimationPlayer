@@ -741,7 +741,7 @@ public class AnimationPlayerEditor : Editor
             
             animationPlayer.previewer ??= new AnimationPlayerPreviewer(parentEditor.target);
             previewer = animationPlayer.previewer;
- 
+
             SetButtonVisualStates();
             SetSliderVisibility();
             
@@ -749,7 +749,8 @@ public class AnimationPlayerEditor : Editor
             {
                 if (previewer.IsPreviewing)
                     previewer.StopPreview();
-                previewer.StartPreview(parentEditor.selectedLayerIndex, parentEditor.selectedStateIndex, true, previewSlider, blendVar1Slider, blendVar2Slider);
+                previewer.StartPreview(parentEditor.selectedLayerIndex, parentEditor.selectedStateIndex, true, previewSlider, blendVar1Slider.value, 
+                                       blendVar2Slider.value);
                 SetButtonVisualStates();
             };
             
@@ -764,6 +765,22 @@ public class AnimationPlayerEditor : Editor
                 previewer.AutomaticPlayback = !previewer.AutomaticPlayback;
                 SetButtonVisualStates();
             };
+
+            previewSlider.RegisterValueChangedCallback(change =>
+            {
+                if (previewer.IsPreviewing)
+                    previewer.AutomaticPlayback = false;
+                else
+                {
+                    previewer.StartPreview(parentEditor.selectedLayerIndex, parentEditor.selectedStateIndex, true, previewSlider, blendVar1Slider.value,
+                                           blendVar2Slider.value);
+                    previewer.AutomaticPlayback = false;
+                    SetButtonVisualStates();
+                }
+
+                previewer.SetTime(change.newValue / animationPlayer.GetPlayingState().Duration);
+
+            });
 
             blendVar1Slider.RegisterValueChangedCallback(change =>
             {
@@ -859,6 +876,8 @@ public class AnimationPlayerEditor : Editor
                 blendVar1Slider.SetDisplayed(false);
                 blendVar2Slider.SetDisplayed(false);
             }
+
+            previewSlider.highValue = currentState.Duration;
         }
     }
 

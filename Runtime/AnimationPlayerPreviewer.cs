@@ -25,7 +25,7 @@ public class AnimationPlayerPreviewer
     public bool IsPreviewing => previewGraph.IsValid();
     public bool AutomaticPlayback { get; set; }
 
-    public void StartPreview(int layer, int state, bool automaticPlayback, Slider playbackSlider, Slider blendVar1Slider, Slider blendVar2Slider)
+    public void StartPreview(int layer, int state, bool automaticPlayback, Slider playbackSlider, float blendVar1Value, float blendVar2Value)
     {
         this.playbackSlider = playbackSlider;
         AutomaticPlayback = automaticPlayback;
@@ -40,12 +40,12 @@ public class AnimationPlayerPreviewer
         
         if (playedState is BlendTree1D blendTree1D)
         {
-            animationPlayer.SetBlendVar(blendTree1D.blendVariable, blendVar1Slider.value);
+            animationPlayer.SetBlendVar(blendTree1D.blendVariable, blendVar1Value);
         }
         else if (playedState is BlendTree2D blendTree2D)
         {
-            animationPlayer.SetBlendVar(blendTree2D.blendVariable,  blendVar1Slider.value);
-            animationPlayer.SetBlendVar(blendTree2D.blendVariable2, blendVar2Slider.value);
+            animationPlayer.SetBlendVar(blendTree2D.blendVariable,  blendVar1Value);
+            animationPlayer.SetBlendVar(blendTree2D.blendVariable2, blendVar2Value);
         }
         
         lastTime = Time.realtimeSinceStartup;
@@ -62,17 +62,24 @@ public class AnimationPlayerPreviewer
             lastTime = now;
 
             animationPlayer.UpdateSelf();
-            var normalizedStateProgress = animationPlayer.GetNormalizedStateProgress(state, layer);
-            playbackSlider.value = (float) normalizedStateProgress;
+            var stateProgress = animationPlayer.GetCurrentStateTime(state, true, layer);
+            playbackSlider.SetValueWithoutNotify((float) stateProgress);
 
             var playedState = animationPlayer.GetState(state, layer);
-            if (!playedState.Loops && normalizedStateProgress == 1d)
+            if (!playedState.Loops && animationPlayer.GetNormalizedStateProgress(state, layer) == 1d) // returns double clamped to [0, 1], so >= 1d is always exactly 1d
                 StopPreview();
         }
     }
     
     public void Resample()
     {
+        animationPlayer.UpdateSelf();
+        previewGraph.Evaluate();
+    }
+    
+    public void SetTime(float relativeTime)
+    {
+        animationPlayer.JumpToRelativeTime(relativeTime);
         animationPlayer.UpdateSelf();
         previewGraph.Evaluate();
     }

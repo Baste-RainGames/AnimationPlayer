@@ -674,7 +674,9 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     /// <returns>How many seconds the state has been playing for</returns>
     public double GetCurrentStateTime(int state, bool wrapped = true, int layer = 0)
     {
-        return layers[layer].GetStateAbsoluteTime(state);
+        return wrapped 
+            ? layers[layer].GetStateWrappedTime (state) 
+            : layers[layer].GetStateAbsoluteTime(state);
     }
 
 #if !ANIMATION_PLAYER_FORCE_INTEGER_STATES
@@ -690,7 +692,9 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     public double GetCurrentStateTime(string state, bool wrapped = true, int layer = 0)
     {
         if (TryGetStateIndex(state, layer, out var stateID, nameof(GetCurrentStateTime)))
-            return layers[layer].GetStateAbsoluteTime(stateID);
+            return wrapped
+                ? layers[layer].GetStateWrappedTime (stateID) 
+                : layers[layer].GetStateAbsoluteTime(stateID);
         return 0f;
     }
 #endif

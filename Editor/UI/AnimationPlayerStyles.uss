@@ -40,7 +40,7 @@
 }
 
 .transition-list--entry {
-    height:44px;
+    height: 44px;
 }
 
 .transition-list--entry-line {
@@ -51,4 +51,12 @@
 .preview-bar {
     height: 22px;
     flex-direction: row;
+}
+
+.preview-bar__button {
+    width: 50px;
+}
+
+.progress-slider {
+    flex-grow: 1;
 }

@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Animations;
@@ -104,3 +105,4 @@ public class AnimationPlayerPreviewer
     }
 }
 }
+#endif

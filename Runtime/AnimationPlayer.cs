@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Assertions;
 using UnityEngine.Playables;
 using UnityEngine.Profiling;
 
+using Object = UnityEngine.Object;
 using Debug = UnityEngine.Debug;
 
 namespace Animation_Player
@@ -54,7 +55,8 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
 
     public Animator OutputAnimator { get; private set; }
 
-    //IK. Note that IK requires an empty AnimatorController with... why am I doing this like this?
+    // IK. Note that IK requires an empty AnimatorController with... why am I doing this like this?
+    // Note way later: the above comment implies that I had a thought at one point. No idea what that thought was, lol.
     private float currentIKLookAtWeight;
     private Vector3 currentIKLookAtPosition;
 
@@ -87,7 +89,6 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
         graph = PlayableGraph.Create();
 
         // The AnimationPlayableOutput links the graph with an animator that plays the graph.
-        // I think we can ditch the animator, but the documentation is kinda sparse!
         OutputAnimator = gameObject.EnsureComponent<Animator>();
         AnimationPlayableOutput animOutput = AnimationPlayableOutput.Create(graph, $"{name}_animation_player", OutputAnimator);
 
@@ -209,10 +210,19 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     }
 
 #if UNITY_EDITOR
+    [NonSerialized]
+    public AnimationPlayerPreviewer previewer;
     private Vector3 positionBeforePreview;
+    private bool previewCreatedAnimator;
 
     public void EnterPreview()
     {
+        if (!gameObject.GetComponent<Animator>())
+        {
+            previewCreatedAnimator = true;
+            var animator = gameObject.AddComponent<Animator>();
+            animator.hideFlags = HideFlags.DontSave | HideFlags.HideInInspector;
+        }
         hasAwoken = false;
         Awake();
         positionBeforePreview = transform.position;
@@ -222,6 +232,21 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     {
         OnDestroy();
         hasAwoken = false;
+        if (previewCreatedAnimator)
+        {
+            if (TryGetComponent<Animator>(out var animator))
+            {
+                // We have to delay this, otherwise a new Animator is inexplicably added to the GameObject automatically. 
+                EditorApplication.delayCall += () =>
+                {
+                    DestroyImmediate(animator, true); 
+                };
+            }
+                
+        }
+
+        previewCreatedAnimator = false;
+        
         if (positionBeforePreview != transform.position)
             transform.position = positionBeforePreview;
     }
@@ -1299,7 +1324,6 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     }
 
     private readonly List<AnimationClip> allClipsInPlayer = new List<AnimationClip>();
-
     public void GetAnimationClips(List<AnimationClip> results)
     {
         allClipsInPlayer.Clear();

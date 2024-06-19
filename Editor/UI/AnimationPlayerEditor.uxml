@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
-    <Style src="project://database/Packages/com.baste.animationplayer/Editor/UI/AnimationPlayerStylesNew.uss?fileID=7433441132597879392&amp;guid=d8ce903d29a9e0a4dbcd0a6e394057ae&amp;type=3#AnimationPlayerStyles" />
+    <Style src="project://database/Packages/com.baste.animationplayer/Editor/UI/AnimationPlayerStyles.uss?fileID=7433441132597879392&amp;guid=d8ce903d29a9e0a4dbcd0a6e394057ae&amp;type=3#AnimationPlayerStyles" />
     <ui:VisualElement name="MainUIRoot" style="flex-grow: 1;">
         <ui:Label tabindex="-1" text="Runtime Info Goes Here" parse-escape-sequences="true" display-tooltip-when-elided="true" name="RuntimeInfoLabel" />
         <ui:Label tabindex="-1" text="Errors Goes Here" parse-escape-sequences="true" display-tooltip-when-elided="true" name="ErrorLabel" style="color: rgb(255, 0, 0);" />
@@ -40,9 +40,10 @@
         <ui:VisualElement name="MetaDataView" class="category-view" style="display: none;">
             <ui:Label tabindex="-1" text="View Metadata" parse-escape-sequences="true" display-tooltip-when-elided="true" />
         </ui:VisualElement>
-        <ui:VisualElement name="PreviewBar" class="preview-bar">
-            <ui:Button text="Play" parse-escape-sequences="true" display-tooltip-when-elided="true" name="PlayPauseButton" />
-            <ui:Button text="Stop" parse-escape-sequences="true" display-tooltip-when-elided="true" name="StopButton" />
+        <ui:VisualElement name="PreviewBar" class="preview-bar" style="flex-direction: row;">
+            <ui:Button text="Play" parse-escape-sequences="true" display-tooltip-when-elided="true" name="PlayPauseButton" class="preview-bar__button" />
+            <ui:Button text="Stop" parse-escape-sequences="true" display-tooltip-when-elided="true" name="StopButton" class="preview-bar__button" />
+            <ui:Slider high-value="1" show-input-field="false" name="ProgressSlider" class="progress-slider" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

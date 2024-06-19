@@ -28,6 +28,7 @@ public class AnimationPlayerEditor : Editor
     private VisualElement editLayerView;
     private VisualElement editPlayerSettingsView;
     private VisualElement metaDataView;
+    private PreviewBar previewBar;
     private VisualElement layerBar;
     private Label errorLabel;
     private Label runtimeInfoLabel;
@@ -117,6 +118,7 @@ public class AnimationPlayerEditor : Editor
         editLayerView          = mainUIRoot.Q("EditLayerView");
         editPlayerSettingsView = mainUIRoot.Q("EditPlayerSettingsView");
         metaDataView           = mainUIRoot.Q("MetaDataView");
+        previewBar             = new PreviewBar(this, mainUIRoot.Q("PreviewBar"));
 
         var stateBar = mainUIRoot.Q("StateBar");
 
@@ -426,6 +428,71 @@ public class AnimationPlayerEditor : Editor
             root.SetDisplayed(displayed);
         }
     }
+    
+    [Serializable]
+    private class StateEditor
+    {
+        private readonly Label errorLabel;
+        private readonly VisualElement stateEditorRoot;
+        private readonly VisualElement selectedStateRoot;
+
+        private AnimationStateEditor shownEditor;
+
+        public StateEditor(VisualElement entireUIRoot, Label errorLabel)
+        {
+            stateEditorRoot = entireUIRoot.Q("EditStateView");
+            selectedStateRoot = stateEditorRoot.Q("SelectedState");
+            this.errorLabel = errorLabel;
+        }
+
+        public void SetDisplayed(bool displayed)
+        {
+            stateEditorRoot.SetDisplayed(displayed);
+        }
+
+        public void ShowAnimationState(SerializedProperty stateProperty)
+        {
+            if (shownEditor != null)
+            {
+                shownEditor.ClearBindings(stateProperty);
+                shownEditor.RootVisualElement.parent.Remove(shownEditor.RootVisualElement);
+                shownEditor = null;
+            }
+
+            if (stateProperty.managedReferenceValue == null)
+            {
+                ShowError("State is null");
+                return;
+            }
+
+            var stateType = stateProperty.managedReferenceValue.GetType();
+            if (editorsForStateTypes.TryGetValue(stateType, out var editor))
+            {
+                editor.GenerateUI();
+                editor.BindUI(stateProperty);
+
+                shownEditor = editor;
+                selectedStateRoot.Add(shownEditor.RootVisualElement);
+                errorLabel.SetDisplayed(false);
+            }
+            else
+            {
+                ShowError("No known editor for state type " + stateType);
+            }
+        }
+
+        private void ShowError(string error)
+        {
+            selectedStateRoot.SetDisplayed(false);
+            errorLabel.text = error;
+            errorLabel.SetDisplayed(true);
+        }
+
+        public void RenamePressedOnState()
+        {
+            stateEditorRoot.Q<TextField>("name").Focus();
+        }
+    }
 
     [Serializable]
     private class TransitionEditor
@@ -644,67 +711,42 @@ public class AnimationPlayerEditor : Editor
     }
 
     [Serializable]
-    private class StateEditor
+    private class PreviewBar
     {
-        private readonly Label errorLabel;
-        private readonly VisualElement stateEditorRoot;
-        private readonly VisualElement selectedStateRoot;
+        private readonly AnimationPlayer animationPlayer;
+        private readonly Button playPauseButton;
+        private readonly Button stopButton;
+        private readonly Slider previewSlider;
 
-        private AnimationStateEditor shownEditor;
-
-        public StateEditor(VisualElement entireUIRoot, Label errorLabel)
+        public PreviewBar(AnimationPlayerEditor parentEditor, VisualElement previewBarRoot)
         {
-            stateEditorRoot = entireUIRoot.Q("EditStateView");
-            selectedStateRoot = stateEditorRoot.Q("SelectedState");
-            this.errorLabel = errorLabel;
-        }
+            animationPlayer = parentEditor.target;
+            playPauseButton = previewBarRoot.Q<Button>("PlayPauseButton");
+            stopButton      = previewBarRoot.Q<Button>("StopButton");
+            previewSlider   = previewBarRoot.Q<Slider>("ProgressSlider");
+            
+            animationPlayer.previewer ??= new AnimationPlayerPreviewer(parentEditor.target);
+            playPauseButton.text = animationPlayer.previewer.IsPreviewing ? "Pause" : "Play";
 
-        public void SetDisplayed(bool displayed)
-        {
-            stateEditorRoot.SetDisplayed(displayed);
-        }
-
-        public void ShowAnimationState(SerializedProperty stateProperty)
-        {
-            if (shownEditor != null)
+            playPauseButton.clicked += () =>
             {
-                shownEditor.ClearBindings(stateProperty);
-                shownEditor.RootVisualElement.parent.Remove(shownEditor.RootVisualElement);
-                shownEditor = null;
-            }
-
-            if (stateProperty.managedReferenceValue == null)
+                if (animationPlayer.previewer.IsPreviewing)
+                {
+                    animationPlayer.previewer.AutomaticPlayback = !animationPlayer.previewer.AutomaticPlayback;
+                    playPauseButton.text = animationPlayer.previewer.AutomaticPlayback ? "Pause" : "Play";
+                }
+                else
+                {
+                    animationPlayer.previewer.StartPreview(parentEditor.selectedLayerIndex, parentEditor.selectedStateIndex, true, previewSlider);
+                    playPauseButton.text = "Pause";
+                }
+            };
+            
+            stopButton.clicked += () =>
             {
-                ShowError("State is null");
-                return;
-            }
-
-            var stateType = stateProperty.managedReferenceValue.GetType();
-            if (editorsForStateTypes.TryGetValue(stateType, out var editor))
-            {
-                editor.GenerateUI();
-                editor.BindUI(stateProperty);
-
-                shownEditor = editor;
-                selectedStateRoot.Add(shownEditor.RootVisualElement);
-                errorLabel.SetDisplayed(false);
-            }
-            else
-            {
-                ShowError("No known editor for state type " + stateType);
-            }
-        }
-
-        private void ShowError(string error)
-        {
-            selectedStateRoot.SetDisplayed(false);
-            errorLabel.text = error;
-            errorLabel.SetDisplayed(true);
-        }
-
-        public void RenamePressedOnState()
-        {
-            stateEditorRoot.Q<TextField>("name").Focus();
+                animationPlayer.previewer.StopPreview();
+                playPauseButton.text = "Play";
+            };
         }
     }
 

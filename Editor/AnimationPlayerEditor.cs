@@ -73,6 +73,7 @@ public class AnimationPlayerEditor : Editor
             updateRuntimeInfoCoroutine = null;
         }
 
+        previewBar.StopAnyPreview();
         currentBulkStateAdder?.Deactivate();
         EditorApplication.update -= UpdateDragAndDropTarget;
         Undo.undoRedoEvent -= UndoRedo;
@@ -231,7 +232,8 @@ public class AnimationPlayerEditor : Editor
     {
         if (!skipUndo)
             Undo.RecordObject(this, "Set Selected State to " + selectedStateIndex);
-        
+
+        previewBar.StopAnyPreview();
         stateList.listView.SetSelectionWithoutNotify(new [] { selectedStateIndex });
         this.selectedStateIndex = selectedStateIndex;
 
@@ -287,6 +289,7 @@ public class AnimationPlayerEditor : Editor
         this.uiState = uiState;
 
         stateEditor           .SetDisplayed(uiState == UIState.EditStates);
+        previewBar            .SetDisplayed(uiState == UIState.EditStates);
         transitionEditor      .SetDisplayed(uiState == UIState.EditTransitions);
         editLayerView         .SetDisplayed(uiState == UIState.EditLayer);
         editPlayerSettingsView.SetDisplayed(uiState == UIState.EditPlayerSettings);
@@ -714,39 +717,67 @@ public class AnimationPlayerEditor : Editor
     private class PreviewBar
     {
         private readonly AnimationPlayer animationPlayer;
-        private readonly Button playPauseButton;
+        private readonly VisualElement previewBarRoot;
+        private readonly Button playReplayButton;
+        private readonly Button pauseResumeButton;
         private readonly Button stopButton;
         private readonly Slider previewSlider;
+        private readonly AnimationPlayerPreviewer previewer;
 
         public PreviewBar(AnimationPlayerEditor parentEditor, VisualElement previewBarRoot)
-        {
-            animationPlayer = parentEditor.target;
-            playPauseButton = previewBarRoot.Q<Button>("PlayPauseButton");
-            stopButton      = previewBarRoot.Q<Button>("StopButton");
-            previewSlider   = previewBarRoot.Q<Slider>("ProgressSlider");
+        { 
+            animationPlayer   = parentEditor.target;
+            this.previewBarRoot = previewBarRoot;
+            playReplayButton  = previewBarRoot.Q<Button>("PlayReplayButton");
+            pauseResumeButton = previewBarRoot.Q<Button>("PauseResumeButton");
+            stopButton        = previewBarRoot.Q<Button>("StopButton");
+            previewSlider     = previewBarRoot.Q<Slider>("ProgressSlider");
             
             animationPlayer.previewer ??= new AnimationPlayerPreviewer(parentEditor.target);
-            playPauseButton.text = animationPlayer.previewer.IsPreviewing ? "Pause" : "Play";
+            previewer = animationPlayer.previewer;
+ 
+            SetButtonVisualStates();
 
-            playPauseButton.clicked += () =>
+            playReplayButton.clicked += () =>
             {
-                if (animationPlayer.previewer.IsPreviewing)
-                {
-                    animationPlayer.previewer.AutomaticPlayback = !animationPlayer.previewer.AutomaticPlayback;
-                    playPauseButton.text = animationPlayer.previewer.AutomaticPlayback ? "Pause" : "Play";
-                }
-                else
-                {
-                    animationPlayer.previewer.StartPreview(parentEditor.selectedLayerIndex, parentEditor.selectedStateIndex, true, previewSlider);
-                    playPauseButton.text = "Pause";
-                }
+                if (previewer.IsPreviewing)
+                    previewer.StopPreview();
+                previewer.StartPreview(parentEditor.selectedLayerIndex, parentEditor.selectedStateIndex, true, previewSlider);
+                SetButtonVisualStates();
             };
             
             stopButton.clicked += () =>
             {
-                animationPlayer.previewer.StopPreview();
-                playPauseButton.text = "Play";
+                previewer.StopPreview();
+                SetButtonVisualStates();
             };
+
+            pauseResumeButton.clicked += () =>
+            {
+                previewer.AutomaticPlayback = !previewer.AutomaticPlayback;
+                SetButtonVisualStates();
+            };
+        }
+        
+        private void SetButtonVisualStates()
+        {
+            playReplayButton .text = previewer.IsPreviewing ? "Replay" : "Play";
+            pauseResumeButton.text = previewer.IsPreviewing && !previewer.AutomaticPlayback ? "Resume" : "Pause";
+            pauseResumeButton.SetEnabled(previewer.IsPreviewing);
+            stopButton.SetEnabled(previewer.IsPreviewing);
+        }
+
+        public void SetDisplayed(bool displayed)
+        {
+            previewBarRoot.SetDisplayed(displayed);
+            if (!displayed)
+                StopAnyPreview();
+        }
+
+        public void StopAnyPreview()
+        {
+            previewer.StopPreview();
+            SetButtonVisualStates();
         }
     }
 

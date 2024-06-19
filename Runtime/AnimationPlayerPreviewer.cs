@@ -50,8 +50,12 @@ public class AnimationPlayerPreviewer
             lastTime = now;
 
             animationPlayer.UpdateSelf();
-            var normalizedStateProgress = (float) animationPlayer.GetNormalizedStateProgress(state, layer);
-            playbackSlider.value = normalizedStateProgress;
+            var normalizedStateProgress = animationPlayer.GetNormalizedStateProgress(state, layer);
+            playbackSlider.value = (float) normalizedStateProgress;
+
+            var playedState = animationPlayer.GetState(state, layer);
+            if (!playedState.Loops && normalizedStateProgress == 1d)
+                StopPreview();
         }
     }
 

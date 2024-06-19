@@ -8,7 +8,6 @@ using UnityEngine.Assertions;
 using UnityEngine.Playables;
 using UnityEngine.Profiling;
 
-using Object = UnityEngine.Object;
 using Debug = UnityEngine.Debug;
 
 namespace Animation_Player
@@ -59,6 +58,15 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     // Note way later: the above comment implies that I had a thought at one point. No idea what that thought was, lol.
     private float currentIKLookAtWeight;
     private Vector3 currentIKLookAtPosition;
+
+    private void OnValidate()
+    {
+        if (!OutputAnimator)
+        {
+            OutputAnimator = gameObject.EnsureComponent<Animator>();
+            OutputAnimator.hideFlags |= HideFlags.HideInInspector; //@TODO: introduce settings for this.
+        }
+    }
 
     private void Awake()
     {
@@ -213,16 +221,9 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     [NonSerialized]
     public AnimationPlayerPreviewer previewer;
     private Vector3 positionBeforePreview;
-    private bool previewCreatedAnimator;
 
     public void EnterPreview()
     {
-        if (!gameObject.GetComponent<Animator>())
-        {
-            previewCreatedAnimator = true;
-            var animator = gameObject.AddComponent<Animator>();
-            animator.hideFlags = HideFlags.DontSave | HideFlags.HideInInspector;
-        }
         hasAwoken = false;
         Awake();
         positionBeforePreview = transform.position;
@@ -232,21 +233,6 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     {
         OnDestroy();
         hasAwoken = false;
-        if (previewCreatedAnimator)
-        {
-            if (TryGetComponent<Animator>(out var animator))
-            {
-                // We have to delay this, otherwise a new Animator is inexplicably added to the GameObject automatically. 
-                EditorApplication.delayCall += () =>
-                {
-                    DestroyImmediate(animator, true); 
-                };
-            }
-                
-        }
-
-        previewCreatedAnimator = false;
-        
         if (positionBeforePreview != transform.position)
             transform.position = positionBeforePreview;
     }

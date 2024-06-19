@@ -28,7 +28,7 @@ public class AnimationPlayerEditor : Editor
     private VisualElement editLayerView;
     private VisualElement editPlayerSettingsView;
     private VisualElement metaDataView;
-    private PreviewBar previewBar;
+    private PreviewSection previewSection;
     private VisualElement layerBar;
     private Label errorLabel;
     private Label runtimeInfoLabel;
@@ -73,7 +73,7 @@ public class AnimationPlayerEditor : Editor
             updateRuntimeInfoCoroutine = null;
         }
 
-        previewBar.StopAnyPreview();
+        previewSection.StopAnyPreview();
         currentBulkStateAdder?.Deactivate();
         EditorApplication.update -= UpdateDragAndDropTarget;
         Undo.undoRedoEvent -= UndoRedo;
@@ -119,7 +119,7 @@ public class AnimationPlayerEditor : Editor
         editLayerView          = mainUIRoot.Q("EditLayerView");
         editPlayerSettingsView = mainUIRoot.Q("EditPlayerSettingsView");
         metaDataView           = mainUIRoot.Q("MetaDataView");
-        previewBar             = new PreviewBar(this, mainUIRoot.Q("PreviewBar"));
+        previewSection         = new PreviewSection(this, mainUIRoot.Q("PreviewRoot"));
 
         var stateBar = mainUIRoot.Q("StateBar");
 
@@ -233,7 +233,6 @@ public class AnimationPlayerEditor : Editor
         if (!skipUndo)
             Undo.RecordObject(this, "Set Selected State to " + selectedStateIndex);
 
-        previewBar.StopAnyPreview();
         stateList.listView.SetSelectionWithoutNotify(new [] { selectedStateIndex });
         this.selectedStateIndex = selectedStateIndex;
 
@@ -268,6 +267,7 @@ public class AnimationPlayerEditor : Editor
 
             stateEditor     .ShowAnimationState(state);
             transitionEditor.OnSelectedAnimationStateChanged();
+            previewSection  .OnAnimationStateChanged();
         }
         catch (Exception e)
         {
@@ -289,7 +289,7 @@ public class AnimationPlayerEditor : Editor
         this.uiState = uiState;
 
         stateEditor           .SetDisplayed(uiState == UIState.EditStates);
-        previewBar            .SetDisplayed(uiState == UIState.EditStates);
+        previewSection            .SetDisplayed(uiState == UIState.EditStates);
         transitionEditor      .SetDisplayed(uiState == UIState.EditTransitions);
         editLayerView         .SetDisplayed(uiState == UIState.EditLayer);
         editPlayerSettingsView.SetDisplayed(uiState == UIState.EditPlayerSettings);
@@ -714,35 +714,42 @@ public class AnimationPlayerEditor : Editor
     }
 
     [Serializable]
-    private class PreviewBar
+    private class PreviewSection
     {
+        private readonly AnimationPlayerEditor parentEditor;
         private readonly AnimationPlayer animationPlayer;
-        private readonly VisualElement previewBarRoot;
+        private readonly VisualElement previewRoot;
         private readonly Button playReplayButton;
         private readonly Button pauseResumeButton;
         private readonly Button stopButton;
         private readonly Slider previewSlider;
+        private readonly Slider blendVar1Slider;
+        private readonly Slider blendVar2Slider;
         private readonly AnimationPlayerPreviewer previewer;
 
-        public PreviewBar(AnimationPlayerEditor parentEditor, VisualElement previewBarRoot)
+        public PreviewSection(AnimationPlayerEditor parentEditor, VisualElement previewRoot)
         { 
+            this.previewRoot  = previewRoot;
+            this.parentEditor = parentEditor;
             animationPlayer   = parentEditor.target;
-            this.previewBarRoot = previewBarRoot;
-            playReplayButton  = previewBarRoot.Q<Button>("PlayReplayButton");
-            pauseResumeButton = previewBarRoot.Q<Button>("PauseResumeButton");
-            stopButton        = previewBarRoot.Q<Button>("StopButton");
-            previewSlider     = previewBarRoot.Q<Slider>("ProgressSlider");
+            playReplayButton  = previewRoot.Q<Button>("PlayReplayButton");
+            pauseResumeButton = previewRoot.Q<Button>("PauseResumeButton");
+            stopButton        = previewRoot.Q<Button>("StopButton");
+            previewSlider     = previewRoot.Q<Slider>("ProgressSlider");
+            blendVar1Slider   = previewRoot.Q<Slider>("BlendVar1Slider");
+            blendVar2Slider   = previewRoot.Q<Slider>("BlendVar2Slider");
             
             animationPlayer.previewer ??= new AnimationPlayerPreviewer(parentEditor.target);
             previewer = animationPlayer.previewer;
  
             SetButtonVisualStates();
-
+            SetSliderVisibility();
+            
             playReplayButton.clicked += () =>
             {
                 if (previewer.IsPreviewing)
                     previewer.StopPreview();
-                previewer.StartPreview(parentEditor.selectedLayerIndex, parentEditor.selectedStateIndex, true, previewSlider);
+                previewer.StartPreview(parentEditor.selectedLayerIndex, parentEditor.selectedStateIndex, true, previewSlider, blendVar1Slider, blendVar2Slider);
                 SetButtonVisualStates();
             };
             
@@ -757,6 +764,61 @@ public class AnimationPlayerEditor : Editor
                 previewer.AutomaticPlayback = !previewer.AutomaticPlayback;
                 SetButtonVisualStates();
             };
+
+            blendVar1Slider.RegisterValueChangedCallback(change =>
+            {
+                if (!previewer.IsPreviewing)
+                    return;
+                var currentState = animationPlayer.GetState(parentEditor.selectedStateIndex, parentEditor.selectedLayerIndex);
+                if (currentState is BlendTree1D blendTree1D)
+                {
+                    animationPlayer.SetBlendVar(blendTree1D.blendVariable, change.newValue);
+                    if (!previewer.AutomaticPlayback)
+                        previewer.Resample();
+                }
+                else if (currentState is BlendTree2D blendTree2D)
+                {
+                    animationPlayer.SetBlendVar(blendTree2D.blendVariable, change.newValue);
+                    if (!previewer.AutomaticPlayback)
+                        previewer.Resample();
+                }
+                else
+                    Debug.LogError($"Visible Blend Var 1 Slider for a {(currentState == null ? "null state" : currentState.GetType().ToString())}");
+            });
+            
+            blendVar2Slider.RegisterValueChangedCallback(change =>
+            {
+                if (!previewer.IsPreviewing)
+                    return;
+                var currentState = animationPlayer.GetState(parentEditor.selectedStateIndex, parentEditor.selectedLayerIndex);
+                if (currentState is BlendTree2D blendTree2D)
+                {
+                    animationPlayer.SetBlendVar(blendTree2D.blendVariable2, change.newValue);
+                    if (!previewer.AutomaticPlayback)
+                        previewer.Resample(); 
+                }
+                else
+                    Debug.LogError($"Visible Blend Var 2 Slider for a {(currentState == null ? "null state" : currentState.GetType().ToString())}");
+            });
+        }
+
+        public void SetDisplayed(bool displayed)
+        {
+            previewRoot.SetDisplayed(displayed);
+            if (!displayed)
+                StopAnyPreview();
+        }
+
+        public void StopAnyPreview()
+        {
+            previewer?.StopPreview();
+            SetButtonVisualStates();
+        }
+
+        public void OnAnimationStateChanged()
+        {
+            StopAnyPreview();
+            SetSliderVisibility();
         }
         
         private void SetButtonVisualStates()
@@ -766,18 +828,37 @@ public class AnimationPlayerEditor : Editor
             pauseResumeButton.SetEnabled(previewer.IsPreviewing);
             stopButton.SetEnabled(previewer.IsPreviewing);
         }
-
-        public void SetDisplayed(bool displayed)
+        
+        private void SetSliderVisibility()
         {
-            previewBarRoot.SetDisplayed(displayed);
-            if (!displayed)
-                StopAnyPreview();
-        }
+            var currentState = animationPlayer.GetState(parentEditor.selectedStateIndex, parentEditor.selectedLayerIndex);
+            if (currentState is BlendTree1D blendTree1D)
+            {
+                blendVar1Slider.SetDisplayed(true);
+                blendVar2Slider.SetDisplayed(false);
 
-        public void StopAnyPreview()
-        {
-            previewer.StopPreview();
-            SetButtonVisualStates();
+                blendVar1Slider.label     = blendTree1D.blendVariable;
+                blendVar1Slider.lowValue  = blendTree1D.entries.Min(e => e.threshold);
+                blendVar1Slider.highValue = blendTree1D.entries.Max(e => e.threshold);
+            }
+            else if (currentState is BlendTree2D blendTree2D)
+            {
+                blendVar1Slider.SetDisplayed(true);
+                blendVar2Slider.SetDisplayed(true);
+                
+                blendVar1Slider.label     = blendTree2D.blendVariable;
+                blendVar1Slider.lowValue  = blendTree2D.entries.Min(e => e.threshold1);
+                blendVar1Slider.highValue = blendTree2D.entries.Max(e => e.threshold1);
+                
+                blendVar2Slider.label     = blendTree2D.blendVariable2;
+                blendVar2Slider.lowValue  = blendTree2D.entries.Min(e => e.threshold2);
+                blendVar2Slider.highValue = blendTree2D.entries.Max(e => e.threshold2);
+            }
+            else
+            {
+                blendVar1Slider.SetDisplayed(false);
+                blendVar2Slider.SetDisplayed(false);
+            }
         }
     }
 

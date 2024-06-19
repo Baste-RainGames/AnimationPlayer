@@ -46,11 +46,11 @@ public class AnimationLayer
     private int[,] transitionLookup;
     private Playable[] runtimePlayables;
 
-    private readonly Dictionary<string, int> stateNameToIdx = new Dictionary<string, int>(StringComparer.InvariantCulture);
+    private readonly Dictionary<string, int> stateNameToIdx = new (StringComparer.InvariantCulture);
 
-    private readonly Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers = new Dictionary<string, List<BlendTreeController1D>>();
-    private readonly Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers = new Dictionary<string, List<BlendTreeController2D>>();
-    private readonly List<BlendTreeController2D> all2DControllers = new List<BlendTreeController2D>();
+    private readonly Dictionary<string, List<BlendTreeController1D>> varTo1DBlendControllers = new ();
+    private readonly Dictionary<string, List<BlendTreeController2D>> varTo2DBlendControllers = new ();
+    private readonly List<BlendTreeController2D> all2DControllers = new ();
 
     private PlayAtTimeInstructionQueue playInstructionQueue;
 
@@ -1074,6 +1074,18 @@ public class AnimationLayer
         }
 
         return hasSet;
+    }
+
+    public void OnDestroy()
+    {
+        // Mostly clearing lists so previews don't double-fill them, but also due to theoretically allowing GC to clean more stuff.
+        varTo1DBlendControllers.Clear();
+        varTo2DBlendControllers.Clear();
+        all2DControllers.Clear();
+        stateNameToIdx.Clear();
+        activeWhenBlendStarted.Clear();
+        valueWhenBlendStarted.Clear();
+        timeLastFrame.Clear();
     }
 }
 }

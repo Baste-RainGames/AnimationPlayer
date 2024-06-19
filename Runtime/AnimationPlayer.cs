@@ -62,10 +62,8 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     private void OnValidate()
     {
         if (!OutputAnimator)
-        {
             OutputAnimator = gameObject.EnsureComponent<Animator>();
-            OutputAnimator.hideFlags |= HideFlags.HideInInspector; //@TODO: introduce settings for this.
-        }
+        OutputAnimator.hideFlags |= HideFlags.HideInInspector; //@TODO: introduce settings for this.
     }
 
     private void Awake()
@@ -212,7 +210,8 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     private void OnDestroy()
     {
         AnimationPlayerUpdater.DeregisterAnimationPlayer(this);
-
+        foreach (var layer in layers)
+            layer.OnDestroy();
         if (graph.IsValid())
             graph.Destroy();
     }
@@ -834,10 +833,7 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     public float GetBlendVar(string variable)
     {
         AssertBlendVariableDefined(variable, nameof(GetBlendVar));
-
-        if (blendVariableValues.TryGetValue(variable, out var value))
-            return value;
-        return 0f;
+        return blendVariableValues.GetValueOrDefault(variable, 0f);
     }
 
     public (float min, float max) GetMinAndMaxValuesForBlendVar(string variable)

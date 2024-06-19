@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Animations;
@@ -24,7 +25,7 @@ public class AnimationPlayerPreviewer
     public bool IsPreviewing => previewGraph.IsValid();
     public bool AutomaticPlayback { get; set; }
 
-    public void StartPreview(int layer, int state, bool automaticPlayback, Slider playbackSlider)
+    public void StartPreview(int layer, int state, bool automaticPlayback, Slider playbackSlider, Slider blendVar1Slider, Slider blendVar2Slider)
     {
         this.playbackSlider = playbackSlider;
         AutomaticPlayback = automaticPlayback;
@@ -33,9 +34,20 @@ public class AnimationPlayerPreviewer
 
         animationPlayer.ExitPreview();
         animationPlayer.EnterPreview();
-        animationPlayer.Play(state, layer);
+        var playedState = animationPlayer.Play(state, layer);
         previewGraph = animationPlayer.Graph;
         previewGraph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
+        
+        if (playedState is BlendTree1D blendTree1D)
+        {
+            animationPlayer.SetBlendVar(blendTree1D.blendVariable, blendVar1Slider.value);
+        }
+        else if (playedState is BlendTree2D blendTree2D)
+        {
+            animationPlayer.SetBlendVar(blendTree2D.blendVariable,  blendVar1Slider.value);
+            animationPlayer.SetBlendVar(blendTree2D.blendVariable2, blendVar2Slider.value);
+        }
+        
         lastTime = Time.realtimeSinceStartup;
 
         EditorApplication.update += Update;
@@ -46,7 +58,7 @@ public class AnimationPlayerPreviewer
         if (AutomaticPlayback)
         {
             var now = Time.realtimeSinceStartup;
-            animationPlayer.Graph.Evaluate(now - lastTime);
+            previewGraph.Evaluate(now - lastTime);
             lastTime = now;
 
             animationPlayer.UpdateSelf();
@@ -57,6 +69,12 @@ public class AnimationPlayerPreviewer
             if (!playedState.Loops && normalizedStateProgress == 1d)
                 StopPreview();
         }
+    }
+    
+    public void Resample()
+    {
+        animationPlayer.UpdateSelf();
+        previewGraph.Evaluate();
     }
 
     public void StopPreview()
@@ -79,21 +97,18 @@ public class AnimationPlayerPreviewer
         var resetGraph = PlayableGraph.Create();
         try
         {
-            var animator = animationPlayer.gameObject.EnsureComponent<Animator>();
-            var animOutput = AnimationPlayableOutput.Create(resetGraph, "Cleanup Graph", animator);
-            var state = animationPlayer.layers[0].states[0];
+            var animOutput = AnimationPlayableOutput.Create(resetGraph, "Cleanup Graph", animationPlayer.OutputAnimator);
+            var initialState = animationPlayer.layers[0].states[0];
 
-            AnimationClip clip;
-            if (state is BlendTree1D blendTree1D)
-                clip = blendTree1D.entries[0].clip;
-            else if (state is BlendTree2D blendTree2D)
-                clip = blendTree2D.entries[0].clip;
-            else if (state is PlayRandomClip randomClip)
-                clip = randomClip.clips[0];
-            else if (state is SingleClip singleClip)
-                clip = singleClip.clip;
-            else
-                throw new System.Exception("Unknown type");
+            var clip = initialState switch
+            {
+                BlendTree1D blendTree1D => blendTree1D.entries[0].clip,
+                BlendTree2D blendTree2D => blendTree2D.entries[0].clip,
+                PlayRandomClip randomClip => randomClip.clips[0],
+                Sequence sequence => sequence.clips[0],
+                SingleClip singleClip => singleClip.clip,
+                _ => throw new System.Exception("Unknown type")
+            };
 
             var clipPlayable = AnimationClipPlayable.Create(resetGraph, clip);
             clipPlayable.SetApplyFootIK(false);

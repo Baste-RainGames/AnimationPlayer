@@ -40,11 +40,16 @@
         <ui:VisualElement name="MetaDataView" class="category-view" style="display: none;">
             <ui:Label tabindex="-1" text="View Metadata" parse-escape-sequences="true" display-tooltip-when-elided="true" />
         </ui:VisualElement>
-        <ui:VisualElement name="PreviewBar" class="preview-bar" style="flex-direction: row;">
-            <ui:Button text="Play" parse-escape-sequences="true" display-tooltip-when-elided="true" name="PlayReplayButton" class="preview-bar__button" />
-            <ui:Button text="Pause" parse-escape-sequences="true" display-tooltip-when-elided="true" name="PauseResumeButton" class="preview-bar__button" />
-            <ui:Button text="Stop" parse-escape-sequences="true" display-tooltip-when-elided="true" name="StopButton" class="preview-bar__button" />
-            <ui:Slider high-value="1" show-input-field="false" name="ProgressSlider" class="progress-slider" />
+        <ui:VisualElement name="PreviewRoot">
+            <ui:Label tabindex="-1" text="Preview" parse-escape-sequences="true" display-tooltip-when-elided="true" name="PreviewHeader" />
+            <ui:VisualElement name="PreviewBar" class="preview-bar" style="flex-direction: row;">
+                <ui:Button text="Play" parse-escape-sequences="true" display-tooltip-when-elided="true" name="PlayReplayButton" class="preview-bar__button" />
+                <ui:Button text="Pause" parse-escape-sequences="true" display-tooltip-when-elided="true" name="PauseResumeButton" class="preview-bar__button" />
+                <ui:Button text="Stop" parse-escape-sequences="true" display-tooltip-when-elided="true" name="StopButton" class="preview-bar__button" />
+                <ui:Slider high-value="1" show-input-field="false" name="ProgressSlider" class="progress-slider" />
+            </ui:VisualElement>
+            <ui:Slider label="Blend Var 1" high-value="100" show-input-field="true" name="BlendVar1Slider" />
+            <ui:Slider label="Blend Var 2" high-value="100" show-input-field="true" name="BlendVar2Slider" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

@@ -42,7 +42,6 @@ public class BlendTree1D : AnimationPlayerState
         if (entries.Count == 0)
             return treeMixer;
 
-
         float[] thresholds = new float[entries.Count];
 
         var innerPlayables = new AnimationClipPlayable[entries.Count];

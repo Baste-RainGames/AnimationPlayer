@@ -60,3 +60,7 @@
 .progress-slider {
     flex-grow: 1;
 }
+
+#StateList .unity-scroll-view__content-viewport {
+    max-height: 200px;
+}

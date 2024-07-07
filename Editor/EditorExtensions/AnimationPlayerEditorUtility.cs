@@ -27,6 +27,7 @@ public static class AnimationPlayerEditorUtility
             transform.localRotation = localRot;
             transform.localScale = localScale;
         }
+
     }
 }
 }

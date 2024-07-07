@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
-using System;
+using System.Linq;
+
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Animations;
@@ -22,8 +23,8 @@ public class AnimationPlayerPreviewer
         this.animationPlayer = animationPlayer;
     }
 
-    public bool IsPreviewing => previewGraph.IsValid();
     public bool AutomaticPlayback { get; set; }
+    public bool IsPreviewing      { get; private set; }
 
     public void StartPreview(int layer, int state, bool automaticPlayback, Slider playbackSlider, float blendVar1Value, float blendVar2Value)
     {
@@ -32,7 +33,10 @@ public class AnimationPlayerPreviewer
         this.layer = layer;
         this.state = state;
 
-        animationPlayer.ExitPreview();
+        if (IsPreviewing)
+            animationPlayer.ExitPreview();
+        IsPreviewing = true;
+
         animationPlayer.EnterPreview();
         var playedState = animationPlayer.Play(state, layer);
         previewGraph = animationPlayer.Graph;
@@ -89,8 +93,8 @@ public class AnimationPlayerPreviewer
         if (!IsPreviewing)
             return;
 
-        animationPlayer.SnapTo(state);
-        playbackSlider.value = 0f;
+        IsPreviewing = false;
+        playbackSlider.SetValueWithoutNotify(0f);
         animationPlayer.ExitPreview();
         Cleanup();
         EditorApplication.update -= Update;
@@ -105,7 +109,7 @@ public class AnimationPlayerPreviewer
         try
         {
             var animOutput = AnimationPlayableOutput.Create(resetGraph, "Cleanup Graph", animationPlayer.OutputAnimator);
-            var initialState = animationPlayer.layers[0].states[0];
+            var initialState = animationPlayer.editTimePreviewState ?? animationPlayer.layers[0].states[0];
 
             var clip = initialState switch
             {

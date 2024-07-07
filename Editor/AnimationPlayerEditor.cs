@@ -170,7 +170,7 @@ public class AnimationPlayerEditor : Editor
     private void UpdateDragAndDropTarget()
     {
         if (dragAndDropClipTarget != null) // null for one editor frame during recompile
-           dragAndDropClipTarget.SetDisplayed(uiState == UIState.EditStates && DragAndDrop.objectReferences.Any(o => o is AnimationClip));
+           dragAndDropClipTarget.SetDisplayed(uiState == UIState.EditStates && DragAndDrop.objectReferences.Any(o => o is AnimationClip || AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(o)) is ModelImporter));
     }
     
     private void UndoRedo(in UndoRedoInfo undo)
@@ -289,7 +289,7 @@ public class AnimationPlayerEditor : Editor
         this.uiState = uiState;
 
         stateEditor           .SetDisplayed(uiState == UIState.EditStates);
-        previewSection            .SetDisplayed(uiState == UIState.EditStates);
+        previewSection        .SetDisplayed(uiState == UIState.EditStates);
         transitionEditor      .SetDisplayed(uiState == UIState.EditTransitions);
         editLayerView         .SetDisplayed(uiState == UIState.EditLayer);
         editPlayerSettingsView.SetDisplayed(uiState == UIState.EditPlayerSettings);
@@ -475,6 +475,13 @@ public class AnimationPlayerEditor : Editor
                 editor.BindUI(stateProperty);
 
                 shownEditor = editor;
+
+                shownEditor.RootVisualElement.Add(new Button(() =>
+                {
+                    stateProperty.serializedObject.FindProperty("editTimePreviewState").managedReferenceValue = stateProperty.managedReferenceValue;
+                    stateProperty.serializedObject.ApplyModifiedProperties();
+                }) { text = "Set As Player Default"});
+
                 selectedStateRoot.Add(shownEditor.RootVisualElement);
                 errorLabel.SetDisplayed(false);
             }
@@ -742,9 +749,6 @@ public class AnimationPlayerEditor : Editor
             animationPlayer.previewer ??= new AnimationPlayerPreviewer(parentEditor.target);
             previewer = animationPlayer.previewer;
 
-            SetButtonVisualStates();
-            SetSliderVisibility();
-            
             playReplayButton.clicked += () =>
             {
                 if (previewer.IsPreviewing)
@@ -824,30 +828,45 @@ public class AnimationPlayerEditor : Editor
             previewRoot.SetDisplayed(displayed);
             if (!displayed)
                 StopAnyPreview();
+            else
+            {
+                SetButtonVisualStates();
+                SetSliderVisibility();
+            }
         }
 
         public void StopAnyPreview()
         {
             previewer?.StopPreview();
-            SetButtonVisualStates();
         }
 
         public void OnAnimationStateChanged()
         {
             StopAnyPreview();
             SetSliderVisibility();
+            SetButtonVisualStates();
         }
         
         private void SetButtonVisualStates()
         {
+            var hasAnyStates = animationPlayer.layers[parentEditor.selectedLayerIndex].states.Count > 0;
+
             playReplayButton .text = previewer.IsPreviewing ? "Replay" : "Play";
             pauseResumeButton.text = previewer.IsPreviewing && !previewer.AutomaticPlayback ? "Resume" : "Pause";
-            pauseResumeButton.SetEnabled(previewer.IsPreviewing);
-            stopButton.SetEnabled(previewer.IsPreviewing);
+
+            playReplayButton .SetEnabled(hasAnyStates);
+            pauseResumeButton.SetEnabled(hasAnyStates && previewer.IsPreviewing);
+            stopButton       .SetEnabled(hasAnyStates && previewer.IsPreviewing);
         }
         
         private void SetSliderVisibility()
         {
+            if (animationPlayer.layers[parentEditor.selectedLayerIndex].states.Count == 0)
+            {
+                blendVar1Slider.SetDisplayed(false);
+                blendVar2Slider.SetDisplayed(false);
+                return;
+            }
             var currentState = animationPlayer.GetState(parentEditor.selectedStateIndex, parentEditor.selectedLayerIndex);
             if (currentState is BlendTree1D blendTree1D)
             {

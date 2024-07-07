@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Assertions;
@@ -12,6 +11,7 @@ using Debug = UnityEngine.Debug;
 
 namespace Animation_Player
 {
+[RequireComponent(typeof(Animator))]
 public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
 {
     // Serialized data:
@@ -22,6 +22,9 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     public static int DefaultState => 0;
     public List<AnimationLayer> layers;
     public TransitionData defaultTransition;
+
+    // If this is set, the AnimationPlayer will revert to this state after you exit a preview.
+    [SerializeReference] public AnimationPlayerState editTimePreviewState;
 
     [SerializeField] internal List<ClipSwapCollection> clipSwapCollections = new List<ClipSwapCollection>();
 
@@ -62,7 +65,7 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     private void OnValidate()
     {
         if (!OutputAnimator)
-            OutputAnimator = gameObject.EnsureComponent<Animator>();
+            OutputAnimator = gameObject.GetComponent<Animator>();
         OutputAnimator.hideFlags |= HideFlags.HideInInspector; //@TODO: introduce settings for this.
     }
 
@@ -95,7 +98,7 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
         graph = PlayableGraph.Create();
 
         // The AnimationPlayableOutput links the graph with an animator that plays the graph.
-        OutputAnimator = gameObject.EnsureComponent<Animator>();
+        OutputAnimator = gameObject.GetComponent<Animator>();
         AnimationPlayableOutput animOutput = AnimationPlayableOutput.Create(graph, $"{name}_animation_player", OutputAnimator);
 
         for (var i = 0; i < layers.Count; i++)

@@ -37,9 +37,9 @@ public class AnimationLayer
     private TransitionData currentTransitionData;
     private string currentTransitionName;
     private float transitionStartTime;
-    private List<bool> activeWhenBlendStarted;
-    private List<float> valueWhenBlendStarted;
-    private List<double> timeLastFrame;
+    private List<bool> activeWhenBlendStarted = new();
+    private List<float> valueWhenBlendStarted = new();
+    private List<double> timeLastFrame = new();
 
     // transitionLookup[a, b] contains the index of the transition from a to b in transitions
     // transitionLookup[x, y] == -1 means that there is no transition defined between the states.
@@ -89,9 +89,13 @@ public class AnimationLayer
             state.RegisterUsedBlendVarsIn(blendVariableValues);
         }
 
-        activeWhenBlendStarted = new List<bool>(states.Count);
-        valueWhenBlendStarted = new List<float>(states.Count);
-        timeLastFrame = new List<double>();
+        activeWhenBlendStarted.Clear();
+        valueWhenBlendStarted.Clear();
+        timeLastFrame.Clear();
+
+        activeWhenBlendStarted.Capacity = Mathf.Min(activeWhenBlendStarted.Capacity, states.Count);
+        valueWhenBlendStarted.Capacity = Mathf.Min(activeWhenBlendStarted.Capacity, states.Count);
+
         for (int i = 0; i < states.Count; i++)
         {
             activeWhenBlendStarted.Add(false);

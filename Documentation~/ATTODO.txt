@@ -3,23 +3,20 @@
 * means "working on RIGHT THE FUCK NOW"
 
 Animation states:
-    - Have the states get a GUID rather than an index, to support reordering and stuff better.
-    - Different kinds of states:
+        - Different kinds of states:
         * blend trees
             * 2D (almost finished, need to implement the good algo!)
             + allow state reordering
             - add speed to blend tree entries, not just the entire blend tree
             - When updating thresholds on 1D trees, do the Unity thing and reorder the states?
-        - sequences (state A into state B into state C, etc.)
-            - this can be used to change into a specific idle state after standing still.
-        * random (bunch of states, selects a random one when you enter)
+        + sequences (state A into state B into state C, etc.)
+        + random (bunch of states, selects a random one when you enter)
         - nested
             - allow one kind of state to be a part of a different kind of state. So a random can contain blend trees and blend trees can contain blend trees and whatnot
-    - Check if it's possible to loop/not loop in the state, and how expensive that is compared to the native (stupid) way of doing it
     + Add support for dragging animation clips over the list of states to generate a new state
         + Also add support for dragging in the .fbx or .blend or whatever (ModelImporter), and add all clips in it
         + If you drag in several, create a "Do you want to add many clips or blend tree" menu
-        - Add select random to the "do you want to add etc." menu
+        + Add select random to the "do you want to add etc." menu
     * Preview (oh my!)
         + preview for single-clip states
         + preview for other kinds of states
@@ -27,43 +24,51 @@ Animation states:
         - previews for transitions
         + make sure the time slider gives the actual animation time! Now it's going to desynchronize (although the relative value is good)
         + reset to bind pose after the preview is done
+        - Update labels on variables for selected state when you change the blend variables used.
     * Animation events!
-        + Make own tab for animation events
+        - Make own tab for animation events
         + Define API.
         + Make sure events are called
         - Make settings:
             - min blend factor - default to 0. Only call the event if the current blend factor is larger than this
             - Play only first/repeat. If the animation loops, do we want this to happen every time, or just the first one?
     - Make it possible to play an animation relative to the current position. This will make Unity-created animations for eg. doors be a _LOT_ easier, and faster to boot.
+        - How the hell did I think this would be doable?
     - Add support for mirroring.
 
-Animation transitions:
-    - Redo entire layout. Having the transitions store from and to is silly, and the current "default" implementation is wonk. Here's a better version:
-        - The Animation Layer has a array "B" where each entry is a (int targetState, Transition transition).
-        - The Animation Layer also has an array "A" where each entry is (int firstIndex, int numTransitions)
-        - All the transitions for state i are stored between B[A[i].firstIndex] and B[A[i].firstIndex + A[i].numTransitions]
-        - The default transition from state i to state j is the earliest transition from state i that targets j.
-        - This layout is pretty error-free
+Player default/Bind Pose
+    - Show on a state in the state list that it's the default state
+    - Have setting default state be a right click thing the state in the state list
+    - Make bind pose when not playing be different from the default state played
+        - Maybe use preview to set bind pose?
 
+OnEnable/OnDisable
+    - Decide on which options I want here
+        - Play default state again in OnEnable
+        - Return to Bind Pose/Stay frozen in OnDisable
+        - Stay frozen and resume
+        - Other options???
+
+Animation transitions:
+    + Use [SerializeReference] to store from/to state directly.
     + Transition-by-clip:
         If you're transitioning from A to B, specify a clip C so the transition is A->C->B.
         This will be usefull for run-stops and such.
-        Have to figure out if C here is a clip, another state in the state view, or another state in a special view.
+        Have to figure out if C here is a clip, another state in the state view, or another state in a special view. (decided on clip for now)
     + Several ways of transitioning between two states
         probably want default transition and named transition
-    * Better layout! Show list of all defined transitions
-        + There's a list of all transitions defined from the current state
-        - Should have a list of ALL transitions?
+    * Better layout! 
+        + Have a from and to state dropdown, and show transitions between those
+        - switch from having a "is default" bool (very faulty!) to having a default transition and additional transitions.
 
 Misc
-    - Move AnimationPlayer.Update to it's own method that runs after Update, using the new player loop system, when it's available (2018.1)
-        - Update on that - that's a bit hard. There's an easy part - where we generate a list of AnimationPlayers and have the static method added to the
+    + Move AnimationPlayer.Update to it's own method that runs after Update, using the new player loop system, when it's available (2018.1)
+        + Update on that - that's a bit hard. There's an easy part - where we generate a list of AnimationPlayers and have the static method added to the
           Player Loop that iterates the AnimationPlayers is easy. The hard part is not fucking with the user's use of the player loop system.
     - Add delete buttons to blend trees etc.
     - Ensure that all public methods in AnimationPlayer have int overload, so it's not neccessary to pay the cost of sending in strings
-    - Make the cached values in the editor be per-layer where appropriate (selected from/to state for transitions)
-    - Make a caching system that doesn't depend on EditorPrefs? Cluttering the registry is an ugly hack.
-        - But then where?
+    - Restore caching of selected State, Transition, etc.
+        - Cache in SessionState, per AnimationPlayer, using (probably) GlobalObjectId.GetGlobalObjectIdSlow
     - Add re-order support to things? Or better view for states
         + reorder for blend trees done.
     - Metadata:
@@ -74,7 +79,8 @@ Misc
         - make sure all of these lists update when stuff is added. On changing tab is not enough, could have two inspectors open
     + AnimationPlayer should have internal BlendVarControllers, so there's not duplication between SetBlendVar and GetBlendVarController().SetValue
     - Dump info about which animations have been played for how long, often, etc.
-    - Make the Drag And Drop hint when dragging objects only show up if dragged objects are animation clips or has animation clips as sub assets.
+    + Make the Drag And Drop hint when dragging objects only show up if dragged objects are animation clips or has animation clips as sub assets.
+    - Make the Drag And Drop space not shift any of the other UI around if possible, so it's not hard to hit slots
     - Make EVERYTHING have tooltips
     - Make sure nothing nullrefs for empty clips anywhere.
 

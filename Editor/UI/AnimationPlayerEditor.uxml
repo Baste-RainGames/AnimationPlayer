@@ -16,7 +16,7 @@
             <ui:Button text="Remove Layer" parse-escape-sequences="true" display-tooltip-when-elided="true" />
         </uie:Toolbar>
         <ui:VisualElement name="StateList" style="flex-grow: 1;">
-            <ui:ListView focusable="true" show-border="true" show-add-remove-footer="true" name="States" reorderable="true" show-foldout-header="true" header-title="States" horizontal-scrolling="true" reorder-mode="Animated" />
+            <ui:ListView focusable="true" show-border="true" show-add-remove-footer="true" name="States" reorderable="true" show-foldout-header="true" header-title="States" horizontal-scrolling="true" reorder-mode="Animated" show-alternating-row-backgrounds="All" />
         </ui:VisualElement>
         <ui:VisualElement name="DragAndDropTarget" style="flex-grow: 1; background-color: rgba(255, 0, 0, 0.49); height: 40px;">
             <ui:Label tabindex="-1" text="Drag clips here to add them as states!" parse-escape-sequences="true" display-tooltip-when-elided="true" style="-unity-text-align: middle-center; flex-grow: 1;" />
@@ -29,7 +29,7 @@
                 <ui:DropdownField label="Transitions From" name="TransitionsFromDropdown" style="flex-grow: 1;" />
                 <ui:DropdownField label="To" name="TransitionsToDropdown" style="flex-grow: 1;" />
             </ui:VisualElement>
-            <ui:ListView focusable="true" name="Transitions" show-border="true" show-add-remove-footer="true" fixed-item-height="44" />
+            <ui:ListView focusable="true" name="Transitions" show-border="true" show-add-remove-footer="true" fixed-item-height="44" show-alternating-row-backgrounds="All" />
         </ui:VisualElement>
         <ui:VisualElement name="EditLayerView" class="category-view" style="flex-direction: column; display: none;">
             <ui:TextField label="Layer Name" value="Base Layer" name="LayerNameInput" />

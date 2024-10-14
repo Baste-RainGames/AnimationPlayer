@@ -25,12 +25,15 @@
             <ui:VisualElement name="SelectedState" />
         </ui:VisualElement>
         <ui:VisualElement name="EditTransitionsView" class="category-view" style="display: flex;">
-            <ui:Label tabindex="-1" text="Transitions From [State]" parse-escape-sequences="true" display-tooltip-when-elided="true" name="TransitionsFromLabel" />
+            <ui:VisualElement name="SelectTransitionFromToRow" style="flex-direction: row;">
+                <ui:DropdownField label="Transitions From" name="TransitionsFromDropdown" style="flex-grow: 1;" />
+                <ui:DropdownField label="To" name="TransitionsToDropdown" style="flex-grow: 1;" />
+            </ui:VisualElement>
             <ui:ListView focusable="true" name="Transitions" show-border="true" show-add-remove-footer="true" fixed-item-height="44" />
         </ui:VisualElement>
         <ui:VisualElement name="EditLayerView" class="category-view" style="flex-direction: column; display: none;">
             <ui:TextField label="Layer Name" value="Base Layer" name="LayerNameInput" />
-            <ui:Slider picking-mode="Ignore" label="Layer Weight" value="42" high-value="1" show-input-field="true" name="LayerWeigthSlider" />
+            <ui:Slider picking-mode="Ignore" label="Layer Weight" value="42" high-value="1" show-input-field="true" name="LayerWeightSlider" />
             <uie:ObjectField label="Avatar Mask" name="AvatarMaskField" />
             <ui:EnumField label="Layer Type" type="Animation_Player.AnimationLayerType, AnimationPlayer" name="LayerTypeField" />
         </ui:VisualElement>

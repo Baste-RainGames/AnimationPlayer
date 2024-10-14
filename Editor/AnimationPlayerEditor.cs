@@ -267,6 +267,7 @@ public class AnimationPlayerEditor : Editor
             var state = statesProp.GetArrayElementAtIndex(selectedStateIndex);
 
             stateEditor     .ShowAnimationState(state);
+            transitionEditor.OnSelectedAnimationStatesChanged();
             previewSection  .OnAnimationStateChanged();
         }
         catch (Exception e)

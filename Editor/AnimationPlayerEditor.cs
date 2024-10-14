@@ -40,7 +40,6 @@ public class AnimationPlayerEditor : Editor
 
     private new AnimationPlayer target => (AnimationPlayer) base.target;
 
-
     [SerializeField] private UIState uiState;
     [SerializeField] private int selectedLayerIndex;
     [SerializeField] private int selectedStateIndex;
@@ -651,11 +650,14 @@ public class AnimationPlayerEditor : Editor
 
                 fromStateDropdown.choices = stateNames;
                 toStateDropdown  .choices = stateNames;
-                
-                fromStateDropdown.SetValueWithoutNotify(stateNames[parentEditor.selectedStateIndex]);
-                toStateDropdown  .SetValueWithoutNotify(stateNames[parentEditor.selectedToStateIndex]);
-                
-                OnSelectedAnimationStatesChanged();
+
+                if (stateNames.Count > 0)
+                {
+                    fromStateDropdown.SetValueWithoutNotify(stateNames[parentEditor.selectedStateIndex]);
+                    toStateDropdown  .SetValueWithoutNotify(stateNames[parentEditor.selectedToStateIndex]);
+                    
+                    OnSelectedAnimationStatesChanged();
+                }
             }
         }
 
@@ -696,15 +698,12 @@ public class AnimationPlayerEditor : Editor
             var durationProp       = transitionDataProp.FindPropertyRelative(nameof(StateTransition.transitionData.duration));
             var clipProp           = transitionDataProp.FindPropertyRelative(nameof(StateTransition.transitionData.clip));
 
-            var topRow    = ve.Q("TopRow");
-            var bottomRow = ve.Q("BottomRow");
+            var transitionTypeField = ve.Q<EnumField>("TransitionType");
+            var nameField           = ve.Q<TextField>("TransitionName");
 
-            var transitionTypeField = topRow.Q<EnumField>("TransitionType");
-
-            var nameField     = bottomRow.Q<TextField>  ("TransitionName");
-            var durationField = bottomRow.Q<FloatField> ("Duration");
-            var curveField    = bottomRow.Q<CurveField> ("Curve");
-            var clipField     = bottomRow.Q<ObjectField>("Clip");
+            var durationField = ve.Q<FloatField> ("Duration");
+            var curveField    = ve.Q<CurveField> ("Curve");
+            var clipField     = ve.Q<ObjectField>("Clip");
 
             transitionTypeField.BindProperty(transitionTypeProp);
             nameField          .BindProperty(nameProp);
@@ -713,27 +712,6 @@ public class AnimationPlayerEditor : Editor
             clipField          .BindProperty(clipProp);
 
             clipField.objectType = typeof(AnimationClip);
-
-            // derp.choices = stateNames;
-            // {
-            //     // There's no public SetIndexWithoutNotify. There is an internal SetIndexWithoutNotify, but it also finds the element and calls SetValueWithoutNotify. 
-            //     var indexOfState = states.IndexOf((AnimationPlayerState) toStateProp.managedReferenceValue);
-            //     if (indexOfState == -1)
-            //     {
-            //         derp.SetValueWithoutNotify(null); // When we create a new state, thee
-            //     }
-            //     else
-            //     {
-            //         var stateName = stateNames[indexOfState];
-            //         derp.SetValueWithoutNotify(stateName);
-            //     }
-            // }
-            //
-            // derp.RegisterValueChangedCallback(_ =>
-            // {
-            //     toStateProp.managedReferenceValue = states[derp.index];
-            //     parentEditor.serializedObject.ApplyModifiedProperties();
-            // });
 
             DisplayFieldsForType((TransitionType) transitionTypeProp.intValue);
             transitionTypeField.RegisterValueChangedCallback(evt =>
@@ -773,7 +751,7 @@ public class AnimationPlayerEditor : Editor
                 layerSectionRoot.Q<TextField>  ("LayerNameInput")   .bindingPath = parentEditor.SelectedLayerProp.FindPropertyRelative(nameof(AnimationLayer.name)).propertyPath;
                 layerSectionRoot.Q<Slider>     ("LayerWeightSlider").bindingPath = parentEditor.SelectedLayerProp.FindPropertyRelative(nameof(AnimationLayer.startWeight)).propertyPath;
                 layerSectionRoot.Q<ObjectField>("AvatarMaskField")  .bindingPath = parentEditor.SelectedLayerProp.FindPropertyRelative(nameof(AnimationLayer.mask)).propertyPath;
-                layerSectionRoot.Q<EnumField>  ("AvatarMaskField")  .bindingPath = parentEditor.SelectedLayerProp.FindPropertyRelative(nameof(AnimationLayer.type)).propertyPath;
+                layerSectionRoot.Q<EnumField>  ("LayerTypeField")   .bindingPath = parentEditor.SelectedLayerProp.FindPropertyRelative(nameof(AnimationLayer.type)).propertyPath;
                 
                 layerSectionRoot.Bind(parentEditor.serializedObject);
             }

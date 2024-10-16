@@ -32,9 +32,9 @@ public static class UIToolkitExtensions
         parentElement.Insert(index, replaceWith);
     }
 
-    public static void SetDisplayed(this VisualElement visualElement, bool displayed)
+    public static void SetFlex(this VisualElement visualElement, bool flex)
     {
-        visualElement.style.display = displayed ? DisplayStyle.Flex : DisplayStyle.None;
+        visualElement.style.display = flex ? DisplayStyle.Flex : DisplayStyle.None;
     }
 
     public static bool IsDisplayed(this VisualElement visualElement) => visualElement.style.display != DisplayStyle.None;

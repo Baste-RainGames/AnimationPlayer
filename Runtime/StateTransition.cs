@@ -10,13 +10,16 @@ namespace Animation_Player
 [Serializable]
 public class StateTransition
 {
-    public bool isDefault;
-    public string name;
-
     [SerializeReference] public AnimationPlayerState fromState;
     [SerializeReference] public AnimationPlayerState toState;
 
     public TransitionData transitionData;
+}
+
+[Serializable]
+public class NamedStateTransition : StateTransition
+{
+    public string name;
 }
 
 /// <summary>

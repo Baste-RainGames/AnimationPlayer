@@ -6,21 +6,24 @@ using UnityEngine.Animations;
 using UnityEngine.Assertions;
 using UnityEngine.Playables;
 using UnityEngine.Profiling;
-
+using UnityEngine.Serialization;
 using Debug = UnityEngine.Debug;
 
 namespace Animation_Player
 {
 [RequireComponent(typeof(Animator))]
-public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
+public class AnimationPlayer : MonoBehaviour, IAnimationClipSource, ISerializationCallbackReceiver
 {
     // Serialized data:
-    private const int lastVersion = 3;
+    private const int lastVersion = 4;
     [SerializeField, HideInInspector] private int versionNumber;
     [SerializeField] private bool showInVisualizer;
 
+    [SerializeField, Obsolete, HideInInspector, FormerlySerializedAs("layers")] private List<AnimationLayer_V0> layers_v0;
+
     public static int DefaultState => 0;
-    public List<AnimationLayer> layers;
+    [SerializeField] private List<AnimationLayer> layers_v1;
+    public List<AnimationLayer> layers => layers_v1;
     public TransitionData defaultTransition;
 
     // If this is set, the AnimationPlayer will revert to this state after you exit a preview.
@@ -166,15 +169,7 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
 
     public void AddLayer(int index, AnimationLayerType type, float weight, AvatarMask mask = null)
     {
-        var newLayer = new AnimationLayer
-        {
-            type = type,
-            startWeight = weight,
-            states = new (),
-            transitions = new (),
-            mask = mask
-        };
-
+        var newLayer = AnimationLayer.CreateLayer(weight, type, mask);
         layers.Insert(index, newLayer);
         layers[index].InitializeSelf(graph, defaultTransition, clipSwapCollections, blendVariableValues);
     }
@@ -1095,7 +1090,6 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
         layers[layer].SwapClipOnState(state, clip);
     }
 
-
     /// <summary>
     /// Gets the default transition between two states. This will either be a transition that's specifically defined for the two states, or the animation
     /// player's default transition if none are set up. This is the same transition as the one that will be used if the animationPlayer is in state from,
@@ -1109,7 +1103,7 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
     /// <returns>The transition between from and to</returns>
     public TransitionData GetTransitionFromTo(int fromState, int toState, int layer = 0)
     {
-        return layers[layer].GetDefaultTransitionFromTo(fromState, toState).transition;
+        return layers[layer].GetDefaultTransitionFromTo(fromState, toState);
     }
 
     /// <summary>
@@ -1270,6 +1264,12 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
         return layers[layer].AddState(state, blendVariableValues);
     }
 
+    public void OnBeforeSerialize() { }
+    public void OnAfterDeserialize()
+    {
+        EnsureVersionUpgraded();
+    }
+
     public bool EnsureVersionUpgraded()
     {
         if (versionNumber == lastVersion)
@@ -1279,34 +1279,32 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
         if (versionNumber == 0)
         {
             if (layers == null || layers.Count == 0)
-                layers = new()
+                layers_v1 = new()
                 {
                     AnimationLayer.CreateLayer()
                 };
+            versionNumber = lastVersion;
+            return true;
         }
 
-        // Version 1 introduced GUIDs. Version 3 unintroduced them. And also broke backwards compatibility!
-        if (versionNumber < 1 && layers != null)
+        // Version 1 introduced GUIDs, which were removed in version 3.
+        // Version 2 added names to transitions
+        // Version 3 started using SerializeReference for states, and broke all backwards compatibility.
+
+        if (versionNumber != 0 && versionNumber < 3)
         {
-            foreach (var layer in layers)
-            {
-                foreach (var state in layer.states)
-                {
-                    // state.EnsureHasGUID();
-                }
-            }
+            Debug.LogError("Not backwards compatible with AnimationPlayer versions 1 or 2. Where did you even find one?");
+            return false;
         }
 
-        if (versionNumber < 2 && layers != null)
+        // version 4 replaced AnimationLayer_V0 with AnimationLayer_V1, which has default and named transitions as different things
+        if (versionNumber < 4)
         {
-            foreach (var layer in layers)
-            {
-                foreach (var transition in layer.transitions)
-                {
-                    Debug.Log("Is this triggering???");
-                    transition.name = "Transition";
-                }
-            }
+#pragma warning disable CS0612 // Type or member is obsolete
+            foreach (var oldLayer in layers_v0)
+                layers_v1.Add(oldLayer.ToV1Layer());
+            layers_v0.Clear();
+#pragma warning restore CS0612 // Type or member is obsolete
         }
 
         versionNumber = lastVersion;

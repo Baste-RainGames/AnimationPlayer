@@ -13,7 +13,8 @@ public class AnimationLayer
 {
     [SerializeReference]
     public List<AnimationPlayerState> states;
-    public List<StateTransition> transitions;
+    public List<StateTransition> defaultTransitions; // There's 0 or 1 default transitions between
+    public List<NamedStateTransition> namedTransitions;
 
     public string name;
     public float startWeight = 1f;
@@ -41,9 +42,9 @@ public class AnimationLayer
     private List<float> valueWhenBlendStarted = new();
     private List<double> timeLastFrame = new();
 
-    // transitionLookup[a, b] contains the index of the default transition from a to b in transitions
-    // transitionLookup[x, y] == -1 means that there is no default transition defined between the states.
-    private int[,] transitionLookup;
+    // defaultTransitionLookup[a, b] contains the index of the default transition from a to b in transitions
+    // defaultTransitionLookup[x, y] == -1 means that there is no default transition defined between the states.
+    private int[,] defaultTransitionLookup;
     private Playable[] runtimePlayables;
 
     private readonly Dictionary<string, int> stateNameToIdx = new (StringComparer.InvariantCulture);
@@ -103,16 +104,14 @@ public class AnimationLayer
             timeLastFrame.Add(0f);
         }
 
-        transitionLookup = new int[states.Count, states.Count];
+        defaultTransitionLookup = new int[states.Count, states.Count];
         for (int i = 0; i < states.Count; i++)
         for (int j = 0; j < states.Count; j++)
-            transitionLookup[i, j] = -1;
+            defaultTransitionLookup[i, j] = -1;
 
-        for (var i = 0; i < transitions.Count; i++)
+        for (var i = 0; i < defaultTransitions.Count; i++)
         {
-            var transition = transitions[i];
-            if (!transition.isDefault)
-                continue;
+            var transition = defaultTransitions[i];
 
             var fromState = states.IndexOf(transition.fromState);
             var toState = states.IndexOf(transition.toState);
@@ -122,10 +121,10 @@ public class AnimationLayer
             }
             else
             {
-                if (transitionLookup[fromState, toState] != -1)
+                if (defaultTransitionLookup[fromState, toState] != -1)
                     Debug.LogWarning($"Found two default transitions from {states[fromState]} to {states[toState]}");
 
-                transitionLookup[fromState, toState] = i;
+                defaultTransitionLookup[fromState, toState] = i;
             }
         }
     }
@@ -166,8 +165,8 @@ public class AnimationLayer
 
     public AnimationPlayerState Play(int state)
     {
-        var (transitionData, transitionName) = FindCorrectTransition(state);
-        return Play(state, transitionData, transitionName, true);
+        var transitionData = FindCorrectTransition(state);
+        return Play(state, transitionData, "Default", true);
     }
 
     public AnimationPlayerState Play(int state, string transition)
@@ -175,13 +174,9 @@ public class AnimationLayer
         var transitionFrom = states[currentPlayedState];
         var transitionTo = states[state];
 
-        foreach (var t in transitions)
-        {
+        foreach (var t in namedTransitions)
             if (t.fromState == transitionFrom && t.toState == transitionTo && t.name == transition)
-            {
                 return Play(state, t.transitionData, transition);
-            }
-        }
 
         Debug.LogError($"Couldn't find a transition from {transitionFrom.Name} to {transitionTo.Name} with the name {transition}. Using default transition");
         return Play(state);
@@ -192,7 +187,7 @@ public class AnimationLayer
         return Play(state, transition, transitionName, true);
     }
 
-    private (TransitionData data, string name) FindCorrectTransition(int stateToPlay)
+    private TransitionData FindCorrectTransition(int stateToPlay)
     {
         return GetDefaultTransitionFromTo(currentPlayedState, stateToPlay);
     }
@@ -523,8 +518,8 @@ public class AnimationLayer
                     Play(instruction.stateToPlay, instruction.transition.Value, instruction.transitionName, false);
                 else
                 {
-                    var (transitionData, transitionName) = FindCorrectTransition(instruction.stateToPlay);
-                    Play(instruction.stateToPlay, transitionData, transitionName, false);
+                    var transitionData = FindCorrectTransition(instruction.stateToPlay);
+                    Play(instruction.stateToPlay, transitionData, "Default", false);
                 }
 
                 playInstructionQueue.Dequeue();
@@ -563,13 +558,16 @@ public class AnimationLayer
         return currentTransitionName == transition;
     }
 
-    public static AnimationLayer CreateLayer()
+    public static AnimationLayer CreateLayer(float startWeight = 1f, AnimationLayerType type = AnimationLayerType.Override, AvatarMask mask = null)
     {
         var layer = new AnimationLayer
         {
-            states = new List<AnimationPlayerState>(),
-            transitions = new List<StateTransition>(),
-            startWeight = 1f
+            states = new (),
+            defaultTransitions = new(),
+            namedTransitions = new(),
+            startWeight = startWeight,
+            type = type,
+            mask = mask,
         };
         return layer;
     }
@@ -673,10 +671,10 @@ public class AnimationLayer
         timeLastFrame.Add(0d);
 
         var newLookup = new int[states.Count, states.Count];
-        for (int i = 0; i < transitionLookup.GetLength(0); i++)
-        for (int j = 0; j < transitionLookup.GetLength(1); j++)
+        for (int i = 0; i < defaultTransitionLookup.GetLength(0); i++)
+        for (int j = 0; j < defaultTransitionLookup.GetLength(1); j++)
         {
-            newLookup[i, j] = transitionLookup[i, j];
+            newLookup[i, j] = defaultTransitionLookup[i, j];
         }
 
         for (int i = 0; i < states.Count; i++)
@@ -685,7 +683,7 @@ public class AnimationLayer
             newLookup[indexOfNew, i] = -1;
         }
 
-        transitionLookup = newLookup;
+        defaultTransitionLookup = newLookup;
 
         stateMixer.SetInputCount(stateMixer.GetInputCount() + 1);
 
@@ -950,14 +948,14 @@ public class AnimationLayer
         }
     }
 
-    public (TransitionData transition, string name) GetDefaultTransitionFromTo(int from, int to)
+    public TransitionData GetDefaultTransitionFromTo(int from, int to)
     {
-        var transitionIndex = transitionLookup[from, to];
+        var transitionIndex = defaultTransitionLookup[from, to];
         if (transitionIndex == -1)
-            return (defaultTransition, "Default");
+            return defaultTransition;
 
-        var transition = transitions[transitionIndex];
-        return (transition.transitionData, transition.name);
+        var transition = defaultTransitions[transitionIndex];
+        return transition.transitionData;
     }
 
     public void OnClipSwapsChanged()
@@ -973,12 +971,18 @@ public class AnimationLayer
     {
         foreach (var state in states)
             AddAllClipsFromStateTo(state, list);
-        foreach (var transition in transitions)
+
+        AddFromList(defaultTransitions);
+        AddFromList(namedTransitions);
+
+        void AddFromList(IEnumerable<StateTransition> listOfTransitions)
         {
-            if (transition.transitionData.clip != null)
-                list.Add(transition.transitionData.clip);
+            foreach (var transition in listOfTransitions)
+                if (transition.transitionData.type == TransitionType.Clip && transition.transitionData.clip != null)
+                    list.Add(transition.transitionData.clip);
         }
     }
+
 
     public int GetNumberOfStateChanges()
     {

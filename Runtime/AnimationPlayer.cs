@@ -1303,6 +1303,7 @@ public class AnimationPlayer : MonoBehaviour, IAnimationClipSource
             {
                 foreach (var transition in layer.transitions)
                 {
+                    Debug.Log("Is this triggering???");
                     transition.name = "Transition";
                 }
             }

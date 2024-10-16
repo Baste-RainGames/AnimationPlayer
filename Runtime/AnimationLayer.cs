@@ -41,8 +41,8 @@ public class AnimationLayer
     private List<float> valueWhenBlendStarted = new();
     private List<double> timeLastFrame = new();
 
-    // transitionLookup[a, b] contains the index of the transition from a to b in transitions
-    // transitionLookup[x, y] == -1 means that there is no transition defined between the states.
+    // transitionLookup[a, b] contains the index of the default transition from a to b in transitions
+    // transitionLookup[x, y] == -1 means that there is no default transition defined between the states.
     private int[,] transitionLookup;
     private Playable[] runtimePlayables;
 
@@ -118,7 +118,7 @@ public class AnimationLayer
             var toState = states.IndexOf(transition.toState);
             if (fromState == -1 || toState == -1)
             {
-                //TODO: fixme
+                Debug.LogError("A transition in the AnimationLayer has to or from states that's not in the list of states!");
             }
             else
             {

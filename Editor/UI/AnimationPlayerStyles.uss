@@ -64,3 +64,10 @@
 #StateList .unity-scroll-view__content-viewport {
     max-height: 200px;
 }
+
+.transition-section--subsection-header {
+    margin-top: 5px;
+    margin-left: 6px;
+
+    -unity-font-style: bold;
+}

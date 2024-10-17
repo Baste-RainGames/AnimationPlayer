@@ -36,7 +36,7 @@
             </ui:VisualElement>
             <ui:Instance template="TransitionListEntry" name="DefaultTransitionBetweenStates" style="padding-left: 5px;" />
             <ui:Label text="Additional Transitions From {0} to {1}" name="AdditionalTransitionsLabel" class="transition-section--subsection-header" />
-            <ui:ListView focusable="true" name="Transitions" show-border="true" show-add-remove-footer="true" fixed-item-height="44" show-alternating-row-backgrounds="All" reorder-mode="Animated" reorderable="true" />
+            <ui:ListView focusable="true" name="Transitions" show-border="true" show-add-remove-footer="true" fixed-item-height="44" show-alternating-row-backgrounds="ContentOnly" reorder-mode="Animated" reorderable="true" show-bound-collection-size="false" virtualization-method="DynamicHeight" />
         </ui:VisualElement>
         <ui:VisualElement name="EditLayerView" class="category-view" style="flex-direction: column; display: none;">
             <ui:TextField label="Layer Name" value="Base Layer" name="LayerNameInput" />

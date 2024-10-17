@@ -37,7 +37,7 @@ public static class UIToolkitExtensions
         visualElement.style.display = flex ? DisplayStyle.Flex : DisplayStyle.None;
     }
 
-    public static bool IsDisplayed(this VisualElement visualElement) => visualElement.style.display != DisplayStyle.None;
+    public static bool IsFlexing(this VisualElement visualElement) => visualElement.style.display != DisplayStyle.None;
 
     public static VisualElement WithClass(this VisualElement visualElement, string @class)
     {

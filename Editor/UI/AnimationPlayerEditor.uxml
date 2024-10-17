@@ -1,5 +1,4 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
-    <ui:Template name="TransitionListEntry" src="project://database/Packages/com.baste.animationplayer/Editor/UI/TransitionListEntry.uxml?fileID=9197481963319205126&amp;guid=4c29a4e8845eb8a40ad07f0ae809b77a&amp;type=3#TransitionListEntry" />
     <Style src="project://database/Packages/com.baste.animationplayer/Editor/UI/AnimationPlayerStyles.uss?fileID=7433441132597879392&amp;guid=d8ce903d29a9e0a4dbcd0a6e394057ae&amp;type=3#AnimationPlayerStyles" />
     <ui:VisualElement name="MainUIRoot" style="flex-grow: 1;">
         <ui:Label tabindex="-1" text="Runtime Info Goes Here" parse-escape-sequences="true" display-tooltip-when-elided="true" name="RuntimeInfoLabel" />
@@ -34,9 +33,11 @@
                 <ui:Label text="Default Transition From {0} to {1}" name="DefaultTransitionLabel" style="-unity-text-align: middle-left;" />
                 <ui:DropdownField choices="Use default for this AnimationPlayer,Custom" index="0" name="DefaultTransitionUseDefaultDropdown" style="flex-grow: 1;" />
             </ui:VisualElement>
-            <ui:Instance template="TransitionListEntry" name="DefaultTransitionBetweenStates" style="padding-left: 5px;" />
+            <ui:VisualElement name="PlayerDefaultTransitionParent" />
+            <ui:VisualElement name="DefaultTransitionsParent" />
             <ui:Label text="Additional Transitions From {0} to {1}" name="AdditionalTransitionsLabel" class="transition-section--subsection-header" />
-            <ui:ListView focusable="true" name="Transitions" show-border="true" show-add-remove-footer="true" fixed-item-height="44" show-alternating-row-backgrounds="All" reorder-mode="Animated" reorderable="true" />
+            <ui:VisualElement name="NamedTransitionsParent" />
+            <ui:Button text="Add" parse-escape-sequences="true" display-tooltip-when-elided="true" name="AddTransitionButton" />
         </ui:VisualElement>
         <ui:VisualElement name="EditLayerView" class="category-view" style="flex-direction: column; display: none;">
             <ui:TextField label="Layer Name" value="Base Layer" name="LayerNameInput" />

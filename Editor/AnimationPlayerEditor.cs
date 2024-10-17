@@ -24,7 +24,7 @@ public class AnimationPlayerEditor : Editor
     private VisualElement mainUIRoot;
     private StateList stateList;
     private StateEditor stateEditor;
-    private TransitionEditor transitionEditor;
+    private AllTransitionsEditor allTransitionsEditor;
     private LayerEditor layerEditor;
     private VisualElement editPlayerSettingsView;
     private VisualElement metaDataView;
@@ -45,10 +45,12 @@ public class AnimationPlayerEditor : Editor
 
     private new AnimationPlayer target => (AnimationPlayer) base.target;
 
-    private UIState uiState;
-    private int selectedLayerIndex;
-    private int selectedStateIndex;
-    private int selectedToStateIndex;
+    // Serialize these fields so they can be handled with Undo.
+    // @todo: Also write the ones that's going into SessionState into SessionState on Undo/Redo!
+    [SerializeField] private UIState uiState;
+    [SerializeField] private int selectedLayerIndex;
+    [SerializeField] private int selectedStateIndex;
+    [SerializeField] private int selectedToStateIndex;
 
     private SerializedProperty layersProp => serializedObject.FindProperty("layers_v1");
     private SerializedProperty SelectedLayerProp => layersProp.GetArrayElementAtIndex(selectedLayerIndex);
@@ -122,7 +124,6 @@ public class AnimationPlayerEditor : Editor
                 runtimeInfoLabel.SetFlex(true);
                 runtimeInfoLabel.text = $"Playing state {state?.Name ?? "null"}";
             }
-            
         }
     }
 
@@ -143,7 +144,7 @@ public class AnimationPlayerEditor : Editor
 
         stateList              = new StateList(this, mainUIRoot.Q("StateList"));
         stateEditor            = new StateEditor(mainUIRoot, errorLabel);
-        transitionEditor       = new TransitionEditor(this, mainUIRoot);
+        allTransitionsEditor       = new AllTransitionsEditor(this, mainUIRoot);
         layerEditor            = new LayerEditor(this, mainUIRoot.Q("EditLayerView"));
         editPlayerSettingsView = mainUIRoot.Q("EditPlayerSettingsView");
         metaDataView           = mainUIRoot.Q("MetaDataView");
@@ -191,6 +192,7 @@ public class AnimationPlayerEditor : Editor
 
         void SelectedLayerChanged(ChangeEvent<string> _)
         {
+            // @todo hello? I don't think we're handling anything else, like setting a state correctly or handling the transitions view or whatever
             SetLayer(layerDropdown.index);
         }
     }
@@ -295,7 +297,7 @@ public class AnimationPlayerEditor : Editor
             var state = statesProp.GetArrayElementAtIndex(selectedStateIndex);
 
             stateEditor     .ShowAnimationState(state);
-            transitionEditor.OnSelectedAnimationStatesChanged();
+            allTransitionsEditor.OnSelectedAnimationStatesChanged();
             previewSection  .OnAnimationStateChanged();
         }
         catch (Exception e)
@@ -320,7 +322,7 @@ public class AnimationPlayerEditor : Editor
 
         stateEditor           .SetDisplayed(uiState is UIState.EditStates);
         previewSection        .SetDisplayed(uiState is UIState.EditStates);
-        transitionEditor      .SetDisplayed(uiState is UIState.EditTransitions);
+        allTransitionsEditor      .SetDisplayed(uiState is UIState.EditTransitions);
         layerEditor           .SetDisplayed(uiState is UIState.EditLayer);
         editPlayerSettingsView.SetFlex(uiState is UIState.EditPlayerSettings);
         metaDataView          .SetFlex(uiState is UIState.ViewMetaData);
@@ -534,40 +536,199 @@ public class AnimationPlayerEditor : Editor
         }
     }
 
+    private class SingleTransitionEditor
+    {
+        public const string path = "Packages/com.baste.animationplayer/Editor/UI/TransitionListEntry.uxml";
+
+        private readonly VisualElement root;
+        private readonly VisualElement topRow;
+        private readonly TextField nameField;
+        private readonly TransitionDataEditor transitionDataEditor;
+        private readonly Button deleteButton;
+
+        private AnimationPlayerState fromState;
+        private AnimationPlayerState toState;
+
+        public static SingleTransitionEditor Create(VisualElement parent)
+        {
+            var visualElement = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(path).CloneRoot();
+            parent.Add(visualElement);
+            return new SingleTransitionEditor(visualElement);
+        }
+
+        private SingleTransitionEditor(VisualElement root)
+        {
+            this.root = root;
+            topRow = root.Q("TopRow");
+            nameField = topRow.Q<TextField>("Name");
+            deleteButton = root.Q<Button>("Delete");
+            transitionDataEditor = new(root);
+        }
+
+        public void BindDefaultTransition(SerializedProperty transitionProp)
+        {
+            topRow.SetFlex(false);
+            deleteButton.SetFlex(false);
+            transitionDataEditor.alwaysShowBottomRow = false;
+            BindCommon(transitionProp);
+        }
+
+        public void BindNamedTransition(SerializedProperty transitionProp, AllTransitionsEditor parentEditor, int index)
+        {
+            topRow.SetFlex(true);
+            deleteButton.SetFlex(true);
+            transitionDataEditor.alwaysShowBottomRow = true;
+
+            nameField.BindProperty(transitionProp.FindPropertyRelative(nameof(NamedStateTransition.name)));
+            deleteButton.clickable = new Clickable(() =>
+            {
+                parentEditor.NamedTransitionDeleted(index);
+            });
+
+            BindCommon(transitionProp);
+        }
+
+        private void BindCommon(SerializedProperty transitionProp)
+        {
+            fromState = (AnimationPlayerState) transitionProp.FindPropertyRelative(nameof(StateTransition.fromState)).managedReferenceValue;
+            toState   = (AnimationPlayerState) transitionProp.FindPropertyRelative(nameof(StateTransition.toState))  .managedReferenceValue;
+
+            var transitionDataProp = transitionProp.FindPropertyRelative(nameof(StateTransition.transitionData));
+            transitionDataEditor.Bind(transitionDataProp);
+        }
+
+        public void Unbind()
+        {
+            root.Unbind();
+        }
+
+        public void RemoveFromHierarchy()
+        {
+            root.RemoveFromHierarchy();
+        }
+
+        public void SetFlex(bool flex)
+        {
+            root.SetFlex(flex);
+        }
+
+        public bool IsFromTo(AnimationPlayerState fromState, AnimationPlayerState toState)
+        {
+            return this.fromState == fromState && this.toState == toState;
+        }
+    }
+
+    private class TransitionDataEditor
+    {
+        private readonly VisualElement root;
+        private readonly EnumField   transitionTypeField;
+        private readonly FloatField  durationField;
+        private readonly CurveField  curveField;
+        private readonly ObjectField clipField;
+        private readonly VisualElement bottomRow;
+        public bool alwaysShowBottomRow;
+
+        public TransitionDataEditor(VisualElement root)
+        {
+            this.root = root;
+            transitionTypeField = root.Q<EnumField>("Type");
+            durationField       = root.Q<FloatField>("Duration");
+
+            bottomRow  = root.Q("BottomRow");
+            curveField = bottomRow.Q<CurveField>("Curve");
+            clipField  = bottomRow.Q<ObjectField>("Clip");
+        }
+
+        public void Bind(SerializedProperty transitionDataProp)
+        {
+            var transitionTypeProp = transitionDataProp.FindPropertyRelative(nameof(StateTransition.transitionData.type));
+            var curveProp          = transitionDataProp.FindPropertyRelative(nameof(StateTransition.transitionData.curve));
+            var durationProp       = transitionDataProp.FindPropertyRelative(nameof(StateTransition.transitionData.duration));
+            var clipProp           = transitionDataProp.FindPropertyRelative(nameof(StateTransition.transitionData.clip));
+
+            transitionTypeField.BindProperty(transitionTypeProp);
+            durationField      .BindProperty(durationProp);
+            curveField         .BindProperty(curveProp);
+            clipField          .BindProperty(clipProp);
+
+            DisplayFieldsForType((TransitionType) transitionTypeProp.intValue);
+            transitionTypeField.RegisterValueChangedCallback(evt =>
+            {
+                if (evt.newValue != null)
+                {
+                    var newValue = (TransitionType) evt.newValue;
+                    DisplayFieldsForType(newValue);
+                }
+                else
+                {
+                    // old comment: Seems to get null when we change UI?
+                    // new comment: @todo that's fucked let's see if it's still happening and then make it not happen.
+                    Debug.LogError("Getting a null enum value when a transition type field changes.");
+                }
+            });
+
+            void DisplayFieldsForType(TransitionType transitionType)
+            {
+                bottomRow.SetFlex(transitionType != TransitionType.Linear || alwaysShowBottomRow);
+                clipField .SetFlex(transitionType == TransitionType.Clip);
+                curveField.SetFlex(transitionType == TransitionType.Curve);
+            }
+        }
+
+        public void SetFlex(bool flex)
+        {
+            root.SetFlex(flex);
+        }
+    }
+
     [Serializable]
-    private class TransitionEditor
+    private class AllTransitionsEditor
     {
         private readonly AnimationPlayerEditor parentEditor;
         private readonly VisualElement transitionEditorRoot;
-        private readonly ListView namedTransitionList;
         private readonly Label defaultTransitionLabel;
         private readonly Label additionalTransitionsLabel;
         private readonly DropdownField fromStateDropdown;
         private readonly DropdownField toStateDropdown;
         private readonly DropdownField useDefaultStateDropdown;
-        private readonly VisualElement defaultTransitionEditor;
+
+        private readonly VisualElement defaultTransitionsParent;
+        private readonly VisualElement namedTransitionsParent;
 
         private readonly string defaultTransitionLabelOriginalText;
         private readonly string additionalTransitionsLabelOriginalText;
 
-        private bool hasDefaultTransition;
-        private SerializedProperty defaultTransitionPropForSelectedStates;
-        private List<SerializedProperty> transitionPropsForSelectedStates = new();
+        // Editors for all transition that exist! Ones for non-selected states will be hidden
+        private List<SingleTransitionEditor> defaultTransitionEditors = new();
+        private List<SingleTransitionEditor> namedTransitionEditors = new();
+        private TransitionDataEditor animationPlayerDefaultTransitionEditor; // editor for AnimationPlayer.defaultTransition
 
-        public TransitionEditor(AnimationPlayerEditor parentEditor, VisualElement entireUIRoot)
+        public AllTransitionsEditor(AnimationPlayerEditor parentEditor, VisualElement entireUIRoot)
         {
             this.parentEditor = parentEditor;
             transitionEditorRoot = entireUIRoot.Q("EditTransitionsView");
 
-            namedTransitionList        = transitionEditorRoot.Q<ListView>("Transitions");
+            defaultTransitionsParent = transitionEditorRoot.Q("DefaultTransitionsParent");
+            namedTransitionsParent   = transitionEditorRoot.Q("NamedTransitionsParent");
+
             fromStateDropdown          = transitionEditorRoot.Q<DropdownField>("TransitionsFromDropdown");
             toStateDropdown            = transitionEditorRoot.Q<DropdownField>("TransitionsToDropdown");
             defaultTransitionLabel     = transitionEditorRoot.Q<Label>("DefaultTransitionLabel");
             additionalTransitionsLabel = transitionEditorRoot.Q<Label>("AdditionalTransitionsLabel");
             useDefaultStateDropdown    = transitionEditorRoot.Q<DropdownField>("DefaultTransitionUseDefaultDropdown");
 
-            defaultTransitionEditor = transitionEditorRoot.Q<TemplateContainer>("DefaultTransitionBetweenStates");
-            defaultTransitionEditor.Q<TextField>().SetEnabled(false);
+            var playerDefaultTransitionParent = transitionEditorRoot.Q("PlayerDefaultTransitionParent");
+            SetupAnimationPlayerDefaultEditorPreview();
+
+            var selectedLayerProp = parentEditor.SelectedLayerProp;
+            var defaultTransitionsProp = selectedLayerProp.FindPropertyRelative(nameof(AnimationLayer.defaultTransitions));
+            var namedTransitionsProp   = selectedLayerProp.FindPropertyRelative(nameof(AnimationLayer.namedTransitions));
+
+            RebuildTransitionEditors(defaultTransitionsParent, defaultTransitionEditors, defaultTransitionsProp, false);
+            RebuildTransitionEditors(namedTransitionsParent,   namedTransitionEditors,   namedTransitionsProp,   true);
+
+            var addTransitionButton = transitionEditorRoot.Q<Button>("AddTransitionButton");
+            addTransitionButton.clickable = new Clickable(AddTransitionClicked);
 
             fromStateDropdown.RegisterValueChangedCallback(FromStateSelected);
             toStateDropdown  .RegisterValueChangedCallback(ToStateSelected);
@@ -575,87 +736,71 @@ public class AnimationPlayerEditor : Editor
             defaultTransitionLabelOriginalText     = defaultTransitionLabel    .text;
             additionalTransitionsLabelOriginalText = additionalTransitionsLabel.text;
 
-            namedTransitionList.itemsSource = transitionPropsForSelectedStates;
-
             useDefaultStateDropdown.RegisterValueChangedCallback(UseDefaultStateChanged);
 
-            const string path = "Packages/com.baste.animationplayer/Editor/UI/TransitionListEntry.uxml";
-            namedTransitionList.makeItem = () => AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(path).CloneRoot();
-
-            namedTransitionList.bindItem = BindTransitionListItem;
-            namedTransitionList.unbindItem = (ve, _) =>
+            void SetupAnimationPlayerDefaultEditorPreview()
             {
-                ve.Unbind();
-            };
+                var rootVisualElement = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(SingleTransitionEditor.path).CloneRoot();
+                playerDefaultTransitionParent.Add(rootVisualElement);
+                rootVisualElement.SetEnabled(false);
+                rootVisualElement.Q("TopRow").SetFlex(false);
+                rootVisualElement.Q("Delete").SetFlex(false);
+                animationPlayerDefaultTransitionEditor = new TransitionDataEditor(rootVisualElement);
+                animationPlayerDefaultTransitionEditor.Bind(parentEditor.serializedObject.FindProperty(nameof(AnimationPlayer.defaultTransition)));
+            }
+        }
 
-            namedTransitionList.itemsAdded += indices =>
+        private void RebuildTransitionEditors(VisualElement parentVisualElement, List<SingleTransitionEditor> transitionEditors,
+                                              SerializedProperty transitionListProp, bool namedTransitions)
+        {
+            foreach (var transitionEditor in transitionEditors)
             {
-                foreach (var index in indices)
-                {
-                    var transitionsProp = parentEditor.SelectedLayerProp.FindPropertyRelative(nameof(AnimationLayer.namedTransitions));
-                    var newTransition = transitionsProp.AppendToArray();
-                    
-                    var nameProp      = newTransition.FindPropertyRelative(nameof(NamedStateTransition.name));
-                    var fromStateProp = newTransition.FindPropertyRelative(nameof(NamedStateTransition.fromState));
-                    var toStateProp   = newTransition.FindPropertyRelative(nameof(NamedStateTransition.toState));
+                transitionEditor.Unbind();
+                transitionEditor.RemoveFromHierarchy();
+            }
+            transitionEditors.Clear();
 
-                    fromStateProp.managedReferenceValue = parentEditor.SelectedStateProp.managedReferenceValue;
-                    toStateProp.managedReferenceValue = parentEditor.SelectedToStateProp.managedReferenceValue;
-
-                    nameProp.stringValue = $"Transition {parentEditor.SelectedStateProp.FindPropertyRelative("name").stringValue}->" +
-                                           $"{parentEditor.SelectedToStateProp.FindPropertyRelative("name").stringValue}";
-
-                    var newData = newTransition.FindPropertyRelative(nameof(NamedStateTransition.transitionData));
-
-                    newData.FindPropertyRelative(nameof(TransitionData.type))                   .intValue             = (int) TransitionType.Linear;
-                    newData.FindPropertyRelative(nameof(TransitionData.duration))               .floatValue           = 1f;
-                    newData.FindPropertyRelative(nameof(TransitionData.timeOffsetIntoNewState)) .doubleValue          = 0f;
-                    newData.FindPropertyRelative(nameof(TransitionData.curve))                  .animationCurveValue  = null;
-                    newData.FindPropertyRelative(nameof(TransitionData.clip))                   .objectReferenceValue = null;
-
-                    parentEditor.serializedObject.ApplyModifiedProperties();
-                    transitionPropsForSelectedStates[index] = newTransition;
-                }
-            };
-            
-            namedTransitionList.Q<Button>(BaseListView.footerRemoveButtonName).clickable = new Clickable(() =>
+            for (int i = 0; i < transitionListProp.arraySize; i++)
             {
-                var transitionsProp = parentEditor.SelectedLayerProp.FindPropertyRelative(nameof(AnimationLayer.namedTransitions));
+                var transition = transitionListProp.GetArrayElementAtIndex(i);
+                var editor = SingleTransitionEditor.Create(parentVisualElement);
+                if (namedTransitions)
+                    editor.BindNamedTransition(transition, this, i);
+                else
+                    editor.BindDefaultTransition(transition);
+                transitionEditors.Add(editor);
+            }
+        }
 
-                var index = namedTransitionList.selectedIndex;
-                if (index == -1)
-                    index = transitionPropsForSelectedStates.Count - 1;
-                if (index == -1)
-                    return;
-                
-                var property = transitionPropsForSelectedStates[index];
-                var propertyPath = property.propertyPath;
+        public void AddTransitionClicked()
+        {
+            var transitionsProp = parentEditor.SelectedLayerProp.FindPropertyRelative(nameof(AnimationLayer.namedTransitions));
+            var newTransition = transitionsProp.AppendToArray();
 
-                var startOfIndex = propertyPath.LastIndexOf("[", StringComparison.Ordinal) + 1;
-                var propertyIndex = int.Parse(propertyPath[startOfIndex..^1]);
+            var nameProp      = newTransition.FindPropertyRelative(nameof(NamedStateTransition.name));
+            var fromStateProp = newTransition.FindPropertyRelative(nameof(NamedStateTransition.fromState));
+            var toStateProp   = newTransition.FindPropertyRelative(nameof(NamedStateTransition.toState));
 
-                transitionsProp.DeleteArrayElementAtIndex(propertyIndex);
-                parentEditor.serializedObject.ApplyModifiedProperties();
-                
-                var selectedStateObject   = (AnimationPlayerState) parentEditor.SelectedStateProp  .managedReferenceValue;
-                var selectedToStateObject = (AnimationPlayerState) parentEditor.SelectedToStateProp.managedReferenceValue;
+            fromStateProp.managedReferenceValue = parentEditor.SelectedStateProp.managedReferenceValue;
+            toStateProp.managedReferenceValue = parentEditor.SelectedToStateProp.managedReferenceValue;
 
-                int j = 0;
-                for (int i = 0; i < transitionsProp.arraySize; i++)
-                {
-                    var transition = transitionsProp.GetArrayElementAtIndex(i);
-                    var fromState = transition.FindPropertyRelative(nameof(StateTransition.fromState)).managedReferenceValue;
-                    var toState   = transition.FindPropertyRelative(nameof(StateTransition.toState))  .managedReferenceValue;
+            nameProp.stringValue = $"Transition {parentEditor.SelectedStateProp.FindPropertyRelative("name").stringValue}->" +
+                                   $"{parentEditor.SelectedToStateProp.FindPropertyRelative("name").stringValue}";
 
-                    if (fromState == selectedStateObject && toState == selectedToStateObject)
-                    {
-                        transitionPropsForSelectedStates[j] = transition;
-                        j++;
-                    }
-                }
-               
-                namedTransitionList.viewController.RemoveItem(transitionPropsForSelectedStates.Count - 1);
-            });
+            var newData = newTransition.FindPropertyRelative(nameof(NamedStateTransition.transitionData));
+
+            newData.FindPropertyRelative(nameof(TransitionData.type))                   .intValue             = (int) TransitionType.Linear;
+            newData.FindPropertyRelative(nameof(TransitionData.duration))               .floatValue           = 1f;
+            newData.FindPropertyRelative(nameof(TransitionData.timeOffsetIntoNewState)) .doubleValue          = 0f;
+            newData.FindPropertyRelative(nameof(TransitionData.curve))                  .animationCurveValue  = null;
+            newData.FindPropertyRelative(nameof(TransitionData.clip))                   .objectReferenceValue = null;
+
+            parentEditor.serializedObject.ApplyModifiedProperties();
+
+            // @todo just make a new one jeez
+            RebuildTransitionEditors(namedTransitionsParent, namedTransitionEditors,
+                                     parentEditor.SelectedLayerProp.FindPropertyRelative(nameof(AnimationLayer.namedTransitions)), true);
+            OnSelectedAnimationStatesChanged();
         }
 
         public void OnSelectedAnimationStatesChanged()
@@ -663,8 +808,8 @@ public class AnimationPlayerEditor : Editor
             var selectedStateObject   = (AnimationPlayerState) parentEditor.SelectedStateProp  .managedReferenceValue;
             var selectedToStateObject = (AnimationPlayerState) parentEditor.SelectedToStateProp.managedReferenceValue;
 
-            UpdateNamedTransitions();
             UpdateLabels();
+            UpdateNamedTransitions();
             UpdateDefaultTransition();
 
             void UpdateLabels()
@@ -681,68 +826,27 @@ public class AnimationPlayerEditor : Editor
                 }
             }
 
-            void UpdateNamedTransitions()
-            {
-                transitionPropsForSelectedStates.Clear();
-                var namedTransitionsProp = parentEditor.SelectedLayerProp.FindPropertyRelative(nameof(AnimationLayer.namedTransitions));
-                for (int i = 0; i < namedTransitionsProp.arraySize; i++)
-                {
-                    var transition = namedTransitionsProp.GetArrayElementAtIndex(i);
-                    var fromState = transition.FindPropertyRelative(nameof(StateTransition.fromState)).managedReferenceValue;
-                    var toState   = transition.FindPropertyRelative(nameof(StateTransition.toState))  .managedReferenceValue;
-
-                    if (fromState == selectedStateObject && toState == selectedToStateObject)
-                    {
-                        transitionPropsForSelectedStates.Add(transition);
-                    }
-                }
-                namedTransitionList.RefreshItems();
-            }
-
             void UpdateDefaultTransition()
             {
-                hasDefaultTransition = false;
-                defaultTransitionPropForSelectedStates = null;
-
-                var defaultTransitionsProp = parentEditor.SelectedLayerProp.FindPropertyRelative(nameof(AnimationLayer.defaultTransitions));
-                for (int i = 0; i < defaultTransitionsProp.arraySize; i++)
+                var foundOne = false;
+                foreach (var defaultTransitionEditor in defaultTransitionEditors)
                 {
-                    var transition = defaultTransitionsProp.GetArrayElementAtIndex(i);
-                    var fromState = transition.FindPropertyRelative(nameof(StateTransition.fromState)).managedReferenceValue;
-                    var toState   = transition.FindPropertyRelative(nameof(StateTransition.toState))  .managedReferenceValue;
-
-                    if (fromState == selectedStateObject && toState == selectedToStateObject)
+                    if (defaultTransitionEditor.IsFromTo(selectedStateObject, selectedToStateObject))
                     {
-                        if (hasDefaultTransition)
-                        {
-                            Debug.LogWarning($"There are two default transitions from {selectedStateObject.Name} to {selectedToStateObject.Name}! " +
-                                             $"There should only be one. This issue is probably be the result of a merge! One will be deleted.");
-                            defaultTransitionsProp.DeleteArrayElementAtIndex(i);
-                            i--;
-                        }
-                        else
-                        {
-                            hasDefaultTransition = true;
-                            defaultTransitionPropForSelectedStates = transition;
-                        }
+                        foundOne = true;
+                        defaultTransitionEditor.SetFlex(true);
                     }
+                    else
+                        defaultTransitionEditor.SetFlex(false);
                 }
 
-                if (hasDefaultTransition)
-                {
-                    defaultTransitionEditor.Unbind();
-                    BindTransition(defaultTransitionEditor, defaultTransitionPropForSelectedStates);
-                    defaultTransitionEditor.SetEnabled(true);
-                    useDefaultStateDropdown.SetValueWithoutNotify(useDefaultStateDropdown.choices[1]);
-                }
-                else
-                {
-                    defaultTransitionEditor.Unbind();
-                    var playerDefault = parentEditor.serializedObject.FindProperty(nameof(AnimationPlayer.defaultTransition));
-                    BindTransitionData(defaultTransitionEditor, playerDefault);
-                    defaultTransitionEditor.SetEnabled(false);
-                    useDefaultStateDropdown.SetValueWithoutNotify(useDefaultStateDropdown.choices[0]);
-                }
+                animationPlayerDefaultTransitionEditor.SetFlex(!foundOne);
+            }
+
+            void UpdateNamedTransitions()
+            {
+                foreach (var namedTransitionEditor in namedTransitionEditors)
+                    namedTransitionEditor.SetFlex(namedTransitionEditor.IsFromTo(selectedStateObject, selectedToStateObject));
             }
         }
 
@@ -796,17 +900,11 @@ public class AnimationPlayerEditor : Editor
         {
             var useAnimationPlayerDefault = evt.newValue == useDefaultStateDropdown.choices[0];
             if (useAnimationPlayerDefault)
-            {
                 RemoveOldCustomDefaultTransition();
-                BindDefaultTransitionEditorToPlayerDefault();
-                defaultTransitionEditor.SetEnabled(false);
-            }
             else
-            {
                 AddNewCustomDefaultTransition();
-                BindDefaultTransitionEditorToNewDefaultTransition();
-                defaultTransitionEditor.SetEnabled(true);
-            }
+
+            animationPlayerDefaultTransitionEditor.SetFlex(useAnimationPlayerDefault);
 
             void RemoveOldCustomDefaultTransition()
             {
@@ -826,18 +924,11 @@ public class AnimationPlayerEditor : Editor
                     }
                 }
 
-                hasDefaultTransition = false;
-                defaultTransitionPropForSelectedStates = null;
                 parentEditor.serializedObject.ApplyModifiedProperties();
-            }
-
-            void BindDefaultTransitionEditorToPlayerDefault()
-            {
-                var playerDefault = parentEditor.serializedObject.FindProperty(nameof(AnimationPlayer.defaultTransition));
-                defaultTransitionEditor.Q<TextField>("TransitionName").SetFlex(false);
-                defaultTransitionEditor.Unbind();
-                BindTransitionData(defaultTransitionEditor, playerDefault);
-                defaultTransitionEditor.SetEnabled(false);
+                // @todo: jeez create new one
+                RebuildTransitionEditors(defaultTransitionsParent, defaultTransitionEditors,
+                                         parentEditor.SelectedLayerProp.FindPropertyRelative(nameof(AnimationLayer.defaultTransitions)), false);
+                OnSelectedAnimationStatesChanged();
             }
 
             void AddNewCustomDefaultTransition()
@@ -861,76 +952,16 @@ public class AnimationPlayerEditor : Editor
 
                 parentEditor.serializedObject.ApplyModifiedProperties();
 
-                hasDefaultTransition = true;
-                defaultTransitionPropForSelectedStates = newTransition;
-            }
-
-            void BindDefaultTransitionEditorToNewDefaultTransition()
-            {
-                defaultTransitionEditor.Unbind();
-                BindTransition(defaultTransitionEditor, defaultTransitionPropForSelectedStates);
-                defaultTransitionEditor.SetEnabled(true);
+                // @todo: jeez create new one
+                RebuildTransitionEditors(defaultTransitionsParent, defaultTransitionEditors,
+                                         parentEditor.SelectedLayerProp.FindPropertyRelative(nameof(AnimationLayer.defaultTransitions)), false);
+                OnSelectedAnimationStatesChanged();
             }
         }
-        
-        private void BindTransitionListItem(VisualElement ve, int index)
+
+        public void NamedTransitionDeleted(int index)
         {
-            var transitionProp = transitionPropsForSelectedStates[index];
-            BindTransition(ve, transitionProp);
-        }
-
-        private void BindTransition(VisualElement ve, SerializedProperty transitionProp)
-        {
-            // Transition can either be NamedStateTransition or just StateTransition
-            var nameProp  = transitionProp.FindPropertyRelative(nameof(NamedStateTransition.name));
-            var nameField = ve.Q<TextField>("TransitionName");
-            if (nameProp != null)
-            {
-                nameField.style.display = DisplayStyle.Flex;
-                nameField.BindProperty(nameProp);
-            }
-            else
-                nameField.style.display = DisplayStyle.None;
-
-            var transitionDataProp = transitionProp.FindPropertyRelative(nameof(StateTransition.transitionData));
-            BindTransitionData(ve, transitionDataProp);
-        }
-
-        private void BindTransitionData(VisualElement ve, SerializedProperty transitionDataProp)
-        {
-            var transitionTypeProp = transitionDataProp.FindPropertyRelative(nameof(StateTransition.transitionData.type));
-            var curveProp          = transitionDataProp.FindPropertyRelative(nameof(StateTransition.transitionData.curve));
-            var durationProp       = transitionDataProp.FindPropertyRelative(nameof(StateTransition.transitionData.duration));
-            var clipProp           = transitionDataProp.FindPropertyRelative(nameof(StateTransition.transitionData.clip));
-
-            var transitionTypeField = ve.Q<EnumField>("TransitionType");
-
-            var durationField = ve.Q<FloatField> ("Duration");
-            var curveField    = ve.Q<CurveField> ("Curve");
-            var clipField     = ve.Q<ObjectField>("Clip");
-
-            transitionTypeField.BindProperty(transitionTypeProp);
-            durationField      .BindProperty(durationProp);
-            curveField         .BindProperty(curveProp);
-            clipField          .BindProperty(clipProp);
-
-            clipField.objectType = typeof(AnimationClip);
-
-            DisplayFieldsForType((TransitionType) transitionTypeProp.intValue);
-            transitionTypeField.RegisterValueChangedCallback(evt =>
-            {
-                if (evt.newValue != null) // Seems to get null when we change UI?
-                {
-                    var newValue = (TransitionType) evt.newValue;
-                    DisplayFieldsForType(newValue);
-                }
-            });
-
-            void DisplayFieldsForType(TransitionType transitionType)
-            {
-                clipField .SetFlex(transitionType == TransitionType.Clip);
-                curveField.SetFlex(transitionType == TransitionType.Curve);
-            }
+            throw new NotImplementedException();
         }
     }
 

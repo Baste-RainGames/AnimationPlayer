@@ -2,13 +2,16 @@
     <Style src="project://database/Packages/com.baste.animationplayer/Editor/UI/AnimationPlayerStyles.uss?fileID=7433441132597879392&amp;guid=d8ce903d29a9e0a4dbcd0a6e394057ae&amp;type=3#AnimationPlayerStyles" />
     <ui:VisualElement name="Root" class="blend-tree-drawer--blend-tree-entry transition-list--entry" style="flex-direction: column;">
         <ui:VisualElement name="TopRow" class="transition-list--entry-line" style="flex-grow: 1;">
-            <ui:TextField picking-mode="Ignore" label="Name" value="Default" name="TransitionName" />
-            <ui:EnumField label="Transition Type" type="Animation_Player.TransitionType, AnimationPlayer" name="TransitionType" />
+            <ui:TextField picking-mode="Ignore" label="Name" value="Default" name="Name" />
         </ui:VisualElement>
-        <ui:VisualElement name="BottomRow" class="transition-list--entry-line">
+        <ui:VisualElement name="MiddleRow" class="transition-list--entry-line" style="flex-grow: 1;">
+            <ui:EnumField label="Transition Type" type="Animation_Player.TransitionType, AnimationPlayer" name="Type" />
             <ui:FloatField label="Duration" value="42.2" name="Duration" />
+        </ui:VisualElement>
+        <ui:VisualElement name="BottomRow" class="transition-list--entry-line" style="justify-content: space-between;">
             <uie:CurveField label="Curve" name="Curve" />
-            <uie:ObjectField label="Clip&#10;" name="Clip" />
+            <uie:ObjectField label="Clip&#10;" name="Clip" type="UnityEngine.AnimationClip, UnityEngine.AnimationModule" />
+            <ui:Button text="Delete Transition" name="Delete" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

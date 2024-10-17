@@ -40,7 +40,7 @@
 }
 
 .transition-list--entry {
-    height: 44px;
+    /*height: 44px;*/
 }
 
 .transition-list--entry-line {
